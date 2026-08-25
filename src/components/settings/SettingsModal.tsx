@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { useSettings } from '../../context/SettingsContext';
-import type { ThemeMode, TouchProtectionMode } from '../../types';
+import type { TouchProtectionMode } from '../../types';
 import { db } from '../../db/database';
-import { Moon, Smartphone, Database, Download, Upload, Trash2, Check, Sliders, Shield } from 'lucide-react';
+import { Sun, Moon, Smartphone, Database, Download, Upload, Trash2, Check, Sliders, Shield } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -13,13 +13,6 @@ interface SettingsModalProps {
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const { settings, updateSettings, resetSettings } = useSettings();
   const [copiedMsg, setCopiedMsg] = useState<string>('');
-
-  const themes: { id: ThemeMode; label: string; bg: string; accent: string }[] = [
-    { id: 'obsidian', label: 'Obsidian Zinc', bg: '#09090b', accent: '#e11d48' },
-    { id: 'felt-green', label: 'Midnight Felt', bg: '#050a08', accent: '#10b981' },
-    { id: 'carbon', label: 'Pro Carbon', bg: '#000000', accent: '#3b82f6' },
-    { id: 'navy', label: 'Tournament Navy', bg: '#050811', accent: '#38bdf8' },
-  ];
 
   const handleExportBackup = async () => {
     try {
@@ -80,38 +73,46 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     }
   };
 
+  const isLight = settings.theme === 'light';
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Pengaturan PoolScore">
       <div className="space-y-5 select-none text-xs">
         {copiedMsg && (
-          <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-medium flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 font-medium flex items-center gap-2">
             <Check className="w-4 h-4" /> {copiedMsg}
           </div>
         )}
 
-        {/* 1. Theme & Appearance */}
+        {/* 1. Mode Tampilan: Mode Malam (Dark) & Mode Siang (Light) */}
         <div>
           <label className="block uppercase tracking-wider text-zinc-400 font-semibold mb-2 flex items-center gap-1.5">
-            <Moon className="w-3.5 h-3.5 text-zinc-400" /> Tema Tampilan
+            {isLight ? <Sun className="w-3.5 h-3.5 text-amber-500" /> : <Moon className="w-3.5 h-3.5 text-rose-500" />} Mode Tampilan Aplikasi
           </label>
           <div className="grid grid-cols-2 gap-2">
-            {themes.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => updateSettings({ theme: t.id })}
-                className={`p-2.5 rounded-xl border flex items-center gap-2.5 text-xs font-medium transition-all ${
-                  settings.theme === t.id
-                    ? 'border-zinc-300 bg-zinc-800 text-white shadow-sm'
-                    : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
-                }`}
-              >
-                <div
-                  className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0"
-                  style={{ backgroundColor: t.accent }}
-                />
-                <span className="truncate">{t.label}</span>
-              </button>
-            ))}
+            <button
+              onClick={() => updateSettings({ theme: 'obsidian' })}
+              className={`p-3 rounded-xl border flex items-center justify-center gap-2.5 text-xs font-semibold uppercase tracking-wider transition-all ${
+                !isLight
+                  ? 'border-rose-500 bg-rose-600 text-white shadow-sm'
+                  : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
+              }`}
+            >
+              <Moon className="w-4 h-4" />
+              Mode Malam (Dark)
+            </button>
+
+            <button
+              onClick={() => updateSettings({ theme: 'light' })}
+              className={`p-3 rounded-xl border flex items-center justify-center gap-2.5 text-xs font-semibold uppercase tracking-wider transition-all ${
+                isLight
+                  ? 'border-rose-500 bg-rose-600 text-white shadow-sm'
+                  : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
+              }`}
+            >
+              <Sun className="w-4 h-4 text-amber-300" />
+              Mode Siang (Light)
+            </button>
           </div>
         </div>
 
@@ -131,12 +132,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 onClick={() => updateSettings({ touchProtection: mode.id as TouchProtectionMode })}
                 className={`p-2.5 rounded-xl border text-center transition-all ${
                   settings.touchProtection === mode.id
-                    ? 'border-rose-500/50 bg-rose-500/15 text-rose-300 shadow-sm'
+                    ? 'border-rose-500 bg-rose-600 text-white shadow-sm'
                     : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
                 }`}
               >
                 <div className="text-xs font-semibold">{mode.label}</div>
-                <div className="text-[10px] text-zinc-500 mt-0.5">{mode.desc}</div>
+                <div className={`text-[10px] mt-0.5 ${settings.touchProtection === mode.id ? 'text-white/80' : 'text-zinc-500'}`}>{mode.desc}</div>
               </button>
             ))}
           </div>
@@ -205,7 +206,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 onClick={() => updateSettings({ fontSize: size.id as 'standard' | 'large' | 'massive' })}
                 className={`py-2 px-2 rounded-xl border text-center text-xs font-semibold transition-all ${
                   settings.fontSize === size.id
-                    ? 'border-zinc-300 bg-zinc-800 text-white shadow-sm'
+                    ? 'border-rose-500 bg-rose-600 text-white shadow-sm'
                     : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
                 }`}
               >
@@ -225,11 +226,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               onClick={handleExportBackup}
               className="py-2.5 px-3 rounded-xl bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-xs font-semibold flex items-center justify-center gap-1.5 text-zinc-200 transition-all active:scale-95"
             >
-              <Download className="w-4 h-4 text-emerald-400" /> Ekspor Backup
+              <Download className="w-4 h-4 text-zinc-400" /> Ekspor Backup
             </button>
 
             <label className="py-2.5 px-3 rounded-xl bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-xs font-semibold flex items-center justify-center gap-1.5 text-zinc-200 cursor-pointer transition-all active:scale-95">
-              <Upload className="w-4 h-4 text-blue-400" /> Impor Backup
+              <Upload className="w-4 h-4 text-zinc-400" /> Impor Backup
               <input
                 type="file"
                 accept=".json"

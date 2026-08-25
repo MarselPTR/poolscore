@@ -4,6 +4,8 @@ import { db, DEFAULT_SETTINGS } from '../db/database';
 
 interface SettingsContextType {
   settings: AppSettings;
+  isDarkMode: boolean;
+  toggleTheme: () => void;
   updateSettings: (newSettings: Partial<AppSettings>) => Promise<void>;
   resetSettings: () => Promise<void>;
 }
@@ -12,6 +14,18 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+
+  const applyTheme = (theme: ThemeMode) => {
+    const isLight = theme === 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    if (isLight) {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    }
+  };
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -31,8 +45,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     loadSettings();
   }, []);
 
-  const applyTheme = (theme: ThemeMode) => {
-    document.documentElement.setAttribute('data-theme', theme);
+  const toggleTheme = () => {
+    const nextTheme: ThemeMode = settings.theme === 'light' ? 'obsidian' : 'light';
+    updateSettings({ theme: nextTheme });
   };
 
   const updateSettings = async (newPartial: Partial<AppSettings>) => {
@@ -58,8 +73,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const isDarkMode = settings.theme !== 'light';
+
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings, resetSettings }}>
+    <SettingsContext.Provider value={{ settings, isDarkMode, toggleTheme, updateSettings, resetSettings }}>
       {children}
     </SettingsContext.Provider>
   );

@@ -64,7 +64,7 @@ export const MatchDetailModal: React.FC<MatchDetailModalProps> = ({
 
           {winner && (
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-900 text-xs text-zinc-300 border border-zinc-800 mt-1">
-              <Trophy className="w-3.5 h-3.5 text-amber-400" />
+              <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
               <span>
                 Pemenang: <strong className="text-white font-bold">{winner.name}</strong>
               </span>
@@ -76,7 +76,7 @@ export const MatchDetailModal: React.FC<MatchDetailModalProps> = ({
         {isMultiSet && match.setHistory && match.setHistory.length > 0 && (
           <div className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800">
             <div className="text-[11px] font-semibold text-amber-400 flex items-center gap-1 mb-2">
-              <Layers className="w-3.5 h-3.5" /> Rekap Skor per Babak (Set History)
+              <Layers className="w-3.5 h-3.5 shrink-0" /> Rekap Skor per Babak (Set History)
             </div>
             <div className="grid grid-cols-3 gap-2 text-center font-mono">
               {match.setHistory.map((s, idx) => (
@@ -204,10 +204,10 @@ export const MatchDetailModal: React.FC<MatchDetailModalProps> = ({
             onClose();
             onOpenShareCard(match);
           }}
-          className="w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
+          className="w-full py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 text-center"
         >
-          <Share2 className="w-4 h-4" />
-          Bagikan Hasil Pertandingan (Share Card)
+          <Share2 className="w-4 h-4 shrink-0" />
+          <span>Bagikan Hasil Pertandingan</span>
         </button>
       </div>
     </Modal>

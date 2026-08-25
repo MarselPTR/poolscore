@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Match } from '../../types';
-import { Maximize, Minimize, QrCode, MoreVertical, Tv, Layers } from 'lucide-react';
+import { Maximize, Minimize, QrCode, MoreVertical, Tv, Layers, Sun, Moon } from 'lucide-react';
+import { useSettings } from '../../context/SettingsContext';
 
 interface MatchTopBarProps {
   match: Match;
@@ -21,6 +22,7 @@ export const MatchTopBar: React.FC<MatchTopBarProps> = ({
   onOpenTV,
   onOpenSettings,
 }) => {
+  const { isDarkMode, toggleTheme } = useSettings();
   const maxPossibleRacks = match.raceTo * 2 - 1;
   const isMultiSet = match.targetSets && match.targetSets > 1;
 
@@ -88,6 +90,15 @@ export const MatchTopBar: React.FC<MatchTopBarProps> = ({
           <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
           <span>LIVE</span>
         </div>
+
+        {/* Quick Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="p-2 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-all"
+          title={isDarkMode ? 'Mode Siang (Light)' : 'Mode Malam (Dark)'}
+        >
+          {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-rose-500" />}
+        </button>
 
         {/* QR Code */}
         <button

@@ -2,7 +2,7 @@
 
 @layer base {
   :root {
-    /* Linear / Raycast / FotMob Style Neutral Zinc Dark Palette */
+    /* Base Dark Tokens */
     --bg: #09090b;
     --surface: #121215;
     --surface-2: #18181c;
@@ -25,32 +25,31 @@
     --blue-dim: rgba(37, 99, 235, 0.12);
     --blue-border: rgba(37, 99, 235, 0.3);
 
-    /* Accents */
-    --felt: #10b981;
-    --felt-dim: rgba(16, 185, 129, 0.12);
-    --amber: #f59e0b;
-    --amber-dim: rgba(245, 158, 11, 0.12);
-
     /* Text Hierarchy */
-    --text: #f4f4f5;
+    --text: #ffffff;
     --text-dim: #a1a1aa;
     --text-faint: #71717a;
     --text-muted: #52525b;
+
+    color-scheme: dark;
   }
 
   /* Themes */
-  [data-theme="obsidian"] {
+  [data-theme="obsidian"],
+  [data-theme="dark"] {
     --bg: #09090b;
     --surface: #121215;
     --surface-2: #18181c;
     --surface-3: #222228;
+    color-scheme: dark;
   }
 
   [data-theme="felt-green"] {
     --bg: #050a08;
     --surface: #0b1410;
     --surface-2: #111e18;
-    --surface-3: #182a22;
+    --surface-3: #18223d;
+    color-scheme: dark;
   }
 
   [data-theme="carbon"] {
@@ -58,6 +57,7 @@
     --surface: #0d0d0f;
     --surface-2: #141417;
     --surface-3: #1c1c21;
+    color-scheme: dark;
   }
 
   [data-theme="navy"] {
@@ -65,6 +65,30 @@
     --surface: #0a0f1d;
     --surface-2: #10172b;
     --surface-3: #18223d;
+    color-scheme: dark;
+  }
+
+  /* =========================================================================
+     LIGHT MODE (Mode Siang) — High-Contrast Global Design Tokens
+     ========================================================================= */
+  [data-theme="light"],
+  .light {
+    --bg: #f4f4f7;
+    --surface: #ffffff;
+    --surface-2: #f1f1f5;
+    --surface-3: #e4e4e9;
+    --surface-hover: #e8e8ed;
+
+    --line: #e4e4e9;
+    --line-strong: #d4d4dc;
+    --line-subtle: #ebebef;
+
+    --text: #09090b;
+    --text-dim: #52525b;
+    --text-faint: #71717a;
+    --text-muted: #a1a1aa;
+
+    color-scheme: light;
   }
 }
 
@@ -80,6 +104,7 @@ body {
   overflow-x: hidden;
   letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Tabular Numerals for Scores and Timers */
@@ -87,7 +112,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Custom Minimalist Scrollbars */
+/* Minimalist Scrollbars */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -99,17 +124,195 @@ body {
   background: var(--surface-3);
   border-radius: 9999px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-faint);
+
+/* =========================================================================
+   LIGHT MODE (Mode Siang) Automatic Style Adapters for Pages and Popups
+   ========================================================================= */
+[data-theme="light"] body {
+  background-color: #f4f4f7 !important;
+  color: #09090b !important;
 }
 
-/* Score Pulse Animation */
-@keyframes scoreBump {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.08); }
-  100% { transform: scale(1); }
+/* Modal Backdrops in Light Mode */
+[data-theme="light"] .fixed.inset-0.bg-black\/75,
+[data-theme="light"] .fixed.inset-0.bg-black\/80,
+[data-theme="light"] .fixed.inset-0.bg-black\/85 {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(4px);
 }
 
-.animate-score-bump {
-  animation: scoreBump 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+/* Modal Dialogs, Cards & Surface Containers */
+[data-theme="light"] .bg-zinc-900,
+[data-theme="light"] .bg-zinc-900\/95,
+[data-theme="light"] .bg-zinc-900\/90,
+[data-theme="light"] .bg-zinc-900\/80,
+[data-theme="light"] .bg-zinc-900\/70,
+[data-theme="light"] .bg-zinc-900\/60,
+[data-theme="light"] .bg-zinc-900\/40 {
+  background-color: #ffffff !important;
+  color: #09090b !important;
+  border-color: #e4e4e9 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
+}
+
+/* Sub-panels, Inner Card Previews, and Recessed Areas */
+[data-theme="light"] .bg-zinc-950,
+[data-theme="light"] .bg-zinc-950\/95,
+[data-theme="light"] .bg-zinc-950\/80,
+[data-theme="light"] .bg-zinc-950\/60,
+[data-theme="light"] .bg-zinc-950\/40 {
+  background-color: #f4f4f7 !important;
+  color: #09090b !important;
+  border-color: #e4e4e9 !important;
+}
+
+/* Elevated Badges, Secondary Buttons, Chips */
+[data-theme="light"] .bg-zinc-800,
+[data-theme="light"] .bg-zinc-800\/90,
+[data-theme="light"] .bg-zinc-800\/80,
+[data-theme="light"] .bg-zinc-800\/60,
+[data-theme="light"] .bg-zinc-800\/40 {
+  background-color: #ebebef !important;
+  color: #18181b !important;
+  border-color: #d4d4dc !important;
+}
+
+/* Hover States */
+[data-theme="light"] .hover\:bg-zinc-800:hover,
+[data-theme="light"] .hover\:bg-zinc-800\/90:hover,
+[data-theme="light"] .hover\:bg-zinc-800\/80:hover,
+[data-theme="light"] .hover\:bg-zinc-800\/40:hover,
+[data-theme="light"] .hover\:bg-zinc-700:hover,
+[data-theme="light"] .hover\:bg-zinc-700\/90:hover {
+  background-color: #dedee5 !important;
+  color: #09090b !important;
+}
+
+/* Borders */
+[data-theme="light"] .border-zinc-800,
+[data-theme="light"] .border-zinc-800\/90,
+[data-theme="light"] .border-zinc-800\/80,
+[data-theme="light"] .border-zinc-800\/60,
+[data-theme="light"] .border-zinc-800\/40 {
+  border-color: #e4e4e9 !important;
+}
+[data-theme="light"] .border-zinc-700,
+[data-theme="light"] .border-zinc-700\/60,
+[data-theme="light"] .border-zinc-700\/50 {
+  border-color: #d4d4dc !important;
+}
+[data-theme="light"] .hover\:border-zinc-700:hover {
+  border-color: #cbd5e1 !important;
+}
+[data-theme="light"] .hover\:border-zinc-600:hover {
+  border-color: #94a3b8 !important;
+}
+
+/* Typography Hierarchy in Light Mode */
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3,
+[data-theme="light"] h4,
+[data-theme="light"] .text-white {
+  color: #09090b !important;
+}
+[data-theme="light"] .text-zinc-100,
+[data-theme="light"] .text-zinc-200,
+[data-theme="light"] .text-zinc-300 {
+  color: #18181b !important;
+}
+[data-theme="light"] .text-zinc-400 {
+  color: #52525b !important;
+}
+[data-theme="light"] .text-zinc-500 {
+  color: #71717a !important;
+}
+[data-theme="light"] .text-zinc-600 {
+  color: #a1a1aa !important;
+}
+[data-theme="light"] .group-hover\:text-white:hover,
+[data-theme="light"] .group:hover .group-hover\:text-white {
+  color: #09090b !important;
+}
+[data-theme="light"] .hover\:text-white:hover {
+  color: #09090b !important;
+}
+
+/* Form Controls & Inputs */
+[data-theme="light"] input[type="text"],
+[data-theme="light"] input[type="number"],
+[data-theme="light"] select,
+[data-theme="light"] textarea {
+  background-color: #ffffff !important;
+  color: #09090b !important;
+  border-color: #d4d4dc !important;
+}
+[data-theme="light"] input::placeholder {
+  color: #a1a1aa !important;
+}
+
+/* Primary Crimson & Blue Accents */
+[data-theme="light"] .text-rose-400,
+[data-theme="light"] .text-rose-500,
+[data-theme="light"] .text-rose-600 {
+  color: #e11d48 !important;
+}
+[data-theme="light"] .text-blue-400,
+[data-theme="light"] .text-blue-500,
+[data-theme="light"] .text-blue-600 {
+  color: #1d4ed8 !important;
+}
+
+/* Light Mode Tints */
+[data-theme="light"] .bg-rose-500\/15,
+[data-theme="light"] .bg-rose-500\/10 {
+  background-color: #ffe4e6 !important;
+  border-color: #fecdd3 !important;
+}
+[data-theme="light"] .border-rose-500\/40,
+[data-theme="light"] .border-rose-500\/30,
+[data-theme="light"] .border-rose-500\/50 {
+  border-color: #fecdd3 !important;
+}
+
+[data-theme="light"] .bg-blue-500\/15,
+[data-theme="light"] .bg-blue-500\/10 {
+  background-color: #dbeafe !important;
+  border-color: #bfdbfe !important;
+}
+[data-theme="light"] .border-blue-500\/40,
+[data-theme="light"] .border-blue-500\/30,
+[data-theme="light"] .border-blue-500\/50 {
+  border-color: #bfdbfe !important;
+}
+
+/* CRITICAL: Buttons with solid bg-rose-600 and Player Avatars MUST have crisp white text */
+[data-theme="light"] .bg-rose-600,
+[data-theme="light"] button.bg-rose-600,
+[data-theme="light"] .bg-rose-600 *,
+[data-theme="light"] button.bg-rose-600 * {
+  background-color: #e11d48 !important;
+  color: #ffffff !important;
+}
+[data-theme="light"] .bg-rose-600:hover,
+[data-theme="light"] button.bg-rose-600:hover {
+  background-color: #f43f5e !important;
+  color: #ffffff !important;
+}
+
+/* Player Avatar text MUST ALWAYS stay pure white */
+[data-theme="light"] [style*="background-color: rgb(225, 29, 72)"],
+[data-theme="light"] [style*="background-color: #e11d48"],
+[data-theme="light"] [style*="background-color: rgb(37, 99, 235)"],
+[data-theme="light"] [style*="background-color: #2563eb"],
+[data-theme="light"] [style*="background-color: rgb(16, 185, 129)"],
+[data-theme="light"] [style*="background-color: #10b981"],
+[data-theme="light"] [style*="background-color: rgb(139, 92, 246)"],
+[data-theme="light"] [style*="background-color: #8b5cf6"],
+[data-theme="light"] [style*="background-color: #ec4899"],
+[data-theme="light"] [style*="background-color: #f97316"] {
+  color: #ffffff !important;
+}
+[data-theme="light"] [style*="background-color"] span {
+  color: inherit !important;
 }

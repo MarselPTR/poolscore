@@ -99,14 +99,14 @@ export const QRModal: React.FC<QRModalProps> = ({
             type="text"
             readOnly
             value={liveUrl}
-            className="w-full bg-transparent text-zinc-300 focus:outline-none truncate"
+            className="w-full bg-transparent text-zinc-300 focus:outline-none truncate px-1"
           />
           <button
             onClick={handleCopy}
-            className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-sans font-semibold text-xs flex items-center gap-1 shrink-0 transition-colors"
+            className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-sans font-semibold text-xs flex items-center gap-1.5 shrink-0 transition-colors"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            {copied ? 'Tersalin' : 'Salin'}
+            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
+            <span>{copied ? 'Tersalin' : 'Salin'}</span>
           </button>
         </div>
 
@@ -116,10 +116,10 @@ export const QRModal: React.FC<QRModalProps> = ({
             onClose();
             onOpenTVView();
           }}
-          className="w-full py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-zinc-700/60 shadow-sm transition-all active:scale-95"
+          className="w-full py-3 px-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-zinc-700/60 shadow-sm transition-all active:scale-95 text-center"
         >
-          <Tv className="w-4 h-4 text-zinc-400" />
-          Buka Tampilan TV Layar Penuh
+          <Tv className="w-4 h-4 text-zinc-400 shrink-0" />
+          <span>Buka Tampilan TV Layar Penuh</span>
         </button>
       </div>
     </Modal>

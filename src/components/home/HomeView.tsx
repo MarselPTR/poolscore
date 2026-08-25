@@ -185,7 +185,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             Belum ada data pertandingan yang tersimpan.
           </div>
         ) : (
-          <div className="divide-y divide-zinc-800/60">
+          <div className="space-y-1.5">
             {recentMatches.slice(0, 5).map((m) => {
               const isMultiSet = m.targetSets && m.targetSets > 1;
 
@@ -193,7 +193,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <div
                   key={m.id}
                   onClick={() => onOpenMatchDetail(m)}
-                  className="py-3 px-1.5 flex items-center justify-between cursor-pointer hover:bg-zinc-800/40 rounded-xl transition-colors group"
+                  className="py-2.5 px-3 flex items-center justify-between cursor-pointer bg-zinc-950/40 hover:bg-zinc-800/40 rounded-xl border border-zinc-800/60 transition-all group"
                 >
                   {/* Player 1 */}
                   <div className="flex items-center gap-2.5 flex-1 min-w-0">
@@ -204,12 +204,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   </div>
 
                   {/* Score Pill */}
-                  <div className="px-2.5 py-1 rounded-lg bg-zinc-800/80 border border-zinc-700/50 font-mono font-bold text-xs font-tabular text-center mx-2 group-hover:border-zinc-600 transition-colors shrink-0">
-                    <span className={m.winner === 1 ? 'text-rose-400' : 'text-zinc-400'}>
+                  <div className="px-3 py-1 rounded-lg bg-zinc-900 border border-zinc-800 font-mono font-bold text-xs font-tabular text-center mx-2 shrink-0 shadow-sm">
+                    <span className={m.winner === 1 ? 'text-rose-500 font-black' : 'text-zinc-400'}>
                       {isMultiSet ? m.player1Sets : m.player1.score}
                     </span>
-                    <span className="text-zinc-600 mx-1.5">-</span>
-                    <span className={m.winner === 2 ? 'text-blue-400' : 'text-zinc-400'}>
+                    <span className="text-zinc-500 mx-1.5">-</span>
+                    <span className={m.winner === 2 ? 'text-blue-500 font-black' : 'text-zinc-400'}>
                       {isMultiSet ? m.player2Sets : m.player2.score}
                     </span>
                   </div>

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Settings, Home, History, Trophy, BarChart3, Building2, Tv } from 'lucide-react';
+import { Settings, Home, History, Trophy, BarChart3, Building2, Tv, Sun, Moon } from 'lucide-react';
+import { useSettings } from '../../context/SettingsContext';
 
 interface HeaderProps {
   currentTab: string;
@@ -14,6 +15,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSettings,
   onOpenTV,
 }) => {
+  const { isDarkMode, toggleTheme } = useSettings();
+
   const navItems = [
     { id: 'home', label: 'Home', icon: Home },
     { id: 'history', label: 'Riwayat', icon: History },
@@ -71,6 +74,20 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right Actions */}
         <div className="flex items-center gap-1.5">
+          {/* Quick Light / Dark Mode Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition-all active:scale-95"
+            title={isDarkMode ? 'Ganti ke Mode Siang (Light Mode)' : 'Ganti ke Mode Malam (Dark Mode)'}
+            aria-label="Toggle theme mode"
+          >
+            {isDarkMode ? (
+              <Sun className="w-4 h-4 text-amber-400" />
+            ) : (
+              <Moon className="w-4 h-4 text-rose-500" />
+            )}
+          </button>
+
           <button
             onClick={onOpenTV}
             className="p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition-all"

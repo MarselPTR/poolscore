@@ -46,7 +46,7 @@ export const LeaderboardView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-5 max-w-4xl mx-auto pb-20 select-none animate-fade-in px-2 sm:px-0">
+    <div className="space-y-4 sm:space-y-5 max-w-4xl mx-auto pb-24 select-none animate-fade-in px-2 sm:px-0">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
         <div>
@@ -73,25 +73,24 @@ export const LeaderboardView: React.FC = () => {
       </div>
 
       {/* Controls Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="space-y-2.5">
         {/* Search */}
-        <div className="relative w-full sm:w-64">
+        <div className="relative w-full">
           <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari nama pemain..."
-            className="w-full pl-9 pr-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-600 transition-colors"
+            className="w-full pl-9 pr-3 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-rose-500 transition-colors"
           />
         </div>
 
-        {/* Sort Chips (Red active state) */}
-        <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto scrollbar-none">
-          <span className="text-xs text-zinc-500 mr-1 shrink-0 font-medium">Urutkan:</span>
+        {/* Sort Chips (Mobile Full-Width 3-Column Segmented Bar) */}
+        <div className="grid grid-cols-3 gap-1.5 w-full">
           <button
             onClick={() => setSortBy('rating')}
-            className={`px-3 py-1.5 rounded-lg border text-xs font-semibold uppercase tracking-wider transition-all shrink-0 ${
+            className={`py-2 px-1 text-center rounded-xl border text-[11px] sm:text-xs font-semibold uppercase tracking-wider transition-all truncate ${
               sortBy === 'rating'
                 ? 'border-rose-500 bg-rose-600 text-white shadow-sm'
                 : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white'
@@ -101,7 +100,7 @@ export const LeaderboardView: React.FC = () => {
           </button>
           <button
             onClick={() => setSortBy('winRate')}
-            className={`px-3 py-1.5 rounded-lg border text-xs font-semibold uppercase tracking-wider transition-all shrink-0 ${
+            className={`py-2 px-1 text-center rounded-xl border text-[11px] sm:text-xs font-semibold uppercase tracking-wider transition-all truncate ${
               sortBy === 'winRate'
                 ? 'border-rose-500 bg-rose-600 text-white shadow-sm'
                 : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white'
@@ -111,7 +110,7 @@ export const LeaderboardView: React.FC = () => {
           </button>
           <button
             onClick={() => setSortBy('matches')}
-            className={`px-3 py-1.5 rounded-lg border text-xs font-semibold uppercase tracking-wider transition-all shrink-0 ${
+            className={`py-2 px-1 text-center rounded-xl border text-[11px] sm:text-xs font-semibold uppercase tracking-wider transition-all truncate ${
               sortBy === 'matches'
                 ? 'border-rose-500 bg-rose-600 text-white shadow-sm'
                 : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white'
@@ -122,9 +121,62 @@ export const LeaderboardView: React.FC = () => {
         </div>
       </div>
 
-      {/* Leaderboard Table */}
+      {/* Leaderboard: Mobile Card Rows (< sm) & Desktop Table (>= sm) */}
       <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
+        {/* 1. Mobile Optimized View (< sm) */}
+        <div className="sm:hidden divide-y divide-zinc-800/60">
+          {filteredPlayers.length === 0 ? (
+            <div className="py-12 text-center text-zinc-500 text-xs">
+              Belum ada data pemain terdaftar.
+            </div>
+          ) : (
+            filteredPlayers.map((player, idx) => {
+              const wr = player.matchesCount > 0
+                ? ((player.winsCount / player.matchesCount) * 100).toFixed(1)
+                : '0.0';
+
+              return (
+                <div
+                  key={player.id}
+                  onClick={() => setSelectedPlayer(player)}
+                  className="p-3.5 flex items-center justify-between gap-3 active:bg-zinc-800/50 cursor-pointer transition-colors"
+                >
+                  {/* Rank & Player Info */}
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <RankMedallion rank={idx + 1} size="md" />
+                    <PlayerAvatar name={player.name} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-xs text-white truncate">
+                        {player.name}
+                      </div>
+                      <div className="text-[10px] text-zinc-400 flex items-center gap-1.5 mt-0.5">
+                        <span className="font-medium text-rose-500">{wr}% Win</span>
+                        <span>·</span>
+                        <span>{player.winsCount}M / {player.lossesCount}K</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rating & Chevron */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="text-right font-tabular">
+                      <div className="font-mono font-bold text-sm text-white">
+                        {player.rating}
+                      </div>
+                      <div className="text-[9px] text-zinc-500 uppercase">
+                        Elo Rating
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-zinc-500 shrink-0" />
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* 2. Desktop Full Table View (>= sm) */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-zinc-900/90 text-zinc-400 uppercase tracking-wider border-b border-zinc-800 text-[11px] font-semibold">
               <tr>

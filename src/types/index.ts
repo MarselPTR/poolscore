@@ -8,7 +8,7 @@ export type FoulType = 'Scratch' | 'Illegal Hit' | 'No Rail' | 'Wrong Ball' | 'O
 
 export type TouchProtectionMode = 'hold' | 'confirm' | 'quick';
 
-export type ThemeMode = 'obsidian' | 'felt-green' | 'carbon' | 'navy';
+export type ThemeMode = 'dark' | 'light' | 'obsidian' | 'felt-green' | 'carbon' | 'navy';
 
 export interface MatchEvent {
   id: string;
@@ -127,6 +127,7 @@ export interface Player {
   winStreak: number;
   bestWinStreak: number;
   breakRunOuts: number;
+  tournamentsWon?: number;
   createdAt: number;
   updatedAt: number;
 }

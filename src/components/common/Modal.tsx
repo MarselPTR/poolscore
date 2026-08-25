@@ -35,10 +35,10 @@ export const Modal: React.FC<ModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-fade-in">
       <div 
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" 
+        className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity" 
         onClick={onClose} 
       />
-      <div className={`relative w-full ${maxWidth} bg-zinc-900/95 rounded-2xl p-5 sm:p-6 shadow-2xl border border-zinc-800 text-zinc-100 z-10 max-h-[90vh] flex flex-col`}>
+      <div className={`relative w-full ${maxWidth} bg-zinc-900 rounded-2xl p-5 sm:p-6 shadow-2xl border border-zinc-800 text-white z-10 max-h-[90vh] flex flex-col`}>
         {title && (
           <div className="flex items-center justify-between pb-3.5 border-b border-zinc-800 mb-4">
             <h3 className="font-bold text-base sm:text-lg text-white">

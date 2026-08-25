@@ -27,11 +27,11 @@ export const MatchResultModal: React.FC<MatchResultModalProps> = ({
   const isMultiSet = match.targetSets && match.targetSets > 1;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in select-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in select-none">
       <div className="relative w-full max-w-md bg-zinc-900 rounded-3xl p-6 sm:p-7 text-center border border-zinc-800 shadow-2xl animate-slide-up">
         {/* Trophy Icon */}
         <div className="w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto mb-3 text-amber-400">
-          <Trophy className="w-8 h-8" />
+          <Trophy className="w-8 h-8 shrink-0" />
         </div>
 
         {/* Status */}
@@ -52,7 +52,7 @@ export const MatchResultModal: React.FC<MatchResultModalProps> = ({
         {isMultiSet ? (
           <div className="my-4 p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800">
             <div className="text-[11px] font-semibold text-amber-400 flex items-center justify-center gap-1">
-              <Layers className="w-3.5 h-3.5" /> Hasil Akhir Skor Babak
+              <Layers className="w-3.5 h-3.5 shrink-0" /> Hasil Akhir Skor Babak
             </div>
             <div className="font-mono font-black text-4xl text-white mt-1 font-tabular">
               <span className="text-rose-400">{match.player1Sets}</span>
@@ -85,36 +85,36 @@ export const MatchResultModal: React.FC<MatchResultModalProps> = ({
         <div className="space-y-2.5">
           <button
             onClick={onOpenShareCard}
-            className="w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
+            className="w-full py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 text-center"
           >
-            <Share2 className="w-4 h-4" />
-            Bagikan Kartu Skor (Share Image)
+            <Share2 className="w-4 h-4 shrink-0" />
+            <span>Bagikan Kartu Skor</span>
           </button>
 
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={onRematch}
-              className="py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 border border-zinc-700/60 transition-all active:scale-95"
+              className="py-2.5 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 border border-zinc-700/60 transition-all active:scale-95 truncate"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Rematch
+              <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+              <span>Rematch</span>
             </button>
 
             <button
               onClick={onNewMatch}
-              className="py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 border border-zinc-700/60 transition-all active:scale-95"
+              className="py-2.5 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 border border-zinc-700/60 transition-all active:scale-95 truncate"
             >
-              <PlusCircle className="w-3.5 h-3.5" />
-              Match Baru
+              <PlusCircle className="w-3.5 h-3.5 shrink-0" />
+              <span>Match Baru</span>
             </button>
           </div>
 
           <button
             onClick={onSaveAndFinish}
-            className="w-full py-2.5 rounded-xl text-zinc-500 hover:text-zinc-300 font-medium text-xs flex items-center justify-center gap-1.5 transition-colors"
+            className="w-full py-2.5 px-3 rounded-xl text-zinc-500 hover:text-zinc-300 font-medium text-xs flex items-center justify-center gap-1.5 transition-colors text-center"
           >
-            <CheckCircle className="w-3.5 h-3.5" />
-            Simpan & Kembali ke Dashboard
+            <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+            <span>Simpan & Selesai</span>
           </button>
         </div>
       </div>
