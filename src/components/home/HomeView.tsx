@@ -3,7 +3,7 @@ import type { Match } from '../../types';
 import { useMatch } from '../../context/MatchContext';
 import { Zap, RotateCcw } from 'lucide-react';
 import { PlayerAvatar } from '../common/PlayerAvatar';
-import { IconTriangleRack, IconBracketTree, IconEloRanking, IconBilliardTable } from '../common/BilliardIcons';
+import { IconBracketTree, IconEloRanking, IconBilliardTable } from '../common/BilliardIcons';
 
 interface HomeViewProps {
   onOpenQuickMatch: () => void;
@@ -22,14 +22,18 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   return (
     <div className="space-y-6 max-w-xl mx-auto py-4 sm:py-8 px-2 pb-16 animate-fade-in select-none">
-      {/* Brand Hero Box matching Mockup Screen 01 */}
-      <div className="text-center py-6 px-4 rounded-3xl bg-surface-2/60 border border-line-strong backdrop-blur-md shadow-2xl relative overflow-hidden">
-        {/* Subtle felt glow ambient */}
-        <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-48 h-48 bg-felt/20 rounded-full blur-3xl pointer-events-none" />
+      {/* Brand Hero Box with Official Rounded Box 8-Ball Logo */}
+      <div className="text-center py-6 px-4 rounded-3xl bg-surface-2/70 border border-line-strong backdrop-blur-md shadow-2xl relative overflow-hidden">
+        {/* Subtle crimson glow ambient */}
+        <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-48 h-48 bg-red/15 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Triangle Rack Logo */}
+        {/* Official PoolScore Logo (Smooth Rounded Box) */}
         <div className="flex justify-center mb-3">
-          <IconTriangleRack size={42} className="drop-shadow-[0_0_12px_rgba(31,138,90,0.5)]" />
+          <img
+            src="/logo.png"
+            alt="PoolScore Logo"
+            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-line-strong shadow-lg drop-shadow-[0_0_24px_rgba(201,42,57,0.35)]"
+          />
         </div>
 
         <h2 className="font-display font-extrabold text-3xl sm:text-4xl uppercase tracking-wider text-text">
@@ -41,10 +45,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
         {/* Resume Active Match Banner if match is running */}
         {isMatchInProgress ? (
-          <div className="mt-5 p-3.5 rounded-2xl bg-felt/15 border border-felt shadow-lg text-left">
-            <div className="flex items-center justify-between text-xs font-mono text-emerald-400 font-bold mb-1">
+          <div className="mt-5 p-3.5 rounded-2xl bg-red/10 border border-red/30 shadow-lg text-left">
+            <div className="flex items-center justify-between text-xs font-mono text-red font-bold mb-1">
               <span className="flex items-center gap-1.5 animate-pulse">
-                <span className="w-2 h-2 rounded-full bg-felt" /> MATCH BERLANGSUNG
+                <span className="w-2 h-2 rounded-full bg-red" /> MATCH BERLANGSUNG
               </span>
               <span>RACK {activeMatch.currentRack}</span>
             </div>
@@ -56,17 +60,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
             <button
               onClick={onOpenQuickMatch}
-              className="mt-2 w-full py-2.5 rounded-xl bg-felt hover:bg-emerald-600 text-white font-ui font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow transition-all active:scale-95"
+              className="mt-2 w-full py-2.5 rounded-xl bg-red hover:bg-red-600 text-white font-ui font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow transition-all active:scale-95"
             >
               <RotateCcw className="w-3.5 h-3.5" /> Lanjutkan Pertandingan (Scoreboard)
             </button>
           </div>
         ) : (
-          /* Primary CTA: Quick Match */
+          /* Primary CTA: Quick Match with Crimson Velvet Gradient */
           <div className="mt-6 flex flex-col gap-2.5">
             <button
               onClick={onOpenQuickMatch}
-              className="w-full py-4 rounded-2xl bg-gradient-to-b from-[#23a06a] to-[#1a7d54] hover:brightness-110 text-white font-ui font-bold text-base uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl shadow-felt/30 transition-all active:scale-98"
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#b91c28] via-[#cf2230] to-[#b91c28] hover:brightness-110 text-white font-ui font-bold text-base uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl shadow-red/25 border border-red/30 transition-all active:scale-98"
             >
               <Zap className="w-5 h-5 fill-white text-white" />
               ⚡ Quick Match
@@ -123,7 +127,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </span>
           <button
             onClick={() => onSelectTab('history')}
-            className="text-xs font-mono text-felt hover:underline flex items-center gap-0.5"
+            className="text-xs font-mono text-red hover:underline flex items-center gap-0.5"
           >
             Lihat Semua →
           </button>
@@ -141,9 +145,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 onClick={() => onOpenMatchDetail(m)}
                 className="py-3 flex items-center justify-between text-xs font-mono cursor-pointer hover:bg-surface-3/50 px-2 rounded-xl transition-all group"
               >
-                {/* Player 1 (Red 3D Ball Avatar) */}
+                {/* Player 1 */}
                 <div className="flex items-center gap-2.5 flex-1 truncate">
-                  <PlayerAvatar playerNumber={1} name={m.player1.name} size="sm" isActiveTurn={m.winner === 1} />
+                  <PlayerAvatar playerNumber={1} name={m.player1.name} size="xs" isActiveTurn={m.winner === 1} />
                   <span className={`truncate font-semibold ${m.winner === 1 ? 'text-text font-bold' : 'text-text-dim'}`}>
                     {m.player1.name}
                   </span>
@@ -160,12 +164,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   </span>
                 </div>
 
-                {/* Player 2 (Blue 3D Ball Avatar) */}
+                {/* Player 2 */}
                 <div className="flex items-center justify-end gap-2.5 flex-1 truncate">
                   <span className={`truncate font-semibold text-right ${m.winner === 2 ? 'text-text' : 'text-text-dim'}`}>
                     {m.player2.name}
                   </span>
-                  <PlayerAvatar playerNumber={2} name={m.player2.name} size="sm" isActiveTurn={m.winner === 2} />
+                  <PlayerAvatar playerNumber={2} name={m.player2.name} size="xs" isActiveTurn={m.winner === 2} />
                 </div>
               </div>
             ))}

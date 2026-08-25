@@ -120,12 +120,12 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
     if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
   };
 
-  // Active glow backgrounds
+  // Active glow backgrounds with deep slate & crimson/blue tones
   const activeStyle = isActiveTurn
     ? isRed
-      ? 'bg-gradient-to-r from-red/20 via-red/5 to-transparent border-red/70 shadow-[0_0_35px_rgba(240,74,58,0.2)] ring-1 ring-red/30'
-      : 'bg-gradient-to-l from-blue/20 via-blue/5 to-transparent border-blue/70 shadow-[0_0_35px_rgba(63,123,250,0.2)] ring-1 ring-blue/30'
-    : 'opacity-70 hover:opacity-95 border-line/60 bg-surface/40';
+      ? 'bg-gradient-to-r from-red/20 via-red/5 to-transparent border-red/70 shadow-[0_0_35px_rgba(201,42,57,0.22)] ring-1 ring-red/30'
+      : 'bg-gradient-to-l from-blue/20 via-blue/5 to-transparent border-blue/70 shadow-[0_0_35px_rgba(59,130,246,0.22)] ring-1 ring-blue/30'
+    : 'opacity-75 hover:opacity-95 border-line/60 bg-surface/50';
 
   const scoreSizeClass = fontSizePreference === 'massive'
     ? 'text-7xl sm:text-8xl md:text-9xl lg:text-[130px]'
@@ -140,13 +140,13 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
       onPointerLeave={cancelHold}
       onPointerCancel={cancelHold}
       onClick={handleClick}
-      className={`relative flex flex-col items-center justify-between p-3 sm:p-5 h-full rounded-2xl border transition-all duration-300 select-none cursor-pointer overflow-hidden group active:scale-[0.99] ${activeStyle}`}
+      className={`relative flex flex-col items-center justify-between p-3 sm:p-5 h-full rounded-3xl border transition-all duration-300 select-none cursor-pointer overflow-hidden group active:scale-[0.99] ${activeStyle}`}
     >
       {/* Full-box animated hold progress fill overlay */}
       {settings.touchProtection === 'hold' && isHolding && (
         <div
           className={`absolute inset-0 transition-all pointer-events-none z-0 ${
-            isRed ? 'bg-red/35' : 'bg-blue/35'
+            isRed ? 'bg-red/30' : 'bg-blue/30'
           }`}
           style={{
             height: `${progress * 100}%`,
@@ -160,7 +160,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
       {isHolding && (
         <div
           className={`absolute inset-0 pointer-events-none z-0 animate-pulse ${
-            isRed ? 'shadow-[inset_0_0_60px_rgba(240,74,58,0.5)]' : 'shadow-[inset_0_0_60px_rgba(63,123,250,0.5)]'
+            isRed ? 'shadow-[inset_0_0_60px_rgba(201,42,57,0.4)]' : 'shadow-[inset_0_0_60px_rgba(59,130,246,0.4)]'
           }`}
         />
       )}
@@ -180,8 +180,8 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
             className={`font-display font-bold uppercase tracking-wider text-lg sm:text-2xl lg:text-3xl transition-colors duration-300 truncate max-w-[160px] sm:max-w-[220px] ${
               isActiveTurn
                 ? isRed
-                  ? 'text-red drop-shadow-[0_0_12px_rgba(240,74,58,0.6)]'
-                  : 'text-blue drop-shadow-[0_0_12px_rgba(63,123,250,0.6)]'
+                  ? 'text-red drop-shadow-[0_0_12px_rgba(201,42,57,0.5)]'
+                  : 'text-blue drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]'
                 : 'text-text-dim'
             }`}
           >
@@ -234,8 +234,8 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
           } ${
             isActiveTurn
               ? isRed
-                ? 'text-red drop-shadow-[0_0_24px_rgba(240,74,58,0.5)]'
-                : 'text-blue drop-shadow-[0_0_24px_rgba(63,123,250,0.5)]'
+                ? 'text-red drop-shadow-[0_0_24px_rgba(201,42,57,0.45)]'
+                : 'text-blue drop-shadow-[0_0_24px_rgba(59,130,246,0.45)]'
               : 'text-text-faint'
           }`}
         >
@@ -274,7 +274,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
         >
           <span
             className={`w-2 h-2 rounded-full ${
-              isRed ? 'bg-red shadow-[0_0_8px_#f04a3a]' : 'bg-blue shadow-[0_0_8px_#3f7bfa]'
+              isRed ? 'bg-red shadow-[0_0_8px_#c92a39]' : 'bg-blue shadow-[0_0_8px_#3b82f6]'
             }`}
           />
           Your Turn
@@ -286,7 +286,9 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
             <div className="flex items-center gap-2 animate-fade-in" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={handleClick}
-                className="px-4 py-2 text-xs font-bold font-ui uppercase tracking-wider rounded-xl bg-felt hover:bg-emerald-600 text-white shadow-lg flex items-center gap-1 active:scale-95"
+                className={`px-4 py-2 text-xs font-bold font-ui uppercase tracking-wider rounded-xl ${
+                  isRed ? 'bg-red hover:bg-red-600' : 'bg-blue hover:bg-blue-600'
+                } text-white shadow-lg flex items-center gap-1 active:scale-95`}
               >
                 <Check className="w-3.5 h-3.5" /> Konfirmasi Menang
               </button>
@@ -299,7 +301,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
             </div>
           ) : (
             <div
-              className={`w-full py-2 sm:py-2.5 px-3 rounded-xl border text-center font-ui font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-sm ${
+              className={`w-full py-2 sm:py-2.5 px-3 rounded-2xl border text-center font-ui font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-sm ${
                 isRed
                   ? 'border-red/40 bg-surface-2/80 text-red hover:border-red hover:bg-red/10'
                   : 'border-blue/40 bg-surface-2/80 text-blue hover:border-blue hover:bg-blue/10'

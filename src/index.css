@@ -2,69 +2,80 @@
 
 @layer base {
   :root {
-    /* Default Obsidian Dark Table Theme */
-    --bg: #0a0e0c;
-    --surface: #121815;
-    --surface-2: #182420;
-    --surface-3: #1e2b26;
+    /* Brand Theme derived from PoolScore 8-Ball Logo */
+    --bg: #0e1218;
+    --surface: #151a23;
+    --surface-2: #1c2330;
+    --surface-3: #242d3d;
     --line: rgba(255, 255, 255, 0.08);
     --line-strong: rgba(255, 255, 255, 0.16);
 
-    /* Player 1 Coral Red */
-    --red: #f04a3a;
-    --red-dim: #5c2b26;
-    --red-glow: rgba(240, 74, 58, 0.28);
+    /* Brand Velvet Crimson (Player 1 & Primary Identity) */
+    --red: #c92a39;
+    --red-dim: #5c1820;
+    --red-glow: rgba(201, 42, 57, 0.3);
 
-    /* Player 2 Azure Blue */
-    --blue: #3f7bfa;
-    --blue-dim: #243a5c;
-    --blue-glow: rgba(63, 123, 250, 0.28);
+    /* Player 2 Royal Sapphire Blue */
+    --blue: #3b82f6;
+    --blue-dim: #1e3a8a;
+    --blue-glow: rgba(59, 130, 246, 0.28);
 
-    /* Table Felt Emerald Green */
-    --felt: #1f8a5a;
-    --felt-dim: #0f3423;
-    --felt-glow: rgba(31, 138, 90, 0.25);
+    /* Table Felt Emerald Accent */
+    --felt: #16a34a;
+    --felt-dim: #14532d;
+    --felt-glow: rgba(22, 163, 74, 0.25);
 
-    /* Warning Amber */
-    --amber: #f2a93b;
-    --amber-dim: #4d3312;
+    /* Trophy Amber */
+    --amber: #f59e0b;
+    --amber-dim: #78350f;
 
-    /* Text Hierarchy */
-    --text: #f3f1ea;
-    --text-dim: #8b968f;
-    --text-faint: #525f58;
+    /* Text Hierarchy (Easy on the eyes Slate typography) */
+    --text: #f8fafc;
+    --text-dim: #94a3b8;
+    --text-faint: #64748b;
   }
 
-  /* Midnight Green Table Felt Theme */
+  /* Midnight Slate (Pure Charcoal & Crimson) */
+  [data-theme="obsidian"] {
+    --bg: #0e1218;
+    --surface: #151a23;
+    --surface-2: #1c2330;
+    --surface-3: #242d3d;
+    --felt: #c92a39;
+    --felt-dim: #5c1820;
+    --felt-glow: rgba(201, 42, 57, 0.3);
+  }
+
+  /* Classic Emerald Felt */
   [data-theme="felt-green"] {
-    --bg: #061510;
-    --surface: #0a1f18;
-    --surface-2: #0f2c22;
-    --surface-3: #143b2e;
-    --felt: #04e2ac;
-    --felt-dim: #064030;
-    --felt-glow: rgba(4, 226, 172, 0.3);
+    --bg: #08120e;
+    --surface: #0e1f18;
+    --surface-2: #152c23;
+    --surface-3: #1c3d31;
+    --felt: #10b981;
+    --felt-dim: #064e3b;
+    --felt-glow: rgba(16, 185, 129, 0.3);
   }
 
-  /* Carbon Black Pro Tournament Theme */
+  /* Pro Carbon Dark Theme */
   [data-theme="carbon"] {
-    --bg: #080808;
-    --surface: #111111;
-    --surface-2: #191919;
-    --surface-3: #222222;
+    --bg: #090b0e;
+    --surface: #11141a;
+    --surface-2: #181d26;
+    --surface-3: #222936;
     --felt: #3b82f6;
-    --felt-dim: #1e293b;
+    --felt-dim: #1e3a8a;
     --felt-glow: rgba(59, 130, 246, 0.3);
   }
 
   /* Deep Navy Tournament Theme */
   [data-theme="navy"] {
-    --bg: #050b14;
-    --surface: #0b1526;
-    --surface-2: #101e38;
-    --surface-3: #182c4f;
+    --bg: #0a0f1d;
+    --surface: #10172c;
+    --surface-2: #17213e;
+    --surface-3: #1f2c52;
     --felt: #38bdf8;
-    --felt-dim: #0c4a6e;
+    --felt-dim: #075985;
     --felt-glow: rgba(56, 189, 248, 0.3);
   }
 }
@@ -77,11 +88,11 @@
 body {
   background-color: var(--bg);
   color: var(--text);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-image: 
-    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(31, 138, 90, 0.08), transparent 60%),
-    radial-gradient(ellipse 700px 500px at 100% 20%, rgba(63, 123, 250, 0.06), transparent 55%),
-    radial-gradient(ellipse 800px 600px at 50% 110%, rgba(240, 74, 58, 0.05), transparent 60%);
+    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(201, 42, 57, 0.08), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 100% 20%, rgba(59, 130, 246, 0.06), transparent 55%),
+    radial-gradient(ellipse 800px 600px at 50% 110%, rgba(30, 41, 59, 0.3), transparent 60%);
   background-attachment: fixed;
   overflow-x: hidden;
 }
@@ -125,7 +136,7 @@ body {
 /* Score Pulse Animation */
 @keyframes scoreBump {
   0% { transform: scale(1); }
-  40% { transform: scale(1.15); }
+  40% { transform: scale(1.12); }
   100% { transform: scale(1); }
 }
 
@@ -135,14 +146,14 @@ body {
 
 /* Glassmorphism Classes */
 .glass-panel {
-  background: rgba(18, 24, 21, 0.85);
+  background: rgba(21, 26, 35, 0.88);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--line);
 }
 
 .glass-panel-strong {
-  background: rgba(24, 36, 32, 0.92);
+  background: rgba(28, 35, 48, 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--line-strong);

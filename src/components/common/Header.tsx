@@ -1,6 +1,6 @@
 import React from 'react';
 import { Settings, Home, History } from 'lucide-react';
-import { IconTriangleRack, IconEloRanking, IconBracketTree, IconBilliardTable, IconTVScreen } from './BilliardIcons';
+import { IconEloRanking, IconBracketTree, IconBilliardTable, IconTVScreen } from './BilliardIcons';
 
 interface HeaderProps {
   currentTab: string;
@@ -26,15 +26,19 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-30 w-full border-b border-line bg-surface/90 backdrop-blur-md select-none">
       <div className="max-w-6xl mx-auto px-4 py-2.5 flex items-center justify-between">
-        {/* Wordmark Logo with Authentic 3D Triangle Rack Icon */}
+        {/* Brand Logo (Rounded Squircle) & Wordmark */}
         <div
           onClick={() => onSelectTab('home')}
-          className="flex items-center gap-3 cursor-pointer group"
+          className="flex items-center gap-2.5 cursor-pointer group"
         >
-          <IconTriangleRack size={28} className="transition-transform group-hover:scale-110 drop-shadow-[0_0_8px_rgba(31,138,90,0.4)]" />
+          <img
+            src="/logo.png"
+            alt="PoolScore Logo"
+            className="w-8 h-8 rounded-xl object-cover border border-line-strong drop-shadow-[0_0_10px_rgba(201,42,57,0.35)] transition-transform group-hover:scale-105"
+          />
 
           <div>
-            <h1 className="font-display font-bold text-xl tracking-wider uppercase text-text group-hover:text-felt transition-colors">
+            <h1 className="font-display font-bold text-xl tracking-wider uppercase text-text group-hover:text-red transition-colors">
               PoolScore
             </h1>
             <div className="font-mono text-[9px] text-text-faint tracking-widest uppercase -mt-0.5">
@@ -56,7 +60,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => onSelectTab(item.id)}
                 className={`px-3 py-1.5 rounded-xl font-mono text-xs uppercase font-bold tracking-wider flex items-center gap-2 transition-all ${
                   isActive
-                    ? 'bg-felt/20 text-emerald-300 border border-felt/40 shadow-sm'
+                    ? 'bg-surface-2 text-text border border-line-strong shadow-sm'
                     : 'text-text-dim hover:text-text hover:bg-surface-2 border border-transparent'
                 }`}
               >
