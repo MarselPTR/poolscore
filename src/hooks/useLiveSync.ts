@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import type { Match } from '../types';
 
 const CHANNEL_NAME = 'poolscore_live_sync_channel';
@@ -30,12 +30,15 @@ export function useLiveBroadcast() {
 }
 
 export function useLiveReceiver(onMatchUpdate: (match: Match | null) => void) {
+  const onMatchUpdateRef = useRef(onMatchUpdate);
+  onMatchUpdateRef.current = onMatchUpdate;
+
   useEffect(() => {
-    // Read initial cached state from localStorage
+    // Read initial cached state from localStorage on mount
     try {
       const cached = localStorage.getItem(STORAGE_KEY);
       if (cached) {
-        onMatchUpdate(JSON.parse(cached));
+        onMatchUpdateRef.current(JSON.parse(cached));
       }
     } catch {
       // ignore
@@ -47,7 +50,7 @@ export function useLiveReceiver(onMatchUpdate: (match: Match | null) => void) {
       bc = new BroadcastChannel(CHANNEL_NAME);
       bc.onmessage = (event) => {
         if (event.data && event.data.type === 'MATCH_UPDATE') {
-          onMatchUpdate(event.data.match);
+          onMatchUpdateRef.current(event.data.match);
         }
       };
     }
@@ -57,12 +60,12 @@ export function useLiveReceiver(onMatchUpdate: (match: Match | null) => void) {
       if (event.key === STORAGE_KEY) {
         if (event.newValue) {
           try {
-            onMatchUpdate(JSON.parse(event.newValue));
+            onMatchUpdateRef.current(JSON.parse(event.newValue));
           } catch {
             // ignore
           }
         } else {
-          onMatchUpdate(null);
+          onMatchUpdateRef.current(null);
         }
       }
     };
@@ -73,5 +76,5 @@ export function useLiveReceiver(onMatchUpdate: (match: Match | null) => void) {
       if (bc) bc.close();
       window.removeEventListener('storage', handleStorage);
     };
-  }, [onMatchUpdate]);
+  }, []);
 }
