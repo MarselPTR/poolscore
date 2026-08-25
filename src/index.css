@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Default Obsidian Dark Table Theme */
+    --bg: #0a0e0c;
+    --surface: #121815;
+    --surface-2: #182420;
+    --surface-3: #1e2b26;
+    --line: rgba(255, 255, 255, 0.08);
+    --line-strong: rgba(255, 255, 255, 0.16);
+
+    /* Player 1 Coral Red */
+    --red: #f04a3a;
+    --red-dim: #5c2b26;
+    --red-glow: rgba(240, 74, 58, 0.28);
+
+    /* Player 2 Azure Blue */
+    --blue: #3f7bfa;
+    --blue-dim: #243a5c;
+    --blue-glow: rgba(63, 123, 250, 0.28);
+
+    /* Table Felt Emerald Green */
+    --felt: #1f8a5a;
+    --felt-dim: #0f3423;
+    --felt-glow: rgba(31, 138, 90, 0.25);
+
+    /* Warning Amber */
+    --amber: #f2a93b;
+    --amber-dim: #4d3312;
+
+    /* Text Hierarchy */
+    --text: #f3f1ea;
+    --text-dim: #8b968f;
+    --text-faint: #525f58;
+  }
+
+  /* Midnight Green Table Felt Theme */
+  [data-theme="felt-green"] {
+    --bg: #061510;
+    --surface: #0a1f18;
+    --surface-2: #0f2c22;
+    --surface-3: #143b2e;
+    --felt: #04e2ac;
+    --felt-dim: #064030;
+    --felt-glow: rgba(4, 226, 172, 0.3);
+  }
+
+  /* Carbon Black Pro Tournament Theme */
+  [data-theme="carbon"] {
+    --bg: #080808;
+    --surface: #111111;
+    --surface-2: #191919;
+    --surface-3: #222222;
+    --felt: #3b82f6;
+    --felt-dim: #1e293b;
+    --felt-glow: rgba(59, 130, 246, 0.3);
+  }
+
+  /* Deep Navy Tournament Theme */
+  [data-theme="navy"] {
+    --bg: #050b14;
+    --surface: #0b1526;
+    --surface-2: #101e38;
+    --surface-3: #182c4f;
+    --felt: #38bdf8;
+    --felt-dim: #0c4a6e;
+    --felt-glow: rgba(56, 189, 248, 0.3);
+  }
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  background-image: 
+    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(31, 138, 90, 0.08), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 100% 20%, rgba(63, 123, 250, 0.06), transparent 55%),
+    radial-gradient(ellipse 800px 600px at 50% 110%, rgba(240, 74, 58, 0.05), transparent 60%);
+  background-attachment: fixed;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--line-strong);
+}
+
+/* Billiard Table Sight Diamond */
+.billiard-diamond {
+  width: 8px;
+  height: 8px;
+  background: var(--text-faint);
+  transform: rotate(45deg);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 1px;
+}
+
+.billiard-diamond.active-p1 {
+  background: var(--red);
+  box-shadow: 0 0 10px var(--red), 0 0 18px var(--red-glow);
+}
+
+.billiard-diamond.active-p2 {
+  background: var(--blue);
+  box-shadow: 0 0 10px var(--blue), 0 0 18px var(--blue-glow);
+}
+
+/* Score Pulse Animation */
+@keyframes scoreBump {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.animate-score-bump {
+  animation: scoreBump 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+  background: rgba(18, 24, 21, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--line);
+}
+
+.glass-panel-strong {
+  background: rgba(24, 36, 32, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--line-strong);
+}
