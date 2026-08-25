@@ -104,7 +104,89 @@ body {
   overflow-x: hidden;
   letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* =========================================================================
+   SILKY SMOOTH ANIMATIONS & MICRO-INTERACTIONS
+   ========================================================================= */
+@keyframes pageEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.995);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes modalBackdropEnter {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes modalCardEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes scoreBump {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-page-enter {
+  animation: pageEnter 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-modal-backdrop {
+  animation: modalBackdropEnter 0.18s ease-out forwards;
+}
+
+.animate-modal-card {
+  animation: modalCardEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-score-bump {
+  animation: scoreBump 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Tactile Interactive States for Buttons & Clickables */
+button,
+a,
+[role="button"] {
+  transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.12s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:active:not(:disabled),
+a:active,
+[role="button"]:active {
+  transform: scale(0.975);
 }
 
 /* Tabular Numerals for Scores and Timers */
@@ -126,19 +208,19 @@ body {
 }
 
 /* =========================================================================
-   LIGHT MODE (Mode Siang) Automatic Style Adapters for Pages and Popups
+   LIGHT MODE (Mode Siang) Automatic Style Adapters
    ========================================================================= */
 [data-theme="light"] body {
   background-color: #f4f4f7 !important;
   color: #09090b !important;
 }
 
-/* Modal Backdrops in Light Mode */
+/* Modal Backdrops in Light Mode: Matching Homepage Glass Blur */
 [data-theme="light"] .fixed.inset-0.bg-black\/75,
 [data-theme="light"] .fixed.inset-0.bg-black\/80,
 [data-theme="light"] .fixed.inset-0.bg-black\/85 {
-  background-color: rgba(15, 23, 42, 0.45) !important;
-  backdrop-filter: blur(4px);
+  background-color: rgba(0, 0, 0, 0.65) !important;
+  backdrop-filter: blur(4px) !important;
 }
 
 /* Modal Dialogs, Cards & Surface Containers */

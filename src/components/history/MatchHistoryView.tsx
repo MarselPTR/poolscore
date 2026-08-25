@@ -194,7 +194,10 @@ export const MatchHistoryView: React.FC<MatchHistoryViewProps> = ({ onOpenShareC
         isOpen={!!selectedMatch}
         onClose={() => setSelectedMatch(null)}
         match={selectedMatch}
-        onOpenShareCard={onOpenShareCard}
+        onOpenShareCard={(m) => {
+          setSelectedMatch(null);
+          onOpenShareCard(m);
+        }}
       />
     </div>
   );

@@ -161,35 +161,37 @@ export const App: React.FC = () => {
       />
 
       <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6">
-        {currentTab === 'home' && (
-          <HomeView
-            onOpenQuickMatch={() => {
-              setTableAssignmentNumber(undefined);
-              setIsQuickMatchOpen(true);
-            }}
-            onSelectTab={setCurrentTab}
-            onOpenMatchDetail={(m) => setShareCardMatch(m)}
-          />
-        )}
+        <div key={currentTab} className="animate-page-enter">
+          {currentTab === 'home' && (
+            <HomeView
+              onOpenQuickMatch={() => {
+                setTableAssignmentNumber(undefined);
+                setIsQuickMatchOpen(true);
+              }}
+              onSelectTab={setCurrentTab}
+              onOpenMatchDetail={(m) => setShareCardMatch(m)}
+            />
+          )}
 
-        {currentTab === 'history' && (
-          <MatchHistoryView
-            onOpenShareCard={(m) => setShareCardMatch(m)}
-          />
-        )}
+          {currentTab === 'history' && (
+            <MatchHistoryView
+              onOpenShareCard={(m) => setShareCardMatch(m)}
+            />
+          )}
 
-        {currentTab === 'stats' && <LeaderboardView />}
+          {currentTab === 'stats' && <LeaderboardView />}
 
-        {currentTab === 'tournament' && (
-          <TournamentView onLaunchTournamentMatch={handleLaunchTournamentMatch} />
-        )}
+          {currentTab === 'tournament' && (
+            <TournamentView onLaunchTournamentMatch={handleLaunchTournamentMatch} />
+          )}
 
-        {currentTab === 'club' && (
-          <ClubView
-            onOpenQuickMatchForTable={handleOpenTableQuickMatch}
-            onOpenTVView={() => setIsTVMode(true)}
-          />
-        )}
+          {currentTab === 'club' && (
+            <ClubView
+              onOpenQuickMatchForTable={handleOpenTableQuickMatch}
+              onOpenTVView={() => setIsTVMode(true)}
+            />
+          )}
+        </div>
       </main>
 
       <BottomNav

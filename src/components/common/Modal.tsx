@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -32,15 +33,21 @@ export const Modal: React.FC<ModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-fade-in">
+  const modalContent = (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto select-none">
+      {/* 1. Backdrop Glass Blur like Homepage */}
       <div 
-        className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity" 
+        className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity animate-modal-backdrop" 
         onClick={onClose} 
       />
-      <div className={`relative w-full ${maxWidth} bg-zinc-900 rounded-2xl p-5 sm:p-6 shadow-2xl border border-zinc-800 text-white z-10 max-h-[90vh] flex flex-col`}>
+
+      {/* 2. Elevated Modal Dialog Card */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`relative z-20 w-full ${maxWidth} bg-zinc-900 rounded-2xl p-5 sm:p-6 shadow-2xl border border-zinc-800 text-white max-h-[90vh] flex flex-col animate-modal-card`}
+      >
         {title && (
-          <div className="flex items-center justify-between pb-3.5 border-b border-zinc-800 mb-4">
+          <div className="flex items-center justify-between pb-3.5 border-b border-zinc-800 mb-4 shrink-0">
             <h3 className="font-bold text-base sm:text-lg text-white">
               {title}
             </h3>
@@ -49,7 +56,7 @@ export const Modal: React.FC<ModalProps> = ({
               className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
               aria-label="Tutup"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4 shrink-0" />
             </button>
           </div>
         )}
@@ -59,4 +66,9 @@ export const Modal: React.FC<ModalProps> = ({
       </div>
     </div>
   );
+
+  // Mount directly to document.body to prevent parent transform clipping or trapping
+  return typeof document !== 'undefined'
+    ? createPortal(modalContent, document.body)
+    : modalContent;
 };

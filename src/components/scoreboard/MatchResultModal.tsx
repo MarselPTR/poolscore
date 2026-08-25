@@ -27,8 +27,8 @@ export const MatchResultModal: React.FC<MatchResultModalProps> = ({
   const isMultiSet = match.targetSets && match.targetSets > 1;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in select-none">
-      <div className="relative w-full max-w-md bg-zinc-900 rounded-3xl p-6 sm:p-7 text-center border border-zinc-800 shadow-2xl animate-slide-up">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-modal-backdrop select-none">
+      <div className="relative w-full max-w-md bg-zinc-900 rounded-3xl p-6 sm:p-7 text-center border border-zinc-800 shadow-2xl animate-modal-card">
         {/* Trophy Icon */}
         <div className="w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto mb-3 text-amber-400">
           <Trophy className="w-8 h-8 shrink-0" />
