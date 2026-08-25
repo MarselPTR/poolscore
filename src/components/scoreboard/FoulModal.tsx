@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import type { FoulType } from '../../types';
 import { PlayerAvatar } from '../common/PlayerAvatar';
-import { IconFoulScratch, IconBallInHand } from '../common/BilliardIcons';
+import { AlertTriangle, Check } from 'lucide-react';
 
 interface FoulModalProps {
   isOpen: boolean;
@@ -39,90 +39,81 @@ export const FoulModal: React.FC<FoulModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Catat Pelanggaran (Foul)">
-      <div className="space-y-4">
+      <div className="space-y-4 select-none">
         {/* Player Selector */}
         <div>
-          <label className="block text-xs font-mono uppercase tracking-wider text-text-dim mb-2">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
             Pemain yang Melakukan Foul
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2.5">
             <button
               onClick={() => setSelectedPlayer(1)}
-              className={`p-3 rounded-2xl border flex items-center justify-center gap-2.5 font-display uppercase tracking-wider font-bold transition-all ${
+              className={`p-3 rounded-xl border flex items-center justify-center gap-2.5 font-semibold transition-all ${
                 selectedPlayer === 1
-                  ? 'border-red bg-red/20 text-red shadow-[0_0_15px_rgba(240,74,58,0.3)]'
-                  : 'border-line bg-surface-2 text-text-dim hover:text-text'
+                  ? 'border-rose-500/60 bg-rose-500/15 text-rose-300 shadow-sm'
+                  : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
               }`}
             >
               <PlayerAvatar playerNumber={1} name={player1Name} size="xs" isActiveTurn={selectedPlayer === 1} />
-              <span className="truncate">{player1Name}</span>
+              <span className="truncate text-sm">{player1Name}</span>
             </button>
             <button
               onClick={() => setSelectedPlayer(2)}
-              className={`p-3 rounded-2xl border flex items-center justify-center gap-2.5 font-display uppercase tracking-wider font-bold transition-all ${
+              className={`p-3 rounded-xl border flex items-center justify-center gap-2.5 font-semibold transition-all ${
                 selectedPlayer === 2
-                  ? 'border-blue bg-blue/20 text-blue shadow-[0_0_15px_rgba(63,123,250,0.3)]'
-                  : 'border-line bg-surface-2 text-text-dim hover:text-text'
+                  ? 'border-blue-500/60 bg-blue-500/15 text-blue-300 shadow-sm'
+                  : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
               }`}
             >
               <PlayerAvatar playerNumber={2} name={player2Name} size="xs" isActiveTurn={selectedPlayer === 2} />
-              <span className="truncate">{player2Name}</span>
+              <span className="truncate text-sm">{player2Name}</span>
             </button>
           </div>
         </div>
 
-        {/* Foul Types */}
+        {/* Foul Type Selector */}
         <div>
-          <label className="block text-xs font-mono uppercase tracking-wider text-text-dim mb-2">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
             Jenis Pelanggaran
           </label>
-          <div className="space-y-2">
-            {foulTypes.map((item) => (
+          <div className="space-y-1.5">
+            {foulTypes.map((f) => (
               <button
-                key={item.type}
-                onClick={() => setSelectedFoul(item.type)}
-                className={`w-full text-left p-3 rounded-2xl border transition-all flex items-start justify-between ${
-                  selectedFoul === item.type
-                    ? 'border-amber bg-amber/15 text-amber shadow-sm'
-                    : 'border-line bg-surface-2 hover:bg-surface-3 text-text-dim hover:text-text'
+                key={f.type}
+                onClick={() => setSelectedFoul(f.type)}
+                className={`w-full p-2.5 rounded-xl border text-left flex items-start justify-between transition-all ${
+                  selectedFoul === f.type
+                    ? 'border-amber-500/50 bg-amber-500/10 text-white shadow-sm'
+                    : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-zinc-200'
                 }`}
               >
                 <div>
-                  <div className="font-bold text-sm">{item.label}</div>
-                  <div className="text-xs text-text-faint mt-0.5">{item.desc}</div>
+                  <div className="text-xs font-semibold text-white">{f.label}</div>
+                  <div className="text-[11px] text-zinc-500 mt-0.5">{f.desc}</div>
                 </div>
-                {selectedFoul === item.type && (
-                  <IconFoulScratch size={20} className="text-amber shrink-0 mt-0.5" />
+                {selectedFoul === f.type && (
+                  <Check className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                 )}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Info Box */}
-        <div className="p-3.5 rounded-2xl bg-surface-3 border border-line text-xs text-text-dim flex items-center gap-3">
-          <IconBallInHand size={24} className="text-emerald-400 shrink-0" />
+        {/* Ball in Hand Notice */}
+        <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center gap-2.5 text-xs text-zinc-400">
+          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
           <span>
-            Lawan (<strong className="text-text">{selectedPlayer === 1 ? player2Name : player1Name}</strong>) akan otomatis mendapatkan status{' '}
-            <strong className="text-emerald-400 font-bold">Ball in Hand</strong>.
+            Giliran menembak akan otomatis dialihkan ke lawan dengan hak <strong>Ball in Hand</strong>.
           </span>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2 pt-2">
-          <button
-            onClick={handleSubmit}
-            className="flex-1 py-3.5 rounded-xl bg-amber hover:bg-amber-400 text-black font-bold uppercase tracking-wider font-ui text-xs shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5"
-          >
-            <IconBallInHand size={16} /> Terapkan Foul & Ball in Hand
-          </button>
-          <button
-            onClick={onClose}
-            className="px-4 py-3.5 rounded-xl bg-surface-3 hover:bg-surface-2 text-text-dim font-bold text-xs uppercase font-ui"
-          >
-            Batal
-          </button>
-        </div>
+        {/* Action Button */}
+        <button
+          onClick={handleSubmit}
+          className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs uppercase tracking-wider shadow-sm transition-all active:scale-95"
+        >
+          Konfirmasi Foul
+        </button>
       </div>
     </Modal>
   );

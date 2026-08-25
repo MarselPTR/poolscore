@@ -3,6 +3,7 @@ import { Modal } from '../common/Modal';
 import type { Match } from '../../types';
 import { formatSeconds } from '../../utils/time';
 import { Clock } from 'lucide-react';
+import { PlayerAvatar } from '../common/PlayerAvatar';
 
 interface HistoryDrawerProps {
   isOpen: boolean;
@@ -19,38 +20,39 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Riwayat & Timeline Pertandingan">
-      <div className="space-y-4">
+      <div className="space-y-4 select-none">
         {/* Match Header Recap */}
-        <div className="p-3 rounded-xl bg-surface-3 border border-line flex items-center justify-between font-mono text-xs">
+        <div className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-between text-xs font-tabular">
           <div>
-            <div className="text-text-faint uppercase">{match.gameType} · Race to {match.raceTo}</div>
-            <div className="font-bold text-text mt-0.5">
-              <span className="text-red">🔴 {match.player1.name}</span> ({match.player1.score}) vs{' '}
-              <span className="text-blue">🔵 {match.player2.name}</span> ({match.player2.score})
+            <div className="text-zinc-500 uppercase font-semibold text-[11px]">{match.gameType} · Race to {match.raceTo}</div>
+            <div className="font-semibold text-white mt-1 flex items-center gap-2">
+              <span className="text-rose-400 font-bold">{match.player1.name}</span> ({match.player1.score})
+              <span className="text-zinc-600">vs</span>
+              <span className="text-blue-400 font-bold">{match.player2.name}</span> ({match.player2.score})
             </div>
           </div>
           <div className="text-right">
-            <div className="text-text-faint flex items-center gap-1 justify-end">
-              <Clock className="w-3.5 h-3.5" /> Durasi
+            <div className="text-zinc-500 flex items-center gap-1 justify-end text-[11px]">
+              <Clock className="w-3 h-3" /> Durasi
             </div>
-            <div className="font-bold text-text">{formatSeconds(match.durationSeconds)}</div>
+            <div className="font-mono font-bold text-white mt-0.5">{formatSeconds(match.durationSeconds)}</div>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-line">
+        <div className="flex border-b border-zinc-800">
           <button
             onClick={() => setTab('racks')}
-            className={`flex-1 py-2 text-xs font-mono uppercase tracking-wider font-bold border-b-2 transition-all ${
-              tab === 'racks' ? 'border-felt text-emerald-400' : 'border-transparent text-text-dim hover:text-text'
+            className={`flex-1 py-2 text-xs uppercase tracking-wider font-semibold border-b-2 transition-all ${
+              tab === 'racks' ? 'border-rose-500 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'
             }`}
           >
             Ringkasan Rack ({match.rackHistory.length})
           </button>
           <button
             onClick={() => setTab('events')}
-            className={`flex-1 py-2 text-xs font-mono uppercase tracking-wider font-bold border-b-2 transition-all ${
-              tab === 'events' ? 'border-felt text-emerald-400' : 'border-transparent text-text-dim hover:text-text'
+            className={`flex-1 py-2 text-xs uppercase tracking-wider font-semibold border-b-2 transition-all ${
+              tab === 'events' ? 'border-rose-500 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'
             }`}
           >
             Event Log ({match.events.length})
@@ -61,7 +63,7 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
         {tab === 'racks' && (
           <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
             {match.rackHistory.length === 0 ? (
-              <div className="text-center py-8 text-text-faint text-xs font-mono">
+              <div className="text-center py-8 text-zinc-500 text-xs">
                 Belum ada rack yang diselesaikan pada match ini.
               </div>
             ) : (
@@ -74,28 +76,28 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
                     key={rack.rackNumber}
                     className={`p-3 rounded-xl border flex items-center justify-between text-xs font-mono transition-all ${
                       isP1
-                        ? 'border-red/30 bg-red/10'
-                        : 'border-blue/30 bg-blue/10'
+                        ? 'border-rose-500/30 bg-rose-500/10'
+                        : 'border-blue-500/30 bg-blue-500/10'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-7 h-7 rounded-lg bg-surface-3 flex items-center justify-center font-bold text-text">
+                      <div className="w-7 h-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-white">
                         #{rack.rackNumber}
                       </div>
                       <div>
-                        <div className="font-bold flex items-center gap-1.5 text-sm">
-                          <span className={`w-2 h-2 rounded-full ${isP1 ? 'bg-red' : 'bg-blue'}`} />
-                          <span className={isP1 ? 'text-red' : 'text-blue'}>{winnerName}</span>
-                          <span className="text-text-faint font-normal text-xs">memenangkan rack</span>
+                        <div className="font-semibold flex items-center gap-1.5 text-xs text-white">
+                          <PlayerAvatar playerNumber={isP1 ? 1 : 2} size="xs" name={winnerName} />
+                          <span className={isP1 ? 'text-rose-300 font-bold' : 'text-blue-300 font-bold'}>{winnerName}</span>
+                          <span className="text-zinc-400 font-normal text-[11px]">memenangkan rack</span>
                         </div>
                         {rack.breaker && (
-                          <div className="text-[11px] text-text-faint mt-0.5">
+                          <div className="text-[11px] text-zinc-500 mt-0.5">
                             Breaker: {rack.breaker === 1 ? match.player1.name : match.player2.name}
                           </div>
                         )}
                       </div>
                     </div>
-                    <div className="text-right text-text-dim font-bold">
+                    <div className="text-right text-zinc-400 font-bold">
                       {formatSeconds(rack.durationSeconds)}
                     </div>
                   </div>
@@ -105,43 +107,37 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
           </div>
         )}
 
-        {/* Tab 2: Chronological Event Log */}
+        {/* Tab 2: Events */}
         {tab === 'events' && (
-          <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
+          <div className="space-y-1.5 max-h-[340px] overflow-y-auto pr-1">
             {match.events.length === 0 ? (
-              <div className="text-center py-8 text-text-faint text-xs font-mono">
-                Belum ada event log tercatat.
+              <div className="text-center py-8 text-zinc-500 text-xs">
+                Belum ada aktivitas tercatat.
               </div>
             ) : (
-              [...match.events].reverse().map((evt) => {
-                const timeStr = new Date(evt.timestamp).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                });
-
-                return (
-                  <div
-                    key={evt.id}
-                    className="p-2.5 rounded-lg bg-surface-2 border border-line text-xs font-mono flex items-start gap-2.5"
-                  >
-                    <span className="text-[10px] text-text-faint shrink-0 mt-0.5">{timeStr}</span>
-                    <div className="flex-1">
-                      <div className="text-text leading-relaxed">{evt.description}</div>
-                    </div>
+              match.events.map((evt, idx) => (
+                <div
+                  key={idx}
+                  className="p-2.5 rounded-xl bg-zinc-950 border border-zinc-800/80 flex items-center justify-between text-xs font-mono"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-zinc-500">
+                      {formatSeconds(Math.floor((evt.timestamp - match.startedAt) / 1000))}
+                    </span>
+                    <span className="text-zinc-300 font-sans">
+                      {evt.description || 'Aktivitas Match'}
+                    </span>
                   </div>
-                );
-              })
+                  {(evt.metadata?.newScore1 !== undefined || evt.metadata?.newScore2 !== undefined) && (
+                    <span className="font-bold text-white text-xs">
+                      {evt.metadata?.newScore1 ?? 0}-{evt.metadata?.newScore2 ?? 0}
+                    </span>
+                  )}
+                </div>
+              ))
             )}
           </div>
         )}
-
-        <button
-          onClick={onClose}
-          className="w-full py-2.5 rounded-xl bg-surface-3 hover:bg-surface-2 text-text font-bold text-xs uppercase font-ui"
-        >
-          Tutup
-        </button>
       </div>
     </Modal>
   );

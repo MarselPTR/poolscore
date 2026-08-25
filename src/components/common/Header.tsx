@@ -1,6 +1,5 @@
 import React from 'react';
-import { Settings, Home, History } from 'lucide-react';
-import { IconEloRanking, IconBracketTree, IconBilliardTable, IconTVScreen } from './BilliardIcons';
+import { Settings, Home, History, Trophy, BarChart3, Building2, Tv } from 'lucide-react';
 
 interface HeaderProps {
   currentTab: string;
@@ -17,32 +16,32 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const navItems = [
     { id: 'home', label: 'Home', icon: Home },
-    { id: 'history', label: 'History', icon: History },
-    { id: 'stats', label: 'Leaderboard', customIcon: IconEloRanking },
-    { id: 'tournament', label: 'Turnamen', customIcon: IconBracketTree },
-    { id: 'club', label: 'Club Meja', customIcon: IconBilliardTable },
+    { id: 'history', label: 'Riwayat', icon: History },
+    { id: 'stats', label: 'Leaderboard', icon: BarChart3 },
+    { id: 'tournament', label: 'Turnamen', icon: Trophy },
+    { id: 'club', label: 'Club Meja', icon: Building2 },
   ];
 
   return (
-    <header className="sticky top-0 z-30 w-full border-b border-line bg-surface/90 backdrop-blur-md select-none">
-      <div className="max-w-6xl mx-auto px-4 py-2.5 flex items-center justify-between">
-        {/* Brand Logo (Rounded Squircle) & Wordmark */}
+    <header className="sticky top-0 z-40 w-full border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-xl select-none">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+        {/* Brand Logo & Wordmark */}
         <div
           onClick={() => onSelectTab('home')}
-          className="flex items-center gap-2.5 cursor-pointer group"
+          className="flex items-center gap-3 cursor-pointer group"
         >
           <img
             src="/logo.png"
             alt="PoolScore Logo"
-            className="w-8 h-8 rounded-xl object-cover border border-line-strong drop-shadow-[0_0_10px_rgba(201,42,57,0.35)] transition-transform group-hover:scale-105"
+            className="w-8 h-8 rounded-xl object-cover border border-zinc-800 shadow-sm transition-transform duration-150 group-hover:scale-105"
           />
 
           <div>
-            <h1 className="font-display font-bold text-xl tracking-wider uppercase text-text group-hover:text-red transition-colors">
+            <div className="font-bold text-base tracking-tight text-white leading-none group-hover:text-rose-400 transition-colors">
               PoolScore
-            </h1>
-            <div className="font-mono text-[9px] text-text-faint tracking-widest uppercase -mt-0.5">
-              Scoreboard for Pool
+            </div>
+            <div className="text-[10px] text-zinc-500 tracking-wider font-mono uppercase mt-0.5">
+              Scoreboard
             </div>
           </div>
         </div>
@@ -52,19 +51,18 @@ export const Header: React.FC<HeaderProps> = ({
           {navItems.map((item) => {
             const isActive = currentTab === item.id;
             const Icon = item.icon;
-            const CustomIcon = item.customIcon;
 
             return (
               <button
                 key={item.id}
                 onClick={() => onSelectTab(item.id)}
-                className={`px-3 py-1.5 rounded-xl font-mono text-xs uppercase font-bold tracking-wider flex items-center gap-2 transition-all ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider flex items-center gap-2 transition-all duration-150 ${
                   isActive
-                    ? 'bg-surface-2 text-text border border-line-strong shadow-sm'
-                    : 'text-text-dim hover:text-text hover:bg-surface-2 border border-transparent'
+                    ? 'bg-zinc-900 text-white border border-zinc-700/60 shadow-sm'
+                    : 'text-zinc-400 hover:text-white hover:bg-zinc-900/60 border border-transparent'
                 }`}
               >
-                {CustomIcon ? <CustomIcon size={16} /> : Icon ? <Icon className="w-4 h-4" /> : null}
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-rose-500' : 'text-zinc-500'}`} />
                 {item.label}
               </button>
             );
@@ -72,18 +70,18 @@ export const Header: React.FC<HeaderProps> = ({
         </nav>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={onOpenTV}
-            className="p-2 rounded-xl bg-surface-2 hover:bg-surface-3 text-text-dim hover:text-text border border-line transition-colors"
-            title="Tampilan TV / Big Screen"
+            className="p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition-all"
+            title="Tampilan TV Arena"
           >
-            <IconTVScreen size={18} />
+            <Tv className="w-4 h-4" />
           </button>
 
           <button
             onClick={onOpenSettings}
-            className="p-2 rounded-xl bg-surface-2 hover:bg-surface-3 text-text-dim hover:text-text border border-line transition-colors"
+            className="p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition-all"
             title="Pengaturan"
           >
             <Settings className="w-4 h-4" />

@@ -83,18 +83,18 @@ export const HeadToHeadModal: React.FC<HeadToHeadModalProps> = ({
   const pctB = total > 0 ? ((winsB / total) * 100).toFixed(1) : '50.0';
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Head-to-Head Perbandingan">
-      <div className="space-y-4">
+    <Modal isOpen={isOpen} onClose={onClose} title="Perbandingan Head-to-Head">
+      <div className="space-y-4 select-none">
         {/* Selectors */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-[11px] font-mono uppercase text-red mb-1">
-              🔴 Pemain 1
+            <label className="block text-xs font-semibold text-rose-400 uppercase mb-1.5">
+              Pemain 1
             </label>
             <select
               value={playerA}
               onChange={(e) => setPlayerA(e.target.value)}
-              className="w-full p-2.5 rounded-xl bg-surface-2 border border-red/40 text-text font-display uppercase font-bold text-sm focus:outline-none"
+              className="w-full p-2.5 rounded-xl bg-zinc-950 border border-rose-500/40 text-white font-semibold text-xs focus:outline-none focus:border-rose-500"
             >
               {players.map((p) => (
                 <option key={p.id} value={p.name}>
@@ -105,13 +105,13 @@ export const HeadToHeadModal: React.FC<HeadToHeadModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-[11px] font-mono uppercase text-blue mb-1">
-              🔵 Pemain 2
+            <label className="block text-xs font-semibold text-blue-400 uppercase mb-1.5">
+              Pemain 2
             </label>
             <select
               value={playerB}
               onChange={(e) => setPlayerB(e.target.value)}
-              className="w-full p-2.5 rounded-xl bg-surface-2 border border-blue/40 text-text font-display uppercase font-bold text-sm focus:outline-none"
+              className="w-full p-2.5 rounded-xl bg-zinc-950 border border-blue-500/40 text-white font-semibold text-xs focus:outline-none focus:border-blue-500"
             >
               {players.map((p) => (
                 <option key={p.id} value={p.name}>
@@ -123,44 +123,44 @@ export const HeadToHeadModal: React.FC<HeadToHeadModalProps> = ({
         </div>
 
         {/* H2H Score Card */}
-        <div className="p-4 rounded-2xl bg-surface-2 border border-line text-center">
-          <div className="flex items-center justify-between text-xs font-mono text-text-faint uppercase mb-1">
-            <span>🔴 {playerA}</span>
-            <span className="font-bold text-text">TOTAL MATCH: {total}</span>
-            <span>{playerB} 🔵</span>
+        <div className="p-4 rounded-2xl bg-zinc-950 border border-zinc-800 text-center font-tabular">
+          <div className="flex items-center justify-between text-xs text-zinc-500 uppercase font-semibold mb-1">
+            <span className="text-rose-400">{playerA}</span>
+            <span className="text-white">Total: {total} Match</span>
+            <span className="text-blue-400">{playerB}</span>
           </div>
 
           <div className="flex items-center justify-center gap-6 my-2">
             <div className="text-center">
-              <div className="font-mono font-extrabold text-4xl text-red">{winsA}</div>
-              <div className="text-[11px] font-mono text-text-faint">{pctA}% Menang</div>
+              <div className="font-mono font-black text-3xl sm:text-4xl text-rose-400">{winsA}</div>
+              <div className="text-[11px] text-zinc-500">{pctA}% Menang</div>
             </div>
 
-            <Swords className="w-6 h-6 text-text-faint" />
+            <Swords className="w-5 h-5 text-zinc-600" />
 
             <div className="text-center">
-              <div className="font-mono font-extrabold text-4xl text-blue">{winsB}</div>
-              <div className="text-[11px] font-mono text-text-faint">{pctB}% Menang</div>
+              <div className="font-mono font-black text-3xl sm:text-4xl text-blue-400">{winsB}</div>
+              <div className="text-[11px] text-zinc-500">{pctB}% Menang</div>
             </div>
           </div>
 
           {/* Ratio Bar */}
-          <div className="w-full h-2 rounded-full bg-surface-3 overflow-hidden flex mt-3">
-            <div className="bg-red h-full" style={{ width: `${pctA}%` }} />
-            <div className="bg-blue h-full" style={{ width: `${pctB}%` }} />
+          <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden flex mt-3">
+            <div className="bg-rose-500 h-full" style={{ width: `${pctA}%` }} />
+            <div className="bg-blue-500 h-full" style={{ width: `${pctB}%` }} />
           </div>
         </div>
 
         {/* Recent Mutual Matches */}
         <div>
-          <div className="text-xs font-mono uppercase tracking-wider text-text-dim mb-2">
+          <div className="text-xs uppercase font-semibold tracking-wider text-zinc-400 mb-2">
             Riwayat Pertemuan Langsung ({h2hMatches.length})
           </div>
 
-          <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+          <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
             {h2hMatches.length === 0 ? (
-              <div className="text-center py-6 text-text-faint text-xs font-mono">
-                Belum ada catatan pertemuan antara kedua pemain ini.
+              <div className="text-center py-6 text-zinc-500 text-xs">
+                Belum ada data pertemuan antara kedua pemain ini.
               </div>
             ) : (
               h2hMatches.map((m) => {
@@ -172,22 +172,20 @@ export const HeadToHeadModal: React.FC<HeadToHeadModalProps> = ({
                 return (
                   <div
                     key={m.id}
-                    className="p-2.5 rounded-xl bg-surface-2 border border-line flex items-center justify-between text-xs font-mono"
+                    className="p-2.5 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-between text-xs font-mono"
                   >
                     <div>
-                      <span className="font-bold uppercase text-text-dim mr-2">{m.gameType}</span>
-                      <span className="text-text-faint">{formatTimestampDate(m.startedAt)}</span>
+                      <span className="font-bold uppercase text-zinc-300 mr-2">{m.gameType}</span>
+                      <span className="text-zinc-500 text-[11px]">{formatTimestampDate(m.startedAt)}</span>
                     </div>
-                    <div className="font-bold flex items-center gap-2">
-                      <span className={wonA ? 'text-red' : 'text-text-faint'}>{scoreA}</span>
-                      <span className="text-text-faint">—</span>
-                      <span className={!wonA ? 'text-blue' : 'text-text-faint'}>{scoreB}</span>
-                      <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                          wonA ? 'bg-red/20 text-red' : 'bg-blue/20 text-blue'
-                        }`}
-                      >
-                        {wonA ? playerA : playerB} Wins
+
+                    <div className="font-bold text-sm">
+                      <span className={wonA ? 'text-rose-400 font-black' : 'text-zinc-500'}>
+                        {scoreA}
+                      </span>
+                      <span className="text-zinc-600 mx-1.5">-</span>
+                      <span className={!wonA ? 'text-blue-400 font-black' : 'text-zinc-500'}>
+                        {scoreB}
                       </span>
                     </div>
                   </div>

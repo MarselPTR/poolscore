@@ -63,78 +63,80 @@ Dicatat dengan PoolScore PWA.`;
     <Modal isOpen={isOpen} onClose={onClose} title="Bagikan Hasil Pertandingan">
       <div className="space-y-4 select-none">
         {/* Card Preview Container */}
-        <div className="relative mx-auto max-w-[340px] rounded-3xl bg-surface border border-line-strong p-5 shadow-2xl overflow-hidden text-text">
-          <div className="flex items-center justify-between mb-3 pb-2 border-b border-line">
+        <div className="relative mx-auto max-w-[340px] rounded-2xl bg-zinc-950 border border-zinc-800 p-5 shadow-xl overflow-hidden text-white font-tabular">
+          <div className="flex items-center justify-between mb-3 pb-2 border-b border-zinc-800">
             <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="PoolScore" className="w-6 h-6 rounded-md object-contain" />
-              <span className="font-display font-bold text-xs uppercase tracking-widest text-text">
+              <img src="/logo.png" alt="PoolScore" className="w-6 h-6 rounded-lg object-contain" />
+              <span className="font-bold text-xs uppercase tracking-tight text-white">
                 PoolScore
               </span>
             </div>
-            <div className="font-mono text-[10px] font-bold tracking-wider text-red uppercase">
+            <div className="font-mono text-[10px] font-bold tracking-wider text-rose-400 uppercase">
               {match.gameType} · FINAL {isMultiSet ? `(${match.targetSets} SETS)` : ''}
             </div>
           </div>
 
           {/* Player 1 Row */}
           <div className="flex items-center justify-between py-2">
-            <div className="flex items-center gap-2.5 font-display font-bold text-lg uppercase truncate">
+            <div className="flex items-center gap-2.5 font-bold text-base uppercase truncate">
               <PlayerAvatar playerNumber={1} size="xs" name={match.player1.name} />
               <span className="truncate">{match.player1.name}</span>
             </div>
-            <div className="font-mono font-extrabold text-3xl text-red">
+            <div className="font-mono font-black text-2xl text-rose-400">
               {isMultiSet ? match.player1Sets : match.player1.score}
             </div>
           </div>
 
-          <div className="text-center font-mono text-[11px] text-text-faint my-1">
+          <div className="text-center font-mono text-[10px] text-zinc-500 my-1">
             {isMultiSet ? `— SETS SCORE (RACE TO ${match.raceTo}/SET) —` : `— RACE TO ${match.raceTo} —`}
           </div>
 
           {/* Player 2 Row */}
           <div className="flex items-center justify-between py-2">
-            <div className="flex items-center gap-2.5 font-display font-bold text-lg uppercase truncate">
+            <div className="flex items-center gap-2.5 font-bold text-base uppercase truncate">
               <PlayerAvatar playerNumber={2} size="xs" name={match.player2.name} />
               <span className="truncate">{match.player2.name}</span>
             </div>
-            <div className="font-mono font-extrabold text-3xl text-blue">
+            <div className="font-mono font-black text-2xl text-blue-400">
               {isMultiSet ? match.player2Sets : match.player2.score}
             </div>
           </div>
 
-          <div className="mt-4 pt-2 border-t border-line text-right font-mono text-[10px] text-text-faint">
-            {formatTimestampDate(match.startedAt).toUpperCase()}
+          {/* Card Footer */}
+          <div className="mt-3 pt-2 border-t border-zinc-800 flex items-center justify-between text-[10px] font-mono text-zinc-500">
+            <span>{formatTimestampDate(match.startedAt)}</span>
+            <span>PoolScore PWA</span>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-2.5 pt-2">
+        <div className="grid grid-cols-2 gap-2 pt-2">
           <button
             onClick={() => downloadShareCard(match)}
             disabled={isGenerating}
-            className="py-3.5 px-3 rounded-xl bg-red hover:bg-red-600 text-white font-bold font-ui text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95 disabled:opacity-50"
+            className="py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
-            Download PNG
+            Download Gambar
           </button>
 
           <button
             onClick={() => shareMatchCardNative(match)}
             disabled={isGenerating}
-            className="py-3.5 px-3 rounded-xl bg-surface-2 hover:bg-surface-3 border border-line-strong text-white font-bold font-ui text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95 disabled:opacity-50"
+            className="py-2.5 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 border border-zinc-700/60 transition-all active:scale-95 disabled:opacity-50"
           >
-            <Share2 className="w-4 h-4 text-blue" />
-            Share WhatsApp
-          </button>
-
-          <button
-            onClick={handleCopyText}
-            className="col-span-2 py-2.5 px-3 rounded-xl bg-surface-2 hover:bg-surface-3 border border-line text-text-dim hover:text-text font-semibold font-ui text-xs uppercase flex items-center justify-center gap-1.5 transition-all"
-          >
-            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-            {copied ? 'Teks Tersalin ke Clipboard!' : 'Salin Ringkasan Teks'}
+            <Share2 className="w-4 h-4" />
+            Bagikan
           </button>
         </div>
+
+        <button
+          onClick={handleCopyText}
+          className="w-full py-2 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 text-xs font-mono flex items-center justify-center gap-1.5 transition-colors"
+        >
+          {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+          {copied ? 'Teks ringkasan disalin!' : 'Salin Teks Ringkasan Skor'}
+        </button>
       </div>
     </Modal>
   );

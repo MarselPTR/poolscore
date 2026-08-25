@@ -77,7 +77,6 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
     const finalRace = isCustomRaceActive && customRace ? parseInt(customRace, 10) || 7 : raceTo;
     const finalSets = isCustomSetsActive && customSets ? parseInt(customSets, 10) || 1 : targetSets;
 
-    // Update settings preferences
     updateSettings({
       soundEnabled: isSoundEnabled,
       wakeLockEnabled: isWakeLockEnabled,
@@ -103,11 +102,11 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Setup Pertandingan Baru">
-      <form onSubmit={handleStart} className="space-y-4">
+      <form onSubmit={handleStart} className="space-y-4 select-none">
         {/* 1. Game Selection */}
         <div>
-          <label className="block text-xs font-mono uppercase tracking-wider text-text-dim mb-2">
-            Pilih Jenis Permainan (Game)
+          <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
+            Pilih Jenis Permainan
           </label>
           <div className="flex flex-wrap gap-2">
             {games.map((g) => (
@@ -115,10 +114,10 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
                 type="button"
                 key={g}
                 onClick={() => setGameType(g)}
-                className={`py-2 px-3.5 rounded-xl border text-xs font-ui font-bold uppercase tracking-wider transition-all ${
+                className={`py-2 px-3.5 rounded-xl border text-xs font-semibold transition-all ${
                   gameType === g
-                    ? 'border-felt bg-felt/20 text-emerald-300 shadow-[0_0_12px_rgba(31,138,90,0.3)]'
-                    : 'border-line bg-surface-2 hover:bg-surface-3 text-text-dim hover:text-text'
+                    ? 'border-rose-500/50 bg-rose-500/15 text-rose-300 shadow-sm'
+                    : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
                 }`}
               >
                 {g}
@@ -128,41 +127,41 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
         </div>
 
         {/* 2. Players Setup */}
-        <div className="space-y-3">
-          <label className="block text-xs font-mono uppercase tracking-wider text-text-dim">
+        <div className="space-y-2.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400">
             Nama Pemain
           </label>
 
           {/* Player 1 (Red) */}
-          <div className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-surface-2 border border-red/40 focus-within:border-red transition-all">
+          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-zinc-950 border border-rose-500/40 focus-within:border-rose-500 transition-all">
             <PlayerAvatar playerNumber={1} size="xs" />
             <input
               type="text"
               value={player1Name}
               onChange={(e) => setPlayer1Name(e.target.value)}
               placeholder="Nama Pemain 1 (Merah)"
-              className="w-full bg-transparent text-sm font-display font-bold uppercase tracking-wider text-text placeholder-text-faint focus:outline-none"
+              className="w-full bg-transparent text-sm font-semibold text-white placeholder-zinc-500 focus:outline-none"
               required
             />
           </div>
 
           {/* Player 2 (Blue) */}
-          <div className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-surface-2 border border-blue/40 focus-within:border-blue transition-all">
+          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-zinc-950 border border-blue-500/40 focus-within:border-blue transition-all">
             <PlayerAvatar playerNumber={2} size="xs" />
             <input
               type="text"
               value={player2Name}
               onChange={(e) => setPlayer2Name(e.target.value)}
               placeholder="Nama Pemain 2 (Biru)"
-              className="w-full bg-transparent text-sm font-display font-bold uppercase tracking-wider text-text placeholder-text-faint focus:outline-none"
+              className="w-full bg-transparent text-sm font-semibold text-white placeholder-zinc-500 focus:outline-none"
               required
             />
           </div>
 
           {/* Quick Player Suggester Chips */}
           {savedPlayers.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap pt-1">
-              <span className="text-[11px] font-mono text-text-faint">Pemain tersimpan:</span>
+            <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+              <span className="text-[11px] text-zinc-500">Tersimpan:</span>
               {savedPlayers.slice(0, 5).map((name) => (
                 <button
                   type="button"
@@ -172,7 +171,7 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
                       setPlayer2Name(name);
                     }
                   }}
-                  className="px-2 py-0.5 rounded-md bg-surface-3 hover:bg-surface-2 text-[11px] font-mono text-text-dim hover:text-text border border-line"
+                  className="px-2 py-0.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-[11px] text-zinc-300 border border-zinc-700/50"
                 >
                   +{name}
                 </button>
@@ -183,14 +182,14 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
 
         {/* 3. Set / Babak Selection (Target Sets) */}
         <div>
-          <label className="block text-xs font-mono uppercase tracking-wider text-text-dim mb-2 flex items-center gap-1.5">
-            <Layers className="w-3.5 h-3.5 text-amber" /> Format Babak / Set Match
+          <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2 flex items-center gap-1.5">
+            <Layers className="w-3.5 h-3.5 text-amber-400" /> Format Babak / Set
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
-              { sets: 1, label: '1 Babak', desc: 'Standar Single Set' },
-              { sets: 2, label: 'Best of 3', desc: 'Menang 2 Set' },
-              { sets: 3, label: 'Best of 5', desc: 'Menang 3 Set' },
+              { sets: 1, label: '1 Babak', desc: 'Single Set' },
+              { sets: 2, label: 'Best of 3', desc: '2 Set Win' },
+              { sets: 3, label: 'Best of 5', desc: '3 Set Win' },
             ].map((s) => (
               <button
                 type="button"
@@ -201,12 +200,12 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
                 }}
                 className={`p-2.5 rounded-xl border text-center transition-all ${
                   targetSets === s.sets && !isCustomSetsActive
-                    ? 'border-amber bg-amber/20 text-amber shadow-[0_0_12px_rgba(242,169,59,0.25)]'
-                    : 'border-line bg-surface-2 hover:bg-surface-3 text-text-dim hover:text-text'
+                    ? 'border-amber-500/50 bg-amber-500/15 text-amber-300 shadow-sm'
+                    : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
                 }`}
               >
-                <div className="text-xs font-mono font-bold uppercase">{s.label}</div>
-                <div className="text-[10px] text-text-faint mt-0.5">{s.desc}</div>
+                <div className="text-xs font-semibold">{s.label}</div>
+                <div className="text-[10px] text-zinc-500 mt-0.5">{s.desc}</div>
               </button>
             ))}
 
@@ -215,12 +214,12 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
               onClick={() => setIsCustomSetsActive(true)}
               className={`p-2.5 rounded-xl border text-center transition-all ${
                 isCustomSetsActive
-                  ? 'border-amber bg-amber/20 text-amber'
-                  : 'border-line bg-surface-2 hover:bg-surface-3 text-text-dim hover:text-text'
+                  ? 'border-amber-500/50 bg-amber-500/15 text-amber-300'
+                  : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
               }`}
             >
-              <div className="text-xs font-mono font-bold uppercase">Custom Set</div>
-              <div className="text-[10px] text-text-faint mt-0.5">Bebas Atur Set</div>
+              <div className="text-xs font-semibold">Custom</div>
+              <div className="text-[10px] text-zinc-500 mt-0.5">Bebas Atur</div>
             </button>
           </div>
 
@@ -233,7 +232,7 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
                 value={customSets}
                 onChange={(e) => setCustomSets(e.target.value)}
                 placeholder="Target kemenangan set (misal: 4 set)"
-                className="p-2.5 rounded-xl bg-surface-2 border border-line text-sm font-mono text-text focus:outline-none focus:border-amber w-full"
+                className="p-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm font-mono text-white focus:outline-none focus:border-amber-500 w-full"
                 autoFocus
               />
             </div>
@@ -242,7 +241,7 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
 
         {/* 4. Race To Selection (Rack per Set) */}
         <div>
-          <label className="block text-xs font-mono uppercase tracking-wider text-text-dim mb-2">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
             Target Rack per Babak (Race To)
           </label>
           <div className="flex flex-wrap gap-2">
@@ -256,8 +255,8 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
                 }}
                 className={`w-11 h-11 rounded-xl border font-mono font-bold text-sm transition-all flex items-center justify-center ${
                   raceTo === r && !isCustomRaceActive
-                    ? 'border-felt bg-felt text-white shadow-md'
-                    : 'border-line bg-surface-2 hover:bg-surface-3 text-text-dim hover:text-text'
+                    ? 'border-rose-500 bg-rose-600 text-white shadow-sm'
+                    : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
                 }`}
               >
                 {r}
@@ -267,10 +266,10 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
             <button
               type="button"
               onClick={() => setIsCustomRaceActive(true)}
-              className={`px-3 h-11 rounded-xl border font-mono text-xs uppercase font-bold transition-all flex items-center justify-center ${
+              className={`px-3 h-11 rounded-xl border font-mono text-xs uppercase font-semibold transition-all flex items-center justify-center ${
                 isCustomRaceActive
-                  ? 'border-felt bg-felt/20 text-emerald-300'
-                  : 'border-line bg-surface-2 hover:bg-surface-3 text-text-dim hover:text-text'
+                  ? 'border-rose-500/50 bg-rose-500/15 text-rose-300'
+                  : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
               }`}
             >
               Custom
@@ -286,7 +285,7 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
                 value={customRace}
                 onChange={(e) => setCustomRace(e.target.value)}
                 placeholder="Masukkan angka (misal: 15)"
-                className="p-2.5 rounded-xl bg-surface-2 border border-line text-sm font-mono text-text focus:outline-none focus:border-felt w-full"
+                className="p-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm font-mono text-white focus:outline-none focus:border-rose-500 w-full"
                 autoFocus
               />
             </div>
@@ -298,17 +297,17 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
           <button
             type="button"
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-text-dim hover:text-text transition-colors"
+            className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors"
           >
             <Sliders className="w-3.5 h-3.5" />
-            {showAdvanced ? 'Sembunyikan Pengaturan Lanjutan' : 'Opsi Lanjutan (Break, Foul, Wake Lock)'}
+            {showAdvanced ? 'Sembunyikan Opsi Lanjutan' : 'Opsi Lanjutan (Break, Foul, Wake Lock)'}
           </button>
 
           {showAdvanced && (
-            <div className="mt-3 p-3 rounded-2xl bg-surface-2 border border-line space-y-3 animate-fade-in text-xs">
+            <div className="mt-3 p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-3 text-xs">
               {/* Break Rule */}
               <div>
-                <label className="block text-[11px] font-mono uppercase text-text-faint mb-1.5">
+                <label className="block text-[11px] uppercase text-zinc-500 font-semibold mb-1.5">
                   Aturan Giliran Break Berikutnya
                 </label>
                 <div className="grid grid-cols-3 gap-1.5">
@@ -317,10 +316,10 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
                       type="button"
                       key={rule}
                       onClick={() => setBreakRule(rule)}
-                      className={`p-2 rounded-lg border text-[10px] font-mono uppercase font-bold text-center ${
+                      className={`p-2 rounded-lg border text-[11px] font-medium text-center transition-all ${
                         breakRule === rule
-                          ? 'border-felt bg-felt/20 text-emerald-300'
-                          : 'border-line bg-surface-3 text-text-dim'
+                          ? 'border-rose-500/50 bg-rose-500/15 text-rose-300'
+                          : 'border-zinc-800 bg-zinc-900 text-zinc-400'
                       }`}
                     >
                       {rule.split(' ')[0]}
@@ -330,44 +329,44 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
               </div>
 
               {/* Toggles */}
-              <div className="space-y-2 pt-1">
+              <div className="space-y-2 pt-1 border-t border-zinc-800/80">
                 <div className="flex items-center justify-between">
-                  <span className="text-text-dim">Foul Tracking & Ball in Hand</span>
+                  <span className="text-zinc-300">Foul Tracking & Ball in Hand</span>
                   <input
                     type="checkbox"
                     checked={isFoulTracking}
                     onChange={(e) => setIsFoulTracking(e.target.checked)}
-                    className="w-4 h-4 accent-felt rounded"
+                    className="w-4 h-4 accent-rose-600 rounded"
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-text-dim">Match & Rack Timer</span>
+                  <span className="text-zinc-300">Match & Rack Timer</span>
                   <input
                     type="checkbox"
                     checked={isTimerEnabled}
                     onChange={(e) => setIsTimerEnabled(e.target.checked)}
-                    className="w-4 h-4 accent-felt rounded"
+                    className="w-4 h-4 accent-rose-600 rounded"
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-text-dim">Layar Tetap Menyala (Wake Lock)</span>
+                  <span className="text-zinc-300">Layar Tetap Menyala (Wake Lock)</span>
                   <input
                     type="checkbox"
                     checked={isWakeLockEnabled}
                     onChange={(e) => setIsWakeLockEnabled(e.target.checked)}
-                    className="w-4 h-4 accent-felt rounded"
+                    className="w-4 h-4 accent-rose-600 rounded"
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-text-dim">Efek Suara Audio & Getar</span>
+                  <span className="text-zinc-300">Efek Suara Audio</span>
                   <input
                     type="checkbox"
                     checked={isSoundEnabled}
                     onChange={(e) => setIsSoundEnabled(e.target.checked)}
-                    className="w-4 h-4 accent-felt rounded"
+                    className="w-4 h-4 accent-rose-600 rounded"
                   />
                 </div>
               </div>
@@ -379,9 +378,9 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
         <div className="pt-2">
           <button
             type="submit"
-            className="w-full py-4 rounded-xl bg-felt hover:bg-emerald-600 text-white font-display font-bold text-lg uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-felt/30 transition-all active:scale-95"
+            className="w-full py-3.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-md shadow-rose-950/40 transition-all active:scale-[0.99]"
           >
-            <Play className="w-5 h-5 fill-white" />
+            <Play className="w-4 h-4 fill-white" />
             Mulai Pertandingan
           </button>
         </div>

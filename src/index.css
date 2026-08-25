@@ -2,81 +2,69 @@
 
 @layer base {
   :root {
-    /* Brand Theme derived from PoolScore 8-Ball Logo */
-    --bg: #0e1218;
-    --surface: #151a23;
-    --surface-2: #1c2330;
-    --surface-3: #242d3d;
-    --line: rgba(255, 255, 255, 0.08);
-    --line-strong: rgba(255, 255, 255, 0.16);
+    /* Linear / Raycast / FotMob Style Neutral Zinc Dark Palette */
+    --bg: #09090b;
+    --surface: #121215;
+    --surface-2: #18181c;
+    --surface-3: #222228;
+    --surface-hover: #272730;
 
-    /* Brand Velvet Crimson (Player 1 & Primary Identity) */
-    --red: #c92a39;
-    --red-dim: #5c1820;
-    --red-glow: rgba(201, 42, 57, 0.3);
+    --line: #222227;
+    --line-strong: #33333d;
+    --line-subtle: #191920;
 
-    /* Player 2 Royal Sapphire Blue */
-    --blue: #3b82f6;
-    --blue-dim: #1e3a8a;
-    --blue-glow: rgba(59, 130, 246, 0.28);
+    /* Player 1 & Primary Brand: Crimson */
+    --red: #e11d48;
+    --red-hover: #f43f5e;
+    --red-dim: rgba(225, 29, 72, 0.12);
+    --red-border: rgba(225, 29, 72, 0.3);
 
-    /* Table Felt Emerald Accent */
-    --felt: #16a34a;
-    --felt-dim: #14532d;
-    --felt-glow: rgba(22, 163, 74, 0.25);
+    /* Player 2: Cobalt Royal Blue */
+    --blue: #2563eb;
+    --blue-hover: #3b82f6;
+    --blue-dim: rgba(37, 99, 235, 0.12);
+    --blue-border: rgba(37, 99, 235, 0.3);
 
-    /* Trophy Amber */
-    --amber: #f59e0b;
-    --amber-dim: #78350f;
-
-    /* Text Hierarchy (Easy on the eyes Slate typography) */
-    --text: #f8fafc;
-    --text-dim: #94a3b8;
-    --text-faint: #64748b;
-  }
-
-  /* Midnight Slate (Pure Charcoal & Crimson) */
-  [data-theme="obsidian"] {
-    --bg: #0e1218;
-    --surface: #151a23;
-    --surface-2: #1c2330;
-    --surface-3: #242d3d;
-    --felt: #c92a39;
-    --felt-dim: #5c1820;
-    --felt-glow: rgba(201, 42, 57, 0.3);
-  }
-
-  /* Classic Emerald Felt */
-  [data-theme="felt-green"] {
-    --bg: #08120e;
-    --surface: #0e1f18;
-    --surface-2: #152c23;
-    --surface-3: #1c3d31;
+    /* Accents */
     --felt: #10b981;
-    --felt-dim: #064e3b;
-    --felt-glow: rgba(16, 185, 129, 0.3);
+    --felt-dim: rgba(16, 185, 129, 0.12);
+    --amber: #f59e0b;
+    --amber-dim: rgba(245, 158, 11, 0.12);
+
+    /* Text Hierarchy */
+    --text: #f4f4f5;
+    --text-dim: #a1a1aa;
+    --text-faint: #71717a;
+    --text-muted: #52525b;
   }
 
-  /* Pro Carbon Dark Theme */
+  /* Themes */
+  [data-theme="obsidian"] {
+    --bg: #09090b;
+    --surface: #121215;
+    --surface-2: #18181c;
+    --surface-3: #222228;
+  }
+
+  [data-theme="felt-green"] {
+    --bg: #050a08;
+    --surface: #0b1410;
+    --surface-2: #111e18;
+    --surface-3: #182a22;
+  }
+
   [data-theme="carbon"] {
-    --bg: #090b0e;
-    --surface: #11141a;
-    --surface-2: #181d26;
-    --surface-3: #222936;
-    --felt: #3b82f6;
-    --felt-dim: #1e3a8a;
-    --felt-glow: rgba(59, 130, 246, 0.3);
+    --bg: #000000;
+    --surface: #0d0d0f;
+    --surface-2: #141417;
+    --surface-3: #1c1c21;
   }
 
-  /* Deep Navy Tournament Theme */
   [data-theme="navy"] {
-    --bg: #0a0f1d;
-    --surface: #10172c;
-    --surface-2: #17213e;
-    --surface-3: #1f2c52;
-    --felt: #38bdf8;
-    --felt-dim: #075985;
-    --felt-glow: rgba(56, 189, 248, 0.3);
+    --bg: #050811;
+    --surface: #0a0f1d;
+    --surface-2: #10172b;
+    --surface-3: #18223d;
   }
 }
 
@@ -88,73 +76,40 @@
 body {
   background-color: var(--bg);
   color: var(--text);
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-image: 
-    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(201, 42, 57, 0.08), transparent 60%),
-    radial-gradient(ellipse 700px 500px at 100% 20%, rgba(59, 130, 246, 0.06), transparent 55%),
-    radial-gradient(ellipse 800px 600px at 50% 110%, rgba(30, 41, 59, 0.3), transparent 60%);
-  background-attachment: fixed;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow-x: hidden;
+  letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Scrollbar */
+/* Tabular Numerals for Scores and Timers */
+.font-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom Minimalist Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--surface);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--surface-3);
-  border-radius: 3px;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--line-strong);
-}
-
-/* Billiard Table Sight Diamond */
-.billiard-diamond {
-  width: 8px;
-  height: 8px;
   background: var(--text-faint);
-  transform: rotate(45deg);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 1px;
-}
-
-.billiard-diamond.active-p1 {
-  background: var(--red);
-  box-shadow: 0 0 10px var(--red), 0 0 18px var(--red-glow);
-}
-
-.billiard-diamond.active-p2 {
-  background: var(--blue);
-  box-shadow: 0 0 10px var(--blue), 0 0 18px var(--blue-glow);
 }
 
 /* Score Pulse Animation */
 @keyframes scoreBump {
   0% { transform: scale(1); }
-  40% { transform: scale(1.12); }
+  50% { transform: scale(1.08); }
   100% { transform: scale(1); }
 }
 
 .animate-score-bump {
-  animation: scoreBump 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-/* Glassmorphism Classes */
-.glass-panel {
-  background: rgba(21, 26, 35, 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--line);
-}
-
-.glass-panel-strong {
-  background: rgba(28, 35, 48, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--line-strong);
+  animation: scoreBump 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }

@@ -1,9 +1,18 @@
-import React from 'react';
-import type { Match } from '../../types';
+import React, { useState, useEffect } from 'react';
 import { useMatch } from '../../context/MatchContext';
-import { Zap, RotateCcw } from 'lucide-react';
+import type { Match } from '../../types';
+import { db } from '../../db/database';
+import { formatSeconds } from '../../utils/time';
+import {
+  Play,
+  RotateCcw,
+  Trophy,
+  BarChart2,
+  LayoutGrid,
+  Activity,
+  ChevronRight,
+} from 'lucide-react';
 import { PlayerAvatar } from '../common/PlayerAvatar';
-import { IconBracketTree, IconEloRanking, IconBilliardTable } from '../common/BilliardIcons';
 
 interface HomeViewProps {
   onOpenQuickMatch: () => void;
@@ -16,163 +25,205 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onSelectTab,
   onOpenMatchDetail,
 }) => {
-  const { activeMatch, recentMatches } = useMatch();
+  const { activeMatch } = useMatch();
+  const [recentMatches, setRecentMatches] = useState<Match[]>([]);
 
-  const isMatchInProgress = activeMatch && activeMatch.status === 'in_progress';
+  useEffect(() => {
+    const fetchRecent = async () => {
+      try {
+        const matches = await db.matches
+          .where('status')
+          .equals('finished')
+          .reverse()
+          .limit(5)
+          .toArray();
+        setRecentMatches(matches);
+      } catch {
+        // ignore
+      }
+    };
+    fetchRecent();
+  }, []);
+
+  const isLive = activeMatch !== null && activeMatch.status === 'in_progress';
 
   return (
-    <div className="space-y-6 max-w-xl mx-auto py-4 sm:py-8 px-2 pb-16 animate-fade-in select-none">
-      {/* Brand Hero Box with Official Rounded Box 8-Ball Logo */}
-      <div className="text-center py-6 px-4 rounded-3xl bg-surface-2/70 border border-line-strong backdrop-blur-md shadow-2xl relative overflow-hidden">
-        {/* Subtle crimson glow ambient */}
-        <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-48 h-48 bg-red/15 rounded-full blur-3xl pointer-events-none" />
-
-        {/* Official PoolScore Logo (Smooth Rounded Box) */}
-        <div className="flex justify-center mb-3">
-          <img
-            src="/logo.png"
-            alt="PoolScore Logo"
-            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-line-strong shadow-lg drop-shadow-[0_0_24px_rgba(201,42,57,0.35)]"
-          />
-        </div>
-
-        <h2 className="font-display font-extrabold text-3xl sm:text-4xl uppercase tracking-wider text-text">
-          PoolScore
-        </h2>
-        <div className="font-mono text-xs text-text-faint uppercase tracking-[0.2em] mt-1">
-          Scoreboard for Pool
-        </div>
-
-        {/* Resume Active Match Banner if match is running */}
-        {isMatchInProgress ? (
-          <div className="mt-5 p-3.5 rounded-2xl bg-red/10 border border-red/30 shadow-lg text-left">
-            <div className="flex items-center justify-between text-xs font-mono text-red font-bold mb-1">
-              <span className="flex items-center gap-1.5 animate-pulse">
-                <span className="w-2 h-2 rounded-full bg-red" /> MATCH BERLANGSUNG
-              </span>
-              <span>RACK {activeMatch.currentRack}</span>
-            </div>
-            <div className="flex items-center justify-between my-1">
-              <span className="font-display font-bold text-lg text-text">
-                <span className="text-red">🔴 {activeMatch.player1.name}</span> ({activeMatch.player1.score}) vs{' '}
-                <span className="text-blue">🔵 {activeMatch.player2.name}</span> ({activeMatch.player2.score})
-              </span>
-            </div>
-            <button
-              onClick={onOpenQuickMatch}
-              className="mt-2 w-full py-2.5 rounded-xl bg-red hover:bg-red-600 text-white font-ui font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow transition-all active:scale-95"
-            >
-              <RotateCcw className="w-3.5 h-3.5" /> Lanjutkan Pertandingan (Scoreboard)
-            </button>
+    <div className="space-y-5 max-w-2xl mx-auto pb-20 select-none animate-fade-in px-2 sm:px-0">
+      {/* Hero: Active Match or Quick Match Launcher */}
+      {isLive && activeMatch ? (
+        <div className="relative overflow-hidden rounded-2xl bg-zinc-900 border border-rose-500/40 p-5 sm:p-6 shadow-lg shadow-rose-950/20">
+          <div className="flex items-center justify-between text-xs text-zinc-400 mb-3">
+            <span className="flex items-center gap-1.5 font-semibold text-rose-300 uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+              Pertandingan Sedang Berlangsung
+            </span>
+            <span className="font-mono text-zinc-400">
+              {formatSeconds(activeMatch.durationSeconds)}
+            </span>
           </div>
-        ) : (
-          /* Primary CTA: Quick Match with Crimson Velvet Gradient */
-          <div className="mt-6 flex flex-col gap-2.5">
-            <button
-              onClick={onOpenQuickMatch}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#b91c28] via-[#cf2230] to-[#b91c28] hover:brightness-110 text-white font-ui font-bold text-base uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl shadow-red/25 border border-red/30 transition-all active:scale-98"
-            >
-              <Zap className="w-5 h-5 fill-white text-white" />
-              ⚡ Quick Match
-            </button>
 
-            <div className="text-[11px] font-mono text-text-faint">
-              Mulai dalam &lt;10 detik tanpa perlu registrasi / login wajib.
+          {/* Quick Score Overview */}
+          <div className="flex items-center justify-between py-2 font-tabular">
+            <div className="flex items-center gap-3">
+              <PlayerAvatar playerNumber={1} size="md" name={activeMatch.player1.name} isActiveTurn={activeMatch.currentTurn === 1} />
+              <div>
+                <div className="font-bold text-base text-white truncate max-w-[120px]">
+                  {activeMatch.player1.name}
+                </div>
+                <div className="text-xs text-zinc-400">Pemain 1</div>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <div className="font-mono font-black text-3xl sm:text-4xl text-white">
+                <span className="text-rose-400">{activeMatch.player1.score}</span>
+                <span className="text-zinc-600 mx-2">-</span>
+                <span className="text-blue-400">{activeMatch.player2.score}</span>
+              </div>
+              <div className="text-[11px] text-zinc-500 uppercase tracking-wider mt-0.5">
+                {activeMatch.gameType} · Race to {activeMatch.raceTo}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 flex-row-reverse text-right">
+              <PlayerAvatar playerNumber={2} size="md" name={activeMatch.player2.name} isActiveTurn={activeMatch.currentTurn === 2} />
+              <div>
+                <div className="font-bold text-base text-white truncate max-w-[120px]">
+                  {activeMatch.player2.name}
+                </div>
+                <div className="text-xs text-zinc-400">Pemain 2</div>
+              </div>
             </div>
           </div>
-        )}
-      </div>
 
-      {/* Quick Access Grid with Sports Icons */}
-      <div className="grid grid-cols-3 gap-2.5">
+          <button
+            onClick={onOpenQuickMatch}
+            className="mt-3.5 w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-sm transition-colors active:scale-[0.99]"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Lanjutkan Papan Skor
+          </button>
+        </div>
+      ) : (
+        <div className="rounded-2xl bg-zinc-900 border border-zinc-800 p-5 sm:p-6 shadow-sm">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-lg font-bold text-white tracking-tight">
+                Mulai Pertandingan Baru
+              </h2>
+              <p className="text-xs text-zinc-400 mt-1">
+                Catat skor 8-Ball, 9-Ball, 10-Ball secara instan dengan aturan turnamen resmi.
+              </p>
+            </div>
+
+            <button
+              onClick={onOpenQuickMatch}
+              className="w-full py-3.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-md shadow-rose-950/40 transition-all active:scale-[0.99]"
+            >
+              <Play className="w-4 h-4 fill-white" />
+              Mulai Quick Match
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Feature Grid (Unified Clean 3-Column Navigation) */}
+      <div className="grid grid-cols-3 gap-3">
         <button
           onClick={() => onSelectTab('tournament')}
-          className="p-3.5 rounded-2xl bg-surface-2 hover:bg-surface-3 border border-line text-center transition-all group"
+          className="p-4 rounded-2xl bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 text-left transition-all group active:scale-[0.98]"
         >
-          <div className="flex justify-center mb-1.5 group-hover:scale-110 transition-transform">
-            <IconBracketTree size={24} />
+          <div className="w-9 h-9 rounded-xl bg-zinc-800/90 flex items-center justify-center mb-3 group-hover:bg-zinc-700 transition-colors">
+            <Trophy className="w-4 h-4 text-zinc-300 group-hover:text-rose-400 transition-colors" />
           </div>
-          <div className="font-mono font-bold text-[11px] uppercase text-text">Turnamen</div>
-          <div className="text-[9px] text-text-faint font-mono">Bagan Bracket</div>
+          <div className="font-semibold text-xs text-white">Turnamen</div>
+          <div className="text-[11px] text-zinc-500 mt-0.5">Bagan Bracket</div>
         </button>
 
         <button
           onClick={() => onSelectTab('stats')}
-          className="p-3.5 rounded-2xl bg-surface-2 hover:bg-surface-3 border border-line text-center transition-all group"
+          className="p-4 rounded-2xl bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 text-left transition-all group active:scale-[0.98]"
         >
-          <div className="flex justify-center mb-1.5 group-hover:scale-110 transition-transform">
-            <IconEloRanking size={24} />
+          <div className="w-9 h-9 rounded-xl bg-zinc-800/90 flex items-center justify-center mb-3 group-hover:bg-zinc-700 transition-colors">
+            <BarChart2 className="w-4 h-4 text-zinc-300 group-hover:text-rose-400 transition-colors" />
           </div>
-          <div className="font-mono font-bold text-[11px] uppercase text-text">Ranking Elo</div>
-          <div className="text-[9px] text-text-faint font-mono">Leaderboard</div>
+          <div className="font-semibold text-xs text-white">Leaderboard</div>
+          <div className="text-[11px] text-zinc-500 mt-0.5">Rating Elo</div>
         </button>
 
         <button
           onClick={() => onSelectTab('club')}
-          className="p-3.5 rounded-2xl bg-surface-2 hover:bg-surface-3 border border-line text-center transition-all group"
+          className="p-4 rounded-2xl bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 text-left transition-all group active:scale-[0.98]"
         >
-          <div className="flex justify-center mb-1.5 group-hover:scale-110 transition-transform">
-            <IconBilliardTable size={24} />
+          <div className="w-9 h-9 rounded-xl bg-zinc-800/90 flex items-center justify-center mb-3 group-hover:bg-zinc-700 transition-colors">
+            <LayoutGrid className="w-4 h-4 text-zinc-300 group-hover:text-rose-400 transition-colors" />
           </div>
-          <div className="font-mono font-bold text-[11px] uppercase text-text">Club Meja</div>
-          <div className="text-[9px] text-text-faint font-mono">Multi-Table</div>
+          <div className="font-semibold text-xs text-white">Club Meja</div>
+          <div className="text-[11px] text-zinc-500 mt-0.5">Multi-Meja</div>
         </button>
       </div>
 
       {/* Recent Matches Feed */}
-      <div className="p-4 rounded-3xl bg-surface-2/70 border border-line">
-        <div className="flex items-center justify-between mb-3">
-          <span className="font-mono text-xs uppercase tracking-widest text-text-faint font-bold">
-            Recent Matches
-          </span>
+      <div className="rounded-2xl bg-zinc-900/60 border border-zinc-800 p-4 sm:p-5">
+        <div className="flex items-center justify-between mb-3 px-0.5">
+          <div className="flex items-center gap-2">
+            <Activity className="w-4 h-4 text-zinc-400" />
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+              Riwayat Pertandingan
+            </h3>
+          </div>
           <button
             onClick={() => onSelectTab('history')}
-            className="text-xs font-mono text-red hover:underline flex items-center gap-0.5"
+            className="text-xs font-medium text-zinc-400 hover:text-white flex items-center gap-0.5 transition-colors"
           >
-            Lihat Semua →
+            Lihat Semua <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {recentMatches.length === 0 ? (
-          <div className="py-6 text-center text-text-faint font-mono text-xs">
-            Belum ada match yang selesai. Tekan Quick Match untuk mulai!
+          <div className="py-8 text-center text-zinc-500 text-xs">
+            Belum ada data pertandingan yang tersimpan.
           </div>
         ) : (
-          <div className="divide-y divide-line">
-            {recentMatches.slice(0, 5).map((m) => (
-              <div
-                key={m.id}
-                onClick={() => onOpenMatchDetail(m)}
-                className="py-3 flex items-center justify-between text-xs font-mono cursor-pointer hover:bg-surface-3/50 px-2 rounded-xl transition-all group"
-              >
-                {/* Player 1 */}
-                <div className="flex items-center gap-2.5 flex-1 truncate">
-                  <PlayerAvatar playerNumber={1} name={m.player1.name} size="xs" isActiveTurn={m.winner === 1} />
-                  <span className={`truncate font-semibold ${m.winner === 1 ? 'text-text font-bold' : 'text-text-dim'}`}>
-                    {m.player1.name}
-                  </span>
-                </div>
+          <div className="divide-y divide-zinc-800/60">
+            {recentMatches.slice(0, 5).map((m) => {
+              const isMultiSet = m.targetSets && m.targetSets > 1;
 
-                {/* Score */}
-                <div className="font-mono font-extrabold text-sm text-text-dim px-3 group-hover:text-text transition-colors">
-                  <span className={m.winner === 1 ? 'text-red' : 'text-text-dim'}>
-                    {m.targetSets && m.targetSets > 1 ? m.player1Sets : m.player1.score}
-                  </span>
-                  <span className="text-text-faint mx-1.5">—</span>
-                  <span className={m.winner === 2 ? 'text-blue' : 'text-text-dim'}>
-                    {m.targetSets && m.targetSets > 1 ? m.player2Sets : m.player2.score}
-                  </span>
-                </div>
+              return (
+                <div
+                  key={m.id}
+                  onClick={() => onOpenMatchDetail(m)}
+                  className="py-3 px-1.5 flex items-center justify-between cursor-pointer hover:bg-zinc-800/40 rounded-xl transition-colors group"
+                >
+                  {/* Player 1 */}
+                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <PlayerAvatar playerNumber={1} name={m.player1.name} size="xs" isActiveTurn={m.winner === 1} />
+                    <span className={`truncate text-xs ${m.winner === 1 ? 'font-semibold text-white' : 'text-zinc-400'}`}>
+                      {m.player1.name}
+                    </span>
+                  </div>
 
-                {/* Player 2 */}
-                <div className="flex items-center justify-end gap-2.5 flex-1 truncate">
-                  <span className={`truncate font-semibold text-right ${m.winner === 2 ? 'text-text' : 'text-text-dim'}`}>
-                    {m.player2.name}
-                  </span>
-                  <PlayerAvatar playerNumber={2} name={m.player2.name} size="xs" isActiveTurn={m.winner === 2} />
+                  {/* Score Pill */}
+                  <div className="px-2.5 py-1 rounded-lg bg-zinc-800/80 border border-zinc-700/50 font-mono font-bold text-xs font-tabular text-center mx-2 group-hover:border-zinc-600 transition-colors shrink-0">
+                    <span className={m.winner === 1 ? 'text-rose-400' : 'text-zinc-400'}>
+                      {isMultiSet ? m.player1Sets : m.player1.score}
+                    </span>
+                    <span className="text-zinc-600 mx-1.5">-</span>
+                    <span className={m.winner === 2 ? 'text-blue-400' : 'text-zinc-400'}>
+                      {isMultiSet ? m.player2Sets : m.player2.score}
+                    </span>
+                  </div>
+
+                  {/* Player 2 */}
+                  <div className="flex items-center justify-end gap-2.5 flex-1 min-w-0">
+                    <span className={`truncate text-xs text-right ${m.winner === 2 ? 'font-semibold text-white' : 'text-zinc-400'}`}>
+                      {m.player2.name}
+                    </span>
+                    <PlayerAvatar playerNumber={2} name={m.player2.name} size="xs" isActiveTurn={m.winner === 2} />
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

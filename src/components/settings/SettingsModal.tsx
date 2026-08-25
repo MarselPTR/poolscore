@@ -3,8 +3,7 @@ import { Modal } from '../common/Modal';
 import { useSettings } from '../../context/SettingsContext';
 import type { ThemeMode, TouchProtectionMode } from '../../types';
 import { db } from '../../db/database';
-import { Moon, Smartphone, Database, Download, Upload, Trash2, Check, Sliders } from 'lucide-react';
-import { IconTouchShield } from '../common/BilliardIcons';
+import { Moon, Smartphone, Database, Download, Upload, Trash2, Check, Sliders, Shield } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -16,13 +15,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   const [copiedMsg, setCopiedMsg] = useState<string>('');
 
   const themes: { id: ThemeMode; label: string; bg: string; accent: string }[] = [
-    { id: 'obsidian', label: 'Obsidian Table', bg: '#0a0e0c', accent: '#1f8a5a' },
-    { id: 'felt-green', label: 'Midnight Felt', bg: '#061510', accent: '#04e2ac' },
-    { id: 'carbon', label: 'Pro Carbon', bg: '#080808', accent: '#3b82f6' },
-    { id: 'navy', label: 'Tournament Navy', bg: '#050b14', accent: '#38bdf8' },
+    { id: 'obsidian', label: 'Obsidian Zinc', bg: '#09090b', accent: '#e11d48' },
+    { id: 'felt-green', label: 'Midnight Felt', bg: '#050a08', accent: '#10b981' },
+    { id: 'carbon', label: 'Pro Carbon', bg: '#000000', accent: '#3b82f6' },
+    { id: 'navy', label: 'Tournament Navy', bg: '#050811', accent: '#38bdf8' },
   ];
 
-  // Export JSON backup
   const handleExportBackup = async () => {
     try {
       const matches = await db.matches.toArray();
@@ -44,14 +42,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
       a.download = `PoolScore_Backup_${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      setCopiedMsg('Backup data berhasil diexport!');
+      setCopiedMsg('Backup data berhasil diekspor!');
       setTimeout(() => setCopiedMsg(''), 3000);
     } catch {
       alert('Gagal mengekspor data.');
     }
   };
 
-  // Import JSON backup
   const handleImportBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -64,7 +61,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         if (json.players) await db.players.bulkPut(json.players);
         if (json.tournaments) await db.tournaments.bulkPut(json.tournaments);
         if (json.settings) updateSettings(json.settings);
-        setCopiedMsg('Data backup berhasil diimport!');
+        setCopiedMsg('Data backup berhasil diimpor!');
         setTimeout(() => setCopiedMsg(''), 3000);
       } catch {
         alert('Format file backup tidak valid.');
@@ -73,7 +70,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     reader.readAsText(file);
   };
 
-  // Clear Database
   const handleClearData = async () => {
     if (confirm('PERINGATAN: Seluruh riwayat pertandingan, pemain, dan turnamen lokal akan dihapus. Lanjutkan?')) {
       await db.matches.clear();
@@ -86,31 +82,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Pengaturan PoolScore">
-      <div className="space-y-6 select-none">
+      <div className="space-y-5 select-none text-xs">
         {copiedMsg && (
-          <div className="p-3 rounded-xl bg-felt/20 border border-felt text-emerald-300 text-xs font-mono font-bold flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-medium flex items-center gap-2">
             <Check className="w-4 h-4" /> {copiedMsg}
           </div>
         )}
 
         {/* 1. Theme & Appearance */}
         <div>
-          <label className="block text-xs font-mono uppercase tracking-wider text-text-dim mb-2 flex items-center gap-1.5">
-            <Moon className="w-3.5 h-3.5 text-felt" /> Tema Meja & Tampilan
+          <label className="block uppercase tracking-wider text-zinc-400 font-semibold mb-2 flex items-center gap-1.5">
+            <Moon className="w-3.5 h-3.5 text-zinc-400" /> Tema Tampilan
           </label>
           <div className="grid grid-cols-2 gap-2">
             {themes.map((t) => (
               <button
                 key={t.id}
                 onClick={() => updateSettings({ theme: t.id })}
-                className={`p-3 rounded-2xl border flex items-center gap-2.5 text-xs font-mono uppercase font-bold transition-all ${
+                className={`p-2.5 rounded-xl border flex items-center gap-2.5 text-xs font-medium transition-all ${
                   settings.theme === t.id
-                    ? 'border-felt bg-felt/20 text-text shadow-sm'
-                    : 'border-line bg-surface-2 text-text-dim hover:text-text'
+                    ? 'border-zinc-300 bg-zinc-800 text-white shadow-sm'
+                    : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
                 }`}
               >
                 <div
-                  className="w-4 h-4 rounded-full border border-line shrink-0"
+                  className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0"
                   style={{ backgroundColor: t.accent }}
                 />
                 <span className="truncate">{t.label}</span>
@@ -121,8 +117,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
         {/* 2. Accidental Touch Protection */}
         <div>
-          <label className="block text-xs font-mono uppercase tracking-wider text-text-dim mb-2 flex items-center gap-2">
-            <IconTouchShield size={16} /> Proteksi Sentuhan Tombol Skor (Win Rack)
+          <label className="block uppercase tracking-wider text-zinc-400 font-semibold mb-2 flex items-center gap-1.5">
+            <Shield className="w-3.5 h-3.5 text-zinc-400" /> Proteksi Tombol Skor (Win Rack)
           </label>
           <div className="grid grid-cols-3 gap-2">
             {[
@@ -133,14 +129,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               <button
                 key={mode.id}
                 onClick={() => updateSettings({ touchProtection: mode.id as TouchProtectionMode })}
-                className={`p-3 rounded-2xl border text-center transition-all ${
+                className={`p-2.5 rounded-xl border text-center transition-all ${
                   settings.touchProtection === mode.id
-                    ? 'border-felt bg-felt/20 text-emerald-300 shadow-sm'
-                    : 'border-line bg-surface-2 text-text-dim hover:text-text'
+                    ? 'border-rose-500/50 bg-rose-500/15 text-rose-300 shadow-sm'
+                    : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
                 }`}
               >
-                <div className="text-xs font-mono font-bold uppercase">{mode.label}</div>
-                <div className="text-[10px] text-text-faint mt-0.5">{mode.desc}</div>
+                <div className="text-xs font-semibold">{mode.label}</div>
+                <div className="text-[10px] text-zinc-500 mt-0.5">{mode.desc}</div>
               </button>
             ))}
           </div>
@@ -148,64 +144,46 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
         {/* 3. Device & Hardware Controls */}
         <div>
-          <label className="block text-xs font-mono uppercase tracking-wider text-text-dim mb-2 flex items-center gap-1.5">
-            <Smartphone className="w-3.5 h-3.5 text-blue" /> Pengaturan Perangkat
+          <label className="block uppercase tracking-wider text-zinc-400 font-semibold mb-2 flex items-center gap-1.5">
+            <Smartphone className="w-3.5 h-3.5 text-zinc-400" /> Pengaturan Perangkat
           </label>
-          <div className="p-3.5 rounded-2xl bg-surface-2 border border-line space-y-3 text-xs">
+          <div className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <span className="font-bold text-text">Screen Wake Lock API</span>
-                <div className="text-[11px] text-text-faint">Mencegah layar smartphone mati saat match aktif</div>
+                <span className="font-semibold text-white">Screen Wake Lock</span>
+                <div className="text-[11px] text-zinc-500">Mencegah layar HP mati saat match aktif</div>
               </div>
               <input
                 type="checkbox"
                 checked={settings.wakeLockEnabled}
                 onChange={(e) => updateSettings({ wakeLockEnabled: e.target.checked })}
-                className="w-4 h-4 accent-felt rounded"
+                className="w-4 h-4 accent-rose-600 rounded"
               />
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-line/60">
+            <div className="flex items-center justify-between pt-2 border-t border-zinc-800/80">
               <div>
-                <span className="font-bold text-text">Efek Suara Audio</span>
-                <div className="text-[11px] text-text-faint">Bunyi stik billiard, kemenangan rack, dan foul</div>
+                <span className="font-semibold text-white">Efek Suara Audio</span>
+                <div className="text-[11px] text-zinc-500">Suara pukulan stik, kemenangan rack, dan foul</div>
               </div>
               <input
                 type="checkbox"
                 checked={settings.soundEnabled}
                 onChange={(e) => updateSettings({ soundEnabled: e.target.checked })}
-                className="w-4 h-4 accent-felt rounded"
+                className="w-4 h-4 accent-rose-600 rounded"
               />
             </div>
 
-            {settings.soundEnabled && (
-              <div className="pt-2 border-t border-line/60">
-                <div className="flex justify-between font-mono text-[11px] text-text-dim mb-1">
-                  <span>Volume Efek Suara</span>
-                  <span>{Math.round(settings.soundVolume * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={settings.soundVolume}
-                  onChange={(e) => updateSettings({ soundVolume: parseFloat(e.target.value) })}
-                  className="w-full accent-felt"
-                />
-              </div>
-            )}
-
-            <div className="flex items-center justify-between pt-2 border-t border-line/60">
+            <div className="flex items-center justify-between pt-2 border-t border-zinc-800/80">
               <div>
-                <span className="font-bold text-text">Efek Getar (Haptic Feedback)</span>
-                <div className="text-[11px] text-text-faint">Getaran singkat saat tombol skor ditekan</div>
+                <span className="font-semibold text-white">Efek Getar (Haptic)</span>
+                <div className="text-[11px] text-zinc-500">Getaran singkat saat tombol ditekan</div>
               </div>
               <input
                 type="checkbox"
                 checked={settings.vibrationEnabled}
                 onChange={(e) => updateSettings({ vibrationEnabled: e.target.checked })}
-                className="w-4 h-4 accent-felt rounded"
+                className="w-4 h-4 accent-rose-600 rounded"
               />
             </div>
           </div>
@@ -213,22 +191,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
         {/* 4. Scoreboard Font Size */}
         <div>
-          <label className="block text-xs font-mono uppercase tracking-wider text-text-dim mb-2 flex items-center gap-1.5">
-            <Sliders className="w-3.5 h-3.5 text-felt" /> Ukuran Angka Skor
+          <label className="block uppercase tracking-wider text-zinc-400 font-semibold mb-2 flex items-center gap-1.5">
+            <Sliders className="w-3.5 h-3.5 text-zinc-400" /> Ukuran Angka Skor
           </label>
           <div className="grid grid-cols-3 gap-2">
             {[
               { id: 'standard', label: 'Standar' },
-              { id: 'large', label: 'Besar (Rekomendasi)' },
+              { id: 'large', label: 'Besar' },
               { id: 'massive', label: 'Ekstra Besar' },
             ].map((size) => (
               <button
                 key={size.id}
                 onClick={() => updateSettings({ fontSize: size.id as 'standard' | 'large' | 'massive' })}
-                className={`py-2 px-2 rounded-2xl border text-center text-xs font-mono font-bold uppercase transition-all ${
+                className={`py-2 px-2 rounded-xl border text-center text-xs font-semibold transition-all ${
                   settings.fontSize === size.id
-                    ? 'border-felt bg-felt/20 text-emerald-300 shadow-sm'
-                    : 'border-line bg-surface-2 text-text-dim hover:text-text'
+                    ? 'border-zinc-300 bg-zinc-800 text-white shadow-sm'
+                    : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
                 }`}
               >
                 {size.label}
@@ -239,19 +217,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
         {/* 5. Data Backup & Reset */}
         <div>
-          <label className="block text-xs font-mono uppercase tracking-wider text-text-dim mb-2 flex items-center gap-1.5">
-            <Database className="w-3.5 h-3.5 text-text-dim" /> Data & Cadangan (Backup)
+          <label className="block uppercase tracking-wider text-zinc-400 font-semibold mb-2 flex items-center gap-1.5">
+            <Database className="w-3.5 h-3.5 text-zinc-400" /> Data & Cadangan (Backup)
           </label>
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={handleExportBackup}
-              className="py-2.5 px-3 rounded-2xl bg-surface-2 hover:bg-surface-3 border border-line text-xs font-mono font-bold uppercase flex items-center justify-center gap-1.5 text-text transition-all active:scale-95"
+              className="py-2.5 px-3 rounded-xl bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-xs font-semibold flex items-center justify-center gap-1.5 text-zinc-200 transition-all active:scale-95"
             >
-              <Download className="w-4 h-4 text-felt" /> Export Backup
+              <Download className="w-4 h-4 text-emerald-400" /> Ekspor Backup
             </button>
 
-            <label className="py-2.5 px-3 rounded-2xl bg-surface-2 hover:bg-surface-3 border border-line text-xs font-mono font-bold uppercase flex items-center justify-center gap-1.5 text-text cursor-pointer transition-all active:scale-95">
-              <Upload className="w-4 h-4 text-blue" /> Import Backup
+            <label className="py-2.5 px-3 rounded-xl bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-xs font-semibold flex items-center justify-center gap-1.5 text-zinc-200 cursor-pointer transition-all active:scale-95">
+              <Upload className="w-4 h-4 text-blue-400" /> Impor Backup
               <input
                 type="file"
                 accept=".json"
@@ -262,9 +240,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
             <button
               onClick={handleClearData}
-              className="col-span-2 py-2 px-3 rounded-2xl bg-red/10 hover:bg-red/20 border border-red/30 text-xs font-mono font-bold uppercase text-red transition-all flex items-center justify-center gap-1.5 active:scale-95"
+              className="col-span-2 py-2.5 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-xs font-semibold text-rose-300 transition-all flex items-center justify-center gap-1.5 active:scale-95"
             >
-              <Trash2 className="w-4 h-4" /> Reset / Bersihkan Database Lokal
+              <Trash2 className="w-4 h-4" /> Reset Database Lokal
             </button>
           </div>
         </div>

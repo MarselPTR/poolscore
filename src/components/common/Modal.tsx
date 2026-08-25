@@ -35,21 +35,21 @@ export const Modal: React.FC<ModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-fade-in">
       <div 
-        className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity" 
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" 
         onClick={onClose} 
       />
-      <div className={`relative w-full ${maxWidth} glass-panel-strong rounded-2xl p-5 sm:p-6 shadow-2xl border border-line-strong text-text z-10 animate-slide-up max-h-[90vh] flex flex-col`}>
+      <div className={`relative w-full ${maxWidth} bg-zinc-900/95 rounded-2xl p-5 sm:p-6 shadow-2xl border border-zinc-800 text-zinc-100 z-10 max-h-[90vh] flex flex-col`}>
         {title && (
-          <div className="flex items-center justify-between pb-4 border-b border-line mb-4">
-            <h3 className="font-display font-bold text-xl uppercase tracking-wider text-text flex items-center gap-2">
+          <div className="flex items-center justify-between pb-3.5 border-b border-zinc-800 mb-4">
+            <h3 className="font-bold text-base sm:text-lg text-white">
               {title}
             </h3>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-text-dim hover:text-text hover:bg-surface-3 transition-colors"
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
               aria-label="Tutup"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         )}

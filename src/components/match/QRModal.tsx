@@ -23,7 +23,7 @@ export const QRModal: React.FC<QRModalProps> = ({
   // Generate SVG QR Code pattern dynamically
   const generateQRSvg = () => {
     return (
-      <svg viewBox="0 0 100 100" className="w-48 h-48 mx-auto bg-white p-3 rounded-2xl shadow-inner">
+      <svg viewBox="0 0 100 100" className="w-44 h-44 mx-auto bg-white p-3 rounded-2xl shadow-inner">
         {/* QR Corner 1 */}
         <rect x="5" y="5" width="26" height="26" fill="#000" />
         <rect x="9" y="9" width="18" height="18" fill="#fff" />
@@ -50,7 +50,7 @@ export const QRModal: React.FC<QRModalProps> = ({
         <rect x="10" y="52" width="6" height="6" fill="#000" />
         <rect x="22" y="58" width="6" height="6" fill="#000" />
 
-        <rect x="38" y="38" width="8" height="8" fill="#1f8a5a" />
+        <rect x="38" y="38" width="8" height="8" fill="#e11d48" />
         <rect x="54" y="42" width="8" height="8" fill="#000" />
         <rect x="44" y="54" width="8" height="8" fill="#000" />
         <rect x="56" y="58" width="8" height="8" fill="#000" />
@@ -81,45 +81,45 @@ export const QRModal: React.FC<QRModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Live Match & QR Spectator">
-      <div className="space-y-4 text-center">
+      <div className="space-y-4 text-center select-none">
         {/* QR Display */}
-        <div className="p-4 bg-surface-2 rounded-2xl border border-line">
+        <div className="p-4 bg-zinc-950 rounded-2xl border border-zinc-800">
           {generateQRSvg()}
-          <div className="mt-3 font-mono font-bold text-sm tracking-wider text-felt">
+          <div className="mt-3 font-mono font-bold text-sm tracking-wider text-rose-400">
             KODE MATCH: {match.id}
           </div>
-          <div className="text-xs text-text-faint mt-0.5">
+          <div className="text-xs text-zinc-500 mt-0.5">
             Penonton atau wasit cukup scan QR ini untuk melihat live scoreboard.
           </div>
         </div>
 
         {/* Link Box */}
-        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-surface-2 border border-line text-xs font-mono">
+        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs font-mono">
           <input
             type="text"
             readOnly
             value={liveUrl}
-            className="bg-transparent text-text-dim w-full focus:outline-none truncate"
+            className="w-full bg-transparent text-zinc-300 focus:outline-none truncate"
           />
           <button
             onClick={handleCopy}
-            className="p-1.5 rounded-lg bg-surface-3 hover:bg-surface-2 text-text transition-colors shrink-0"
-            title="Salin Link"
+            className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-sans font-semibold text-xs flex items-center gap-1 shrink-0 transition-colors"
           >
-            {copied ? <Check className="w-4 h-4 text-felt" /> : <Copy className="w-4 h-4" />}
+            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? 'Tersalin' : 'Salin'}
           </button>
         </div>
 
-        {/* TV Mode Shortcut */}
+        {/* TV Mode Launch CTA */}
         <button
           onClick={() => {
             onClose();
             onOpenTVView();
           }}
-          className="w-full py-3 rounded-xl bg-surface-2 hover:bg-surface-3 border border-line text-text font-bold font-ui text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+          className="w-full py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-zinc-700/60 shadow-sm transition-all active:scale-95"
         >
-          <Tv className="w-4 h-4 text-blue" />
-          Buka Tampilan TV Scoreboard Meja
+          <Tv className="w-4 h-4 text-zinc-400" />
+          Buka Tampilan TV Layar Penuh
         </button>
       </div>
     </Modal>

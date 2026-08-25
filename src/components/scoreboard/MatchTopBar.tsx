@@ -1,7 +1,6 @@
 import React from 'react';
 import type { Match } from '../../types';
-import { Maximize, Minimize, QrCode, MoreVertical, Layers } from 'lucide-react';
-import { IconTVScreen } from '../common/BilliardIcons';
+import { Maximize, Minimize, QrCode, MoreVertical, Tv, Layers } from 'lucide-react';
 
 interface MatchTopBarProps {
   match: Match;
@@ -26,74 +25,74 @@ export const MatchTopBar: React.FC<MatchTopBarProps> = ({
   const isMultiSet = match.targetSets && match.targetSets > 1;
 
   return (
-    <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-2.5 border-b border-line bg-surface-2/70 backdrop-blur-md text-xs font-mono select-none">
-      {/* Left: Match Specifications */}
+    <div className="h-14 flex items-center justify-between px-3 sm:px-6 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-xl text-xs select-none shrink-0">
+      {/* Left: Match Info & Game Type */}
       <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-        <span className="font-bold text-text uppercase tracking-wider bg-surface-3 px-2.5 py-1 rounded-lg border border-line flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-felt" />
+        <span className="font-semibold text-white uppercase tracking-wider bg-zinc-900 px-2.5 py-1.5 rounded-xl border border-zinc-800 flex items-center gap-1.5 shadow-sm">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
           {match.gameType}
         </span>
 
         {/* Set / Babak Counter if Multi-Set */}
-        {isMultiSet ? (
-          <div className="flex items-center gap-1.5 bg-amber/15 text-amber border border-amber/30 px-2.5 py-1 rounded-lg font-bold">
-            <Layers className="w-3.5 h-3.5" />
+        {isMultiSet && (
+          <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1.5 rounded-xl font-semibold">
+            <Layers className="w-3.5 h-3.5 text-amber-400" />
             <span>SET {match.currentSet}</span>
-            <span className="text-text-faint font-normal">(Race to {match.targetSets} Sets)</span>
+            <span className="text-zinc-500 font-normal hidden sm:inline">(Race to {match.targetSets} Sets)</span>
           </div>
-        ) : null}
+        )}
 
-        <span className="text-text-dim flex items-center gap-1">
-          RACE TO <b className="text-text font-bold">{match.raceTo}</b>
+        <span className="text-zinc-400 flex items-center gap-1 font-mono text-xs">
+          RACE TO <b className="text-white font-bold">{match.raceTo}</b>
         </span>
 
-        <span className="text-text-faint hidden xs:inline">·</span>
+        <span className="text-zinc-700 hidden xs:inline">·</span>
 
-        <span className="text-text-dim">
-          RACK <span className="text-text font-bold">{match.currentRack}</span>
-          <span className="text-text-faint">/{maxPossibleRacks}</span>
+        <span className="text-zinc-400 font-mono text-xs">
+          RACK <span className="text-white font-bold">{match.currentRack}</span>
+          <span className="text-zinc-600">/{maxPossibleRacks}</span>
         </span>
 
         {/* Set Score Banner if Multi-Set */}
         {isMultiSet && (
-          <div className="hidden md:flex items-center gap-2 bg-surface-3 px-2.5 py-1 rounded-lg border border-line text-[11px] font-bold">
-            <span className="text-text-faint uppercase text-[9px]">Skor Babak:</span>
-            <span className="text-red">🔴 {match.player1Sets}</span>
-            <span className="text-text-faint">—</span>
-            <span className="text-blue">{match.player2Sets} 🔵</span>
+          <div className="hidden lg:flex items-center gap-2 bg-zinc-900 px-2.5 py-1.5 rounded-xl border border-zinc-800 text-xs font-mono font-bold">
+            <span className="text-zinc-500 uppercase text-[10px]">Skor Babak:</span>
+            <span className="text-rose-400">{match.player1Sets}</span>
+            <span className="text-zinc-600">-</span>
+            <span className="text-blue-400">{match.player2Sets}</span>
           </div>
         )}
 
         {match.tableNumber && (
-          <span className="text-felt font-bold bg-felt/10 px-2 py-0.5 rounded border border-felt/20 hidden sm:inline">
+          <span className="text-zinc-300 font-medium bg-zinc-900 px-2.5 py-1 rounded-xl border border-zinc-800 hidden sm:inline">
             MEJA {match.tableNumber}
           </span>
         )}
       </div>
 
-      {/* Right: Status Indicators & Quick Device Actions */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      {/* Right: Controls & Indicators */}
+      <div className="flex items-center gap-1.5 sm:gap-2">
         {/* Wake Lock Status */}
         <div
-          className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] sm:text-xs transition-colors ${
-            isWakeLocked ? 'text-felt bg-felt/10 border border-felt/30' : 'text-text-faint'
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium transition-colors ${
+            isWakeLocked ? 'text-emerald-300 bg-emerald-500/10 border border-emerald-500/30' : 'text-zinc-500 bg-zinc-900/50 border border-zinc-800'
           }`}
           title={isWakeLocked ? 'Layar dijaga tetap menyala' : 'Wake Lock tidak aktif'}
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${isWakeLocked ? 'bg-felt animate-pulse' : 'bg-text-faint'}`} />
+          <span className={`w-1.5 h-1.5 rounded-full ${isWakeLocked ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-600'}`} />
           <span className="hidden sm:inline">{isWakeLocked ? 'Screen Awake' : 'Wake Lock Off'}</span>
         </div>
 
         {/* Live Badge */}
-        <div className="flex items-center gap-1.5 text-red text-[10px] sm:text-xs font-bold bg-red/10 px-2 py-0.5 rounded border border-red/30">
-          <span className="w-1.5 h-1.5 rounded-full bg-red animate-pulse" />
+        <div className="flex items-center gap-1.5 text-rose-300 text-xs font-semibold bg-rose-500/10 px-2.5 py-1 rounded-xl border border-rose-500/30">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
           <span>LIVE</span>
         </div>
 
-        {/* QR Code live share */}
+        {/* QR Code */}
         <button
           onClick={onOpenQR}
-          className="p-1.5 text-text-dim hover:text-text hover:bg-surface-3 rounded-lg transition-colors"
+          className="p-2 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-all"
           title="Bagikan Live Match / QR"
         >
           <QrCode className="w-4 h-4" />
@@ -102,17 +101,17 @@ export const MatchTopBar: React.FC<MatchTopBarProps> = ({
         {/* TV Mode */}
         <button
           onClick={onOpenTV}
-          className="p-1.5 text-text-dim hover:text-text hover:bg-surface-3 rounded-lg transition-colors hidden sm:block"
-          title="Tampilan TV / Big Screen"
+          className="p-2 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-all hidden sm:block"
+          title="Tampilan TV Arena"
         >
-          <IconTVScreen size={18} />
+          <Tv className="w-4 h-4" />
         </button>
 
-        {/* Fullscreen Toggle */}
+        {/* Fullscreen */}
         <button
           onClick={onToggleFullscreen}
-          className="p-1.5 text-text-dim hover:text-text hover:bg-surface-3 rounded-lg transition-colors"
-          title={isFullscreen ? 'Keluar Fullscreen' : 'Layar Penuh (Fullscreen)'}
+          className="p-2 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-all"
+          title={isFullscreen ? 'Keluar Fullscreen' : 'Layar Penuh'}
         >
           {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
         </button>
@@ -120,8 +119,8 @@ export const MatchTopBar: React.FC<MatchTopBarProps> = ({
         {/* Settings */}
         <button
           onClick={onOpenSettings}
-          className="p-1.5 text-text-dim hover:text-text hover:bg-surface-3 rounded-lg transition-colors"
-          title="Pengaturan Match"
+          className="p-2 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-all"
+          title="Pengaturan"
         >
           <MoreVertical className="w-4 h-4" />
         </button>
