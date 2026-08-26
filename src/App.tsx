@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useMatch } from './context/MatchContext';
 import { useSettings } from './context/SettingsContext';
+import { useAuth } from './context/AuthContext';
 import { initializeDatabase } from './db/database';
 import { Header } from './components/common/Header';
 import { BottomNav } from './components/common/BottomNav';
@@ -17,11 +18,13 @@ import { QuickMatchModal } from './components/match/QuickMatchModal';
 import { ShareCardModal } from './components/match/ShareCardModal';
 import { QRModal } from './components/match/QRModal';
 import { SettingsModal } from './components/settings/SettingsModal';
+import { AuthView } from './components/auth/AuthView';
 import type { Match, GameType } from './types';
 
 export const App: React.FC = () => {
   const { activeMatch, startMatch } = useMatch();
   const { settings } = useSettings();
+  const { user } = useAuth();
 
   const [currentTab, setCurrentTab] = useState<string>('home');
   const [isTVMode, setIsTVMode] = useState<boolean>(false);
@@ -61,6 +64,16 @@ export const App: React.FC = () => {
     };
   }, []);
 
+  // 1. Auth Guard: Show Login / Register Page if not authenticated
+  if (!user) {
+    return <AuthView />;
+  }
+
+  // 2. TV Fullscreen Spectator Mode
+  if (isTVMode) {
+    return <TVScoreboardView onBack={() => setIsTVMode(false)} />;
+  }
+
   const isMatchRunning = activeMatch !== null && activeMatch.status === 'in_progress';
 
   // Handle launch match from tournament tree
@@ -91,12 +104,7 @@ export const App: React.FC = () => {
     setIsQuickMatchOpen(true);
   };
 
-  // 1. TV Fullscreen Spectator Mode
-  if (isTVMode) {
-    return <TVScoreboardView onBack={() => setIsTVMode(false)} />;
-  }
-
-  // 2. Active Match View (Full Screen Immersion)
+  // 3. Active Match View (Full Screen Immersion)
   if (isMatchRunning) {
     return (
       <div className="relative min-h-screen bg-bg text-text">
@@ -150,7 +158,7 @@ export const App: React.FC = () => {
     );
   }
 
-  // 3. Normal Application Dashboard View
+  // 4. Normal Application Dashboard View
   return (
     <div className="min-h-screen flex flex-col bg-bg text-text">
       <Header

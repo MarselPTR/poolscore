@@ -127,39 +127,39 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       )}
 
-      {/* Feature Grid (Unified Clean 3-Column Navigation) */}
+      {/* Feature Grid (Unified Clean 3-Column Navigation - Centered) */}
       <div className="grid grid-cols-3 gap-3">
         <button
           onClick={() => onSelectTab('tournament')}
-          className="p-4 rounded-2xl bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 text-left transition-all group active:scale-[0.98]"
+          className="p-3.5 sm:p-4 rounded-2xl bg-surface-2 hover:bg-surface-hover border border-line flex flex-col items-center justify-center text-center transition-all group active:scale-[0.98] shadow-sm"
         >
-          <div className="w-9 h-9 rounded-xl bg-zinc-800/90 flex items-center justify-center mb-3 group-hover:bg-zinc-700 transition-colors">
-            <Trophy className="w-4 h-4 text-zinc-300 group-hover:text-rose-400 transition-colors" />
+          <div className="w-10 h-10 rounded-xl bg-surface-3 flex items-center justify-center mb-2.5 group-hover:bg-surface transition-colors shadow-inner">
+            <Trophy className="w-4 h-4 text-text-dim group-hover:text-rose-500 transition-colors" />
           </div>
-          <div className="font-semibold text-xs text-white">Turnamen</div>
-          <div className="text-[11px] text-zinc-500 mt-0.5">Bagan Bracket</div>
+          <div className="font-bold text-xs text-text group-hover:text-rose-500 transition-colors">Turnamen</div>
+          <div className="text-[11px] text-text-dim mt-0.5">Bagan Bracket</div>
         </button>
 
         <button
           onClick={() => onSelectTab('stats')}
-          className="p-4 rounded-2xl bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 text-left transition-all group active:scale-[0.98]"
+          className="p-3.5 sm:p-4 rounded-2xl bg-surface-2 hover:bg-surface-hover border border-line flex flex-col items-center justify-center text-center transition-all group active:scale-[0.98] shadow-sm"
         >
-          <div className="w-9 h-9 rounded-xl bg-zinc-800/90 flex items-center justify-center mb-3 group-hover:bg-zinc-700 transition-colors">
-            <BarChart2 className="w-4 h-4 text-zinc-300 group-hover:text-rose-400 transition-colors" />
+          <div className="w-10 h-10 rounded-xl bg-surface-3 flex items-center justify-center mb-2.5 group-hover:bg-surface transition-colors shadow-inner">
+            <BarChart2 className="w-4 h-4 text-text-dim group-hover:text-rose-500 transition-colors" />
           </div>
-          <div className="font-semibold text-xs text-white">Leaderboard</div>
-          <div className="text-[11px] text-zinc-500 mt-0.5">Rating Elo</div>
+          <div className="font-bold text-xs text-text group-hover:text-rose-500 transition-colors">Leaderboard</div>
+          <div className="text-[11px] text-text-dim mt-0.5">Rating Elo</div>
         </button>
 
         <button
           onClick={() => onSelectTab('club')}
-          className="p-4 rounded-2xl bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 text-left transition-all group active:scale-[0.98]"
+          className="p-3.5 sm:p-4 rounded-2xl bg-surface-2 hover:bg-surface-hover border border-line flex flex-col items-center justify-center text-center transition-all group active:scale-[0.98] shadow-sm"
         >
-          <div className="w-9 h-9 rounded-xl bg-zinc-800/90 flex items-center justify-center mb-3 group-hover:bg-zinc-700 transition-colors">
-            <LayoutGrid className="w-4 h-4 text-zinc-300 group-hover:text-rose-400 transition-colors" />
+          <div className="w-10 h-10 rounded-xl bg-surface-3 flex items-center justify-center mb-2.5 group-hover:bg-surface transition-colors shadow-inner">
+            <LayoutGrid className="w-4 h-4 text-text-dim group-hover:text-rose-500 transition-colors" />
           </div>
-          <div className="font-semibold text-xs text-white">Club Meja</div>
-          <div className="text-[11px] text-zinc-500 mt-0.5">Multi-Meja</div>
+          <div className="font-bold text-xs text-text group-hover:text-rose-500 transition-colors">Club Meja</div>
+          <div className="text-[11px] text-text-dim mt-0.5">Multi-Meja</div>
         </button>
       </div>
 

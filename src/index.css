@@ -291,17 +291,31 @@ a:active,
 }
 
 /* Typography Hierarchy in Light Mode */
-[data-theme="light"] h1,
-[data-theme="light"] h2,
-[data-theme="light"] h3,
-[data-theme="light"] h4,
-[data-theme="light"] .text-white {
+[data-theme="light"] h1:not(.hero-text),
+[data-theme="light"] h2:not(.hero-text),
+[data-theme="light"] h3:not(.hero-text),
+[data-theme="light"] h4:not(.hero-text),
+[data-theme="light"] .text-white:not(.hero-text) {
   color: #09090b !important;
 }
-[data-theme="light"] .text-zinc-100,
-[data-theme="light"] .text-zinc-200,
-[data-theme="light"] .text-zinc-300 {
+[data-theme="light"] .text-zinc-100:not(.hero-subtext),
+[data-theme="light"] .text-zinc-200:not(.hero-subtext),
+[data-theme="light"] .text-zinc-300:not(.hero-subtext) {
   color: #18181b !important;
+}
+
+/* Hero & Media Overlays MUST ALWAYS have crisp pure white text in both light and dark modes */
+.hero-text,
+.hero-text *,
+[data-theme="light"] .hero-text,
+[data-theme="light"] .hero-text * {
+  color: #ffffff !important;
+}
+.hero-subtext,
+.hero-subtext *,
+[data-theme="light"] .hero-subtext,
+[data-theme="light"] .hero-subtext * {
+  color: #e4e4e7 !important;
 }
 [data-theme="light"] .text-zinc-400 {
   color: #52525b !important;
@@ -322,15 +336,57 @@ a:active,
 
 /* Form Controls & Inputs */
 [data-theme="light"] input[type="text"],
+[data-theme="light"] input[type="email"],
+[data-theme="light"] input[type="password"],
 [data-theme="light"] input[type="number"],
 [data-theme="light"] select,
 [data-theme="light"] textarea {
-  background-color: #ffffff !important;
+  background-color: #f1f1f5 !important;
   color: #09090b !important;
   border-color: #d4d4dc !important;
 }
 [data-theme="light"] input::placeholder {
   color: #a1a1aa !important;
+}
+
+/* Auth Submit Button High-Contrast Invert:
+   - Light Mode: Black Background (#09090b) with White Text (#ffffff)
+   - Dark Mode: White Background (#ffffff) with Black Text (#09090b)
+*/
+.auth-submit-btn,
+button.auth-submit-btn {
+  background-color: #ffffff !important;
+  color: #09090b !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+.auth-submit-btn *,
+button.auth-submit-btn * {
+  color: #09090b !important;
+}
+.auth-submit-btn:hover,
+button.auth-submit-btn:hover {
+  background-color: #f4f4f5 !important;
+}
+
+[data-theme="light"] .auth-submit-btn,
+[data-theme="light"] button.auth-submit-btn {
+  background-color: #09090b !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.2) !important;
+}
+[data-theme="light"] .auth-submit-btn *,
+[data-theme="light"] button.auth-submit-btn * {
+  color: #ffffff !important;
+}
+[data-theme="light"] .auth-submit-btn:hover,
+[data-theme="light"] button.auth-submit-btn:hover {
+  background-color: #27272a !important;
+}
+
+/* Light Mode Sign-In Pill Button Fallback */
+[data-theme="light"] button.bg-white:not(.auth-submit-btn) {
+  background-color: #09090b !important;
+  color: #ffffff !important;
 }
 
 /* Primary Crimson & Blue Accents */

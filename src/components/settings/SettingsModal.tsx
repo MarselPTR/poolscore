@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { useSettings } from '../../context/SettingsContext';
+import { useAuth } from '../../context/AuthContext';
 import type { TouchProtectionMode } from '../../types';
 import { db } from '../../db/database';
-import { Sun, Moon, Smartphone, Database, Download, Upload, Trash2, Check, Sliders, Shield } from 'lucide-react';
+import { Sun, Moon, Smartphone, Database, Download, Upload, Trash2, Check, Sliders, Shield, User, LogOut } from 'lucide-react';
+import { PlayerAvatar } from '../common/PlayerAvatar';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -12,6 +14,7 @@ interface SettingsModalProps {
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const { settings, updateSettings, resetSettings } = useSettings();
+  const { user, logout } = useAuth();
   const [copiedMsg, setCopiedMsg] = useState<string>('');
 
   const handleExportBackup = async () => {
@@ -73,6 +76,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     }
   };
 
+  const handleLogout = () => {
+    if (confirm('Keluar dari akun Anda saat ini?')) {
+      onClose();
+      logout();
+    }
+  };
+
   const isLight = settings.theme === 'light';
 
   return (
@@ -81,6 +91,37 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         {copiedMsg && (
           <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 font-medium flex items-center gap-2">
             <Check className="w-4 h-4" /> {copiedMsg}
+          </div>
+        )}
+
+        {/* 0. User Account Card */}
+        {user && (
+          <div>
+            <label className="block uppercase tracking-wider text-zinc-400 font-semibold mb-2 flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 text-zinc-400" /> Akun Pengguna Aktif
+            </label>
+            <div className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <PlayerAvatar name={user.name} size="md" />
+                <div>
+                  <div className="font-bold text-sm text-white">
+                    {user.name}
+                  </div>
+                  <div className="text-[11px] text-zinc-500">
+                    {user.email} · <span className="text-rose-400 font-medium">{user.role}</span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleLogout}
+                className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-rose-400 transition-colors flex items-center gap-1.5 font-semibold text-xs"
+                title="Keluar dari akun ini"
+              >
+                <LogOut className="w-3.5 h-3.5 shrink-0" />
+                <span>Keluar</span>
+              </button>
+            </div>
           </div>
         )}
 
@@ -245,6 +286,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             >
               <Trash2 className="w-4 h-4" /> Reset Database Lokal
             </button>
+          </div>
+        </div>
+
+        {/* 6. Copyright & Developer Credit */}
+        <div className="pt-3 border-t border-zinc-800/80 text-center space-y-1">
+          <div className="text-[11px] font-medium text-zinc-400">
+            &copy; {new Date().getFullYear()} PoolScore Championship Suite · Versi 1.0.0 Pro
+          </div>
+          <div className="text-[10px] text-zinc-500 font-mono">
+            Designed &amp; Engineered by <span className="text-rose-500 font-semibold">NugrahaTech Innovations</span>
           </div>
         </div>
       </div>

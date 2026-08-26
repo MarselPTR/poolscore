@@ -1,6 +1,8 @@
 import React from 'react';
-import { Settings, Home, History, Trophy, BarChart3, Building2, Tv, Sun, Moon } from 'lucide-react';
+import { Settings, Home, History, Trophy, BarChart3, Building2, Tv, Sun, Moon, LogOut } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
+import { useAuth } from '../../context/AuthContext';
+import { PlayerAvatar } from './PlayerAvatar';
 
 interface HeaderProps {
   currentTab: string;
@@ -16,6 +18,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenTV,
 }) => {
   const { isDarkMode, toggleTheme } = useSettings();
+  const { user, logout } = useAuth();
 
   const navItems = [
     { id: 'home', label: 'Home', icon: Home },
@@ -27,11 +30,11 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-xl select-none">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 h-14 flex items-center justify-between">
         {/* Brand Logo & Wordmark */}
         <div
           onClick={() => onSelectTab('home')}
-          className="flex items-center gap-3 cursor-pointer group"
+          className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group shrink-0"
         >
           <img
             src="/logo.png"
@@ -74,6 +77,25 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right Actions */}
         <div className="flex items-center gap-1.5">
+          {/* User Profile Pill */}
+          {user && (
+            <button
+              onClick={onOpenSettings}
+              className="hidden sm:flex items-center gap-2 py-1 px-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 transition-all text-left"
+              title="Profil Pengguna"
+            >
+              <PlayerAvatar name={user.name} size="xs" />
+              <div className="text-left leading-tight">
+                <div className="text-xs font-semibold text-white max-w-[80px] truncate">
+                  {user.name}
+                </div>
+                <div className="text-[9px] text-zinc-500 uppercase">
+                  {user.role}
+                </div>
+              </div>
+            </button>
+          )}
+
           {/* Quick Light / Dark Mode Toggle */}
           <button
             onClick={toggleTheme}
@@ -103,6 +125,21 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Settings className="w-4 h-4" />
           </button>
+
+          {/* Logout / Switch Account quick button */}
+          {user && (
+            <button
+              onClick={() => {
+                if (confirm('Keluar dari akun Anda?')) {
+                  logout();
+                }
+              }}
+              className="p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-500 hover:text-rose-400 border border-zinc-800 transition-all active:scale-95"
+              title="Keluar / Ganti Akun"
+            >
+              <LogOut className="w-4 h-4 shrink-0" />
+            </button>
+          )}
         </div>
       </div>
     </header>
