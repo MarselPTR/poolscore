@@ -5,6 +5,7 @@ import { calculateElo } from '../utils/elo';
 import { useLiveBroadcast } from '../hooks/useLiveSync';
 import { useSoundEffects } from '../hooks/useSoundEffects';
 import { useSettings } from './SettingsContext';
+import { syncMatchToSupabase, syncPlayerToSupabase, syncTournamentToSupabase } from '../services/supabaseService';
 import confetti from 'canvas-confetti';
 
 interface StartMatchParams {
@@ -55,7 +56,7 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [recentMatches, setRecentMatches] = useState<Match[]>([]);
 
   const { settings } = useSettings();
-  const { playBallHit, playRackWon, playMatchWon, playFoul } = useSoundEffects(
+  const { playPocketDrop, playBallHit, playRackWon, playMatchWon, playFoul } = useSoundEffects(
     settings.soundEnabled,
     settings.soundVolume,
     settings.vibrationEnabled
@@ -332,14 +333,30 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             currentTMatch.player2Score = s2;
             currentTMatch.winnerName = match.winner === 1 ? match.player1.name : match.player2.name;
 
-            // Advance winner to next round match if nextMatchIndex exists
+            // Advance winner to next round match
             if (currentTMatch.nextMatchIndex !== undefined && t.matches[currentTMatch.nextMatchIndex]) {
               const nextM = t.matches[currentTMatch.nextMatchIndex];
-              if (!nextM.player1Name) {
+              if (!nextM.player1Name || nextM.player1Name.startsWith('Pemenang') || nextM.player1Name.startsWith('Juara')) {
                 nextM.player1Name = currentTMatch.winnerName;
-              } else if (!nextM.player2Name) {
+              } else if (!nextM.player2Name || nextM.player2Name.startsWith('Pemenang') || nextM.player2Name.startsWith('Juara')) {
                 nextM.player2Name = currentTMatch.winnerName;
+              }
+              if (nextM.player1Name && nextM.player2Name && !nextM.player1Name.startsWith('Pemenang') && !nextM.player2Name.startsWith('Pemenang')) {
                 nextM.status = 'ready';
+              }
+            }
+
+            // For Double Elimination: Advance loser to losers bracket
+            if (currentTMatch.nextLoserMatchIndex !== undefined && t.matches[currentTMatch.nextLoserMatchIndex]) {
+              const loserName = match.winner === 1 ? match.player2.name : match.player1.name;
+              const loserM = t.matches[currentTMatch.nextLoserMatchIndex];
+              if (!loserM.player1Name || loserM.player1Name.startsWith('Kalah') || loserM.player1Name.startsWith('Pemenang')) {
+                loserM.player1Name = loserName;
+              } else if (!loserM.player2Name || loserM.player2Name.startsWith('Kalah') || loserM.player2Name.startsWith('Pemenang')) {
+                loserM.player2Name = loserName;
+              }
+              if (loserM.player1Name && loserM.player2Name && !loserM.player1Name.startsWith('Kalah') && !loserM.player2Name.startsWith('Kalah')) {
+                loserM.status = 'ready';
               }
             }
 
@@ -353,9 +370,17 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             }
 
             await db.tournaments.put(t);
+            syncTournamentToSupabase(t).catch(() => {});
           }
         }
       }
+
+      // Sync to Supabase in background
+      syncMatchToSupabase(finalMatch).catch(() => {});
+      const p1Latest = await db.players.where('name').equalsIgnoreCase(match.player1.name).first();
+      if (p1Latest) syncPlayerToSupabase(p1Latest).catch(() => {});
+      const p2Latest = await db.players.where('name').equalsIgnoreCase(match.player2.name).first();
+      if (p2Latest) syncPlayerToSupabase(p2Latest).catch(() => {});
 
       await refreshRecentMatches();
     } catch {
@@ -761,7 +786,11 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       events: [...activeMatch.events, newEvent],
     });
 
-    playBallHit();
+    if (delta > 0) {
+      playPocketDrop();
+    } else {
+      playBallHit();
+    }
   };
 
   // Toggle Timer Pause

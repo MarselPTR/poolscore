@@ -88,9 +88,14 @@ export const ScoreboardLandscape: React.FC<ScoreboardLandscapeProps> = ({
 
       {/* Set Won Celebration Toast/Banner */}
       {setWonAlert && (
-        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-40 bg-amber/95 text-black px-6 py-2.5 rounded-2xl font-mono font-bold text-sm shadow-2xl animate-bounce border-2 border-white flex items-center gap-3">
-          <span>{setWonAlert.text}</span>
-          <span className="bg-black/20 px-2 py-0.5 rounded text-xs">{setWonAlert.setScoreText}</span>
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-40 bg-zinc-950/95 border-2 border-amber-400 text-amber-300 px-6 py-2.5 rounded-2xl font-mono font-bold text-sm shadow-2xl animate-bounce flex items-center gap-3 shadow-amber-950/50">
+          <span className="flex items-center gap-2">
+            <span className="text-base">🏆</span>
+            <span className="text-white font-bold">{setWonAlert.text}</span>
+          </span>
+          <span className="bg-amber-400/20 text-amber-300 border border-amber-400/40 px-2.5 py-0.5 rounded-lg text-xs font-black">
+            {setWonAlert.setScoreText}
+          </span>
         </div>
       )}
 

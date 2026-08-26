@@ -1,23 +1,25 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
+import { useToast } from '../../context/ToastContext';
 import {
   Mail,
-  User,
   Eye,
   EyeOff,
+  User,
   ArrowRight,
-  Zap,
   Sun,
   Moon,
   Sparkles,
-  CheckCircle2,
   Phone,
+  CheckCircle2,
+  Zap,
 } from 'lucide-react';
 
 export const AuthView: React.FC = () => {
   const { login, register, loginAsGuest } = useAuth();
   const { isDarkMode, toggleTheme } = useSettings();
+  const { warning, info } = useToast();
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone' | 'username'>('email');
@@ -46,9 +48,12 @@ export const AuthView: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await login(identifier, password);
+      const res = await login(identifier, password);
+      if (!res.success) {
+        setErrorMsg(res.error || 'Gagal masuk. Periksa kembali akun dan kata sandi Anda.');
+      }
     } catch {
-      setErrorMsg('Gagal masuk. Periksa kembali akun dan kata sandi Anda.');
+      setErrorMsg('Gagal masuk. Periksa kembali koneksi internet Anda.');
     } finally {
       setIsLoading(false);
     }
@@ -65,17 +70,24 @@ export const AuthView: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await register(fullName, regIdentifier, password, role);
-      setSuccessMsg('Pendaftaran berhasil! Mengarahkan ke dashboard...');
+      const res = await register(fullName, regIdentifier, password, role);
+      if (!res.success) {
+        setErrorMsg(res.error || 'Gagal mendaftar. Coba lagi.');
+      } else {
+        setSuccessMsg('Pendaftaran berhasil! Mengarahkan ke dashboard...');
+      }
     } catch {
-      setErrorMsg('Gagal mendaftar. Coba lagi.');
+      setErrorMsg('Gagal mendaftar. Periksa kembali koneksi internet Anda.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleGoogleLogin = () => {
-    login('Pemain Google (Google User)', 'google-oauth');
+    warning(
+      'Fitur Dalam Pengembangan',
+      'Login Google OAuth saat ini sedang dalam tahap pengembangan & integrasi. Silakan masuk menggunakan Email, Username, atau tombol Masuk Cepat sebagai Tamu.'
+    );
   };
 
   return (
@@ -290,7 +302,12 @@ export const AuthView: React.FC = () => {
                 <div className="text-right mt-1 pr-1">
                   <button
                     type="button"
-                    onClick={() => alert('Petunjuk reset kata sandi telah dikirim ke akun terdaftar Anda.')}
+                    onClick={() =>
+                      info(
+                        'Informasi Reset Kata Sandi',
+                        'Petunjuk pemulihan kata sandi telah dikirimkan ke email atau akun Anda.'
+                      )
+                    }
                     className="text-[11px] text-text-dim hover:text-rose-500 font-medium transition-colors"
                   >
                     Forgot Password?

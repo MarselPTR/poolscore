@@ -82,9 +82,14 @@ export const ScoreboardPortrait: React.FC<ScoreboardPortraitProps> = ({
 
       {/* Set Won Toast */}
       {setWonAlert && (
-        <div className="mx-3 mt-2 bg-amber/95 text-black px-4 py-2.5 rounded-2xl font-mono font-bold text-xs shadow-xl animate-bounce border-2 border-white flex items-center justify-between">
-          <span>{setWonAlert.text}</span>
-          <span className="bg-black/20 px-2 py-0.5 rounded text-[11px]">{setWonAlert.setScoreText}</span>
+        <div className="mx-3 mt-2 bg-zinc-950/95 border-2 border-amber-400 text-amber-300 px-4 py-2.5 rounded-2xl font-mono font-bold text-xs shadow-xl animate-bounce flex items-center justify-between shadow-amber-950/50">
+          <span className="flex items-center gap-2">
+            <span className="text-base">🏆</span>
+            <span className="text-white font-bold">{setWonAlert.text}</span>
+          </span>
+          <span className="bg-amber-400/20 text-amber-300 border border-amber-400/40 px-2 py-0.5 rounded text-[11px] font-black">
+            {setWonAlert.setScoreText}
+          </span>
         </div>
       )}
 

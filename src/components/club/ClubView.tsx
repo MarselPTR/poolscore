@@ -121,11 +121,10 @@ export const ClubView: React.FC<ClubViewProps> = ({
             return (
               <div
                 key={table.id}
-                className={`p-4 rounded-2xl border transition-all ${
-                  isLive
+                className={`p-4 rounded-2xl border transition-all ${isLive
                     ? 'border-rose-500/40 bg-zinc-900 shadow-sm'
                     : 'border-zinc-800 bg-zinc-900/60 hover:border-zinc-700'
-                }`}
+                  }`}
               >
                 {/* Table Header */}
                 <div className="flex items-center justify-between mb-3">
@@ -135,11 +134,10 @@ export const ClubView: React.FC<ClubViewProps> = ({
                   </span>
 
                   <span
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase ${
-                      isLive
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase ${isLive
                         ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
                         : 'bg-zinc-800 text-zinc-400'
-                    }`}
+                      }`}
                   >
                     {isLive ? 'LIVE' : 'KOSONG'}
                   </span>

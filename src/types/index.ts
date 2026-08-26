@@ -132,11 +132,15 @@ export interface Player {
   updatedAt: number;
 }
 
+export type TournamentFormat = 'Single Elimination' | 'Double Elimination' | 'Round Robin';
+
 export interface TournamentMatch {
   id: string;
   tournamentId: string;
   round: number;
   matchIndex: number;
+  bracketType?: 'winners' | 'losers' | 'finals' | 'group';
+  groupName?: string;
   player1Name: string;
   player2Name: string;
   player1Score?: number;
@@ -144,19 +148,32 @@ export interface TournamentMatch {
   winnerName?: string;
   status: 'pending' | 'ready' | 'in_progress' | 'completed';
   nextMatchIndex?: number;
+  nextLoserMatchIndex?: number;
+}
+
+export interface TournamentGroupStanding {
+  groupName: string;
+  playerName: string;
+  played: number;
+  won: number;
+  lost: number;
+  rackWon: number;
+  rackLost: number;
+  points: number;
 }
 
 export interface Tournament {
   id: string;
   name: string;
   gameType: GameType;
-  format: 'Single Elimination' | 'Double Elimination' | 'Round Robin';
+  format: TournamentFormat;
   raceTo: number;
   targetSets?: number;
   status: 'draft' | 'in_progress' | 'completed';
   players: string[];
   matches: TournamentMatch[];
   winnerName?: string;
+  runnerUpName?: string;
   createdAt: number;
 }
 

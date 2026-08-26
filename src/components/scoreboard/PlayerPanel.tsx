@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { MatchPlayer } from '../../types';
 import { useSettings } from '../../context/SettingsContext';
-import { Plus, Minus, Check, Layers } from 'lucide-react';
+import { Minus, Check, Layers } from 'lucide-react';
 import { PlayerAvatar } from '../common/PlayerAvatar';
 
 interface PlayerPanelProps {
@@ -202,21 +202,8 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
         )}
       </div>
 
-      {/* Center Section: Tabular Score Numerals with Tactile Minus / Plus */}
+      {/* Center Section: Tabular Score Numerals with Tactile Minus Correction Only */}
       <div className="relative flex items-center justify-center my-auto py-2 z-10 w-full">
-        {/* Subtle manual minus button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onAdjustScore(-1);
-          }}
-          disabled={player.score <= 0 || isGameFinished}
-          title="Kurangi 1 poin"
-          className="opacity-0 group-hover:opacity-100 p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-all active:scale-90 disabled:opacity-0 mr-3 z-20 shadow-sm"
-        >
-          <Minus className="w-4 h-4 sm:w-5 sm:h-5" />
-        </button>
-
         {/* Giant Crisp Tabular Score Numeral */}
         <div
           className={`font-mono font-black font-tabular tracking-tight leading-none transition-all duration-150 pointer-events-none ${scoreSizeClass} ${
@@ -232,18 +219,19 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
           {player.score}
         </div>
 
-        {/* Subtle manual plus button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onAdjustScore(1);
-          }}
-          disabled={isGameFinished}
-          title="Tambah 1 poin"
-          className="opacity-0 group-hover:opacity-100 p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-all active:scale-90 disabled:opacity-0 ml-3 z-20 shadow-sm"
-        >
-          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-        </button>
+        {/* Tactile Manual Minus Correction Button (No Plus button) */}
+        {player.score > 0 && !isGameFinished && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAdjustScore(-1);
+            }}
+            title="Koreksi: Kurangi 1 poin (-1)"
+            className="absolute right-2 sm:right-4 p-2 sm:p-2.5 rounded-xl bg-zinc-800/90 hover:bg-rose-500/20 hover:border-rose-500/40 border border-zinc-700/80 text-zinc-300 hover:text-rose-400 transition-all active:scale-90 z-20 shadow-md flex items-center justify-center"
+          >
+            <Minus className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+        )}
       </div>
 
       {/* Bottom Area: Turn Cue & Action Target */}

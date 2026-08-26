@@ -26,6 +26,88 @@ export function useSoundEffects(soundEnabled: boolean = true, volume: number = 0
     }
   }, [vibrationEnabled]);
 
+  // Realistic Acoustic Billiard Ball Pocket Drop Sound FX (Ball dropping into cloth & leather pocket)
+  const playPocketDrop = useCallback(() => {
+    if (!soundEnabled) return;
+    try {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+
+      const now = ctx.currentTime;
+
+      // 1. Heavy ball acoustic thud / drop resonance (phenolic ball landing in pocket net)
+      const oscThud = ctx.createOscillator();
+      const gainThud = ctx.createGain();
+      const filterThud = ctx.createBiquadFilter();
+
+      oscThud.type = 'sine';
+      oscThud.frequency.setValueAtTime(160, now);
+      oscThud.frequency.exponentialRampToValueAtTime(55, now + 0.09);
+
+      filterThud.type = 'lowpass';
+      filterThud.frequency.setValueAtTime(350, now);
+
+      gainThud.gain.setValueAtTime(0.01, now);
+      gainThud.gain.linearRampToValueAtTime(0.7 * volume, now + 0.008);
+      gainThud.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+      oscThud.connect(filterThud);
+      filterThud.connect(gainThud);
+      gainThud.connect(ctx.destination);
+
+      oscThud.start(now);
+      oscThud.stop(now + 0.15);
+
+      // 2. Leather & cloth friction impact (crisp pocket rattle)
+      const bufferSize = ctx.sampleRate * 0.08;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const output = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.018));
+      }
+
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+
+      const noiseFilter = ctx.createBiquadFilter();
+      noiseFilter.type = 'bandpass';
+      noiseFilter.frequency.setValueAtTime(1400, now);
+      noiseFilter.Q.setValueAtTime(3.5, now);
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.45 * volume, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+
+      noise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+
+      noise.start(now);
+      noise.stop(now + 0.08);
+
+      // 3. Secondary subtle ball settling rattle
+      const oscSettle = ctx.createOscillator();
+      const gainSettle = ctx.createGain();
+      oscSettle.type = 'triangle';
+      oscSettle.frequency.setValueAtTime(110, now + 0.04);
+      oscSettle.frequency.exponentialRampToValueAtTime(40, now + 0.12);
+
+      gainSettle.gain.setValueAtTime(0.01, now + 0.04);
+      gainSettle.gain.linearRampToValueAtTime(0.3 * volume, now + 0.045);
+      gainSettle.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+
+      oscSettle.connect(gainSettle);
+      gainSettle.connect(ctx.destination);
+
+      oscSettle.start(now + 0.04);
+      oscSettle.stop(now + 0.14);
+
+      triggerVibration([40, 20, 60]);
+    } catch {
+      // ignore
+    }
+  }, [soundEnabled, volume, getAudioContext, triggerVibration]);
+
   // Ball collision click (Phenolic resin contact sound)
   const playBallHit = useCallback(() => {
     if (!soundEnabled) return;
@@ -61,69 +143,16 @@ export function useSoundEffects(soundEnabled: boolean = true, volume: number = 0
     }
   }, [soundEnabled, volume, getAudioContext, triggerVibration]);
 
-  // Rack Win Chime
+  // Rack Win Chime - plays realistic pocket drop
   const playRackWon = useCallback(() => {
-    if (!soundEnabled) return;
-    try {
-      const ctx = getAudioContext();
-      if (!ctx) return;
+    playPocketDrop();
+  }, [playPocketDrop]);
 
-      const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
-      notes.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.08);
-
-        gain.gain.setValueAtTime(0.01, ctx.currentTime + idx * 0.08);
-        gain.gain.linearRampToValueAtTime(0.35 * volume, ctx.currentTime + idx * 0.08 + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.08 + 0.4);
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-
-        osc.start(ctx.currentTime + idx * 0.08);
-        osc.stop(ctx.currentTime + idx * 0.08 + 0.45);
-      });
-
-      triggerVibration([50, 40, 80]);
-    } catch {
-      // ignore
-    }
-  }, [soundEnabled, volume, getAudioContext, triggerVibration]);
-
-  // Match Victory Fanfare
+  // Match Victory: Disabled fanfare sound as requested by user
   const playMatchWon = useCallback(() => {
-    if (!soundEnabled) return;
-    try {
-      const ctx = getAudioContext();
-      if (!ctx) return;
-
-      const chord = [523.25, 659.25, 783.99, 1046.50]; // C Major arpeggio
-      chord.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.12);
-
-        gain.gain.setValueAtTime(0.01, ctx.currentTime + idx * 0.12);
-        gain.gain.linearRampToValueAtTime(0.4 * volume, ctx.currentTime + idx * 0.12 + 0.04);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.12 + 0.8);
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-
-        osc.start(ctx.currentTime + idx * 0.12);
-        osc.stop(ctx.currentTime + idx * 0.12 + 0.85);
-      });
-
-      triggerVibration([100, 50, 100, 50, 200]);
-    } catch {
-      // ignore
-    }
-  }, [soundEnabled, volume, getAudioContext, triggerVibration]);
+    // Intentionally silent per user request ("tapi kalau sound kemenangan tidak usah!")
+    triggerVibration([80, 40, 100]);
+  }, [triggerVibration]);
 
   // Foul Buzzer
   const playFoul = useCallback(() => {
@@ -184,11 +213,12 @@ export function useSoundEffects(soundEnabled: boolean = true, volume: number = 0
   }, [soundEnabled, volume, getAudioContext, triggerVibration]);
 
   return {
+    playPocketDrop,
     playBallHit,
     playRackWon,
     playMatchWon,
     playFoul,
     playButtonClick,
-    triggerVibration
+    triggerVibration,
   };
 }

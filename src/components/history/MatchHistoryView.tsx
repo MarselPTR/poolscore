@@ -93,11 +93,10 @@ export const MatchHistoryView: React.FC<MatchHistoryViewProps> = ({ onOpenShareC
             <button
               key={g}
               onClick={() => setSelectedGame(g)}
-              className={`px-3 py-1.5 rounded-lg border text-xs font-semibold uppercase tracking-wider transition-all shrink-0 ${
-                selectedGame === g
+              className={`px-3 py-1.5 rounded-lg border text-xs font-semibold uppercase tracking-wider transition-all shrink-0 ${selectedGame === g
                   ? 'border-rose-500 bg-rose-600 text-white shadow-sm'
                   : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white'
-              }`}
+                }`}
             >
               {g}
             </button>

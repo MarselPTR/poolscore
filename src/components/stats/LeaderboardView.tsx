@@ -90,31 +90,28 @@ export const LeaderboardView: React.FC = () => {
         <div className="grid grid-cols-3 gap-1.5 w-full">
           <button
             onClick={() => setSortBy('rating')}
-            className={`py-2 px-1 text-center rounded-xl border text-[11px] sm:text-xs font-semibold uppercase tracking-wider transition-all truncate ${
-              sortBy === 'rating'
+            className={`py-2 px-1 text-center rounded-xl border text-[11px] sm:text-xs font-semibold uppercase tracking-wider transition-all truncate ${sortBy === 'rating'
                 ? 'border-rose-500 bg-rose-600 text-white shadow-sm'
                 : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white'
-            }`}
+              }`}
           >
             Rating Elo
           </button>
           <button
             onClick={() => setSortBy('winRate')}
-            className={`py-2 px-1 text-center rounded-xl border text-[11px] sm:text-xs font-semibold uppercase tracking-wider transition-all truncate ${
-              sortBy === 'winRate'
+            className={`py-2 px-1 text-center rounded-xl border text-[11px] sm:text-xs font-semibold uppercase tracking-wider transition-all truncate ${sortBy === 'winRate'
                 ? 'border-rose-500 bg-rose-600 text-white shadow-sm'
                 : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white'
-            }`}
+              }`}
           >
             Win Rate
           </button>
           <button
             onClick={() => setSortBy('matches')}
-            className={`py-2 px-1 text-center rounded-xl border text-[11px] sm:text-xs font-semibold uppercase tracking-wider transition-all truncate ${
-              sortBy === 'matches'
+            className={`py-2 px-1 text-center rounded-xl border text-[11px] sm:text-xs font-semibold uppercase tracking-wider transition-all truncate ${sortBy === 'matches'
                 ? 'border-rose-500 bg-rose-600 text-white shadow-sm'
                 : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white'
-            }`}
+              }`}
           >
             Total Match
           </button>
