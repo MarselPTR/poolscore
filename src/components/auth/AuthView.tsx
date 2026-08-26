@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
 import { useToast } from '../../context/ToastContext';
+import { ForgotPasswordModal } from './ForgotPasswordModal';
+import { ResetPasswordDirectModal } from './ResetPasswordDirectModal';
 import {
   Mail,
   Eye,
@@ -19,12 +21,13 @@ import {
 export const AuthView: React.FC = () => {
   const { login, register, loginAsGuest } = useAuth();
   const { isDarkMode, toggleTheme } = useSettings();
-  const { warning, info } = useToast();
+  const { warning } = useToast();
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone' | 'username'>('email');
   const [regMethod, setRegMethod] = useState<'email' | 'phone'>('email');
   const [showPassword, setShowPassword] = useState(false);
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
 
   // Form Fields
   const [identifier, setIdentifier] = useState('');
@@ -302,12 +305,7 @@ export const AuthView: React.FC = () => {
                 <div className="text-right mt-1 pr-1">
                   <button
                     type="button"
-                    onClick={() =>
-                      info(
-                        'Informasi Reset Kata Sandi',
-                        'Petunjuk pemulihan kata sandi telah dikirimkan ke email atau akun Anda.'
-                      )
-                    }
+                    onClick={() => setIsForgotModalOpen(true)}
                     className="text-[11px] text-text-dim hover:text-rose-500 font-medium transition-colors"
                   >
                     Forgot Password?
@@ -534,6 +532,15 @@ export const AuthView: React.FC = () => {
         </div>
       </div>
 
+      {/* Forgot Password Link Modal */}
+      <ForgotPasswordModal
+        isOpen={isForgotModalOpen}
+        onClose={() => setIsForgotModalOpen(false)}
+        initialEmail={identifier}
+      />
+
+      {/* Direct Password Reset Modal from Email Link */}
+      <ResetPasswordDirectModal />
     </div>
   );
 };

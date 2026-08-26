@@ -16,6 +16,8 @@ interface AuthContextType {
   user: UserProfile | null;
   isAuthenticated: boolean;
   isSupabaseOnline: boolean;
+  isPasswordRecoveryMode: boolean;
+  setIsPasswordRecoveryMode: (val: boolean) => void;
   login: (emailOrName: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   register: (
@@ -24,6 +26,14 @@ interface AuthContextType {
     password?: string,
     role?: 'Pemain' | 'Wasit' | 'Pengelola Club'
   ) => Promise<{ success: boolean; error?: string }>;
+  sendPasswordResetLink: (email: string) => Promise<{ success: boolean; error?: string }>;
+  sendPasswordResetOtp: (email: string) => Promise<{ success: boolean; error?: string }>;
+  verifyOtpAndResetPassword: (
+    email: string,
+    otp: string,
+    newPassword: string
+  ) => Promise<{ success: boolean; error?: string }>;
+  updateUserPassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
   loginAsGuest: () => void;
   logout: () => Promise<void>;
 }
@@ -51,6 +61,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   });
 
+  const [isPasswordRecoveryMode, setIsPasswordRecoveryMode] = useState<boolean>(() => {
+    return (
+      window.location.hash.includes('type=recovery') ||
+      window.location.search.includes('type=recovery')
+    );
+  });
+
   // Listen to Supabase Auth state changes if configured
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -72,7 +89,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsPasswordRecoveryMode(true);
+      }
+
       if (session?.user) {
         const u = session.user;
         const meta = u.user_metadata || {};
@@ -120,7 +141,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         if (error) {
-          // If invalid credentials in Supabase, translate user friendly message
           let friendlyError = error.message;
           if (error.message.toLowerCase().includes('invalid login credentials')) {
             friendlyError = 'Email/Username atau kata sandi tidak cocok.';
@@ -245,7 +265,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           };
           setUser(profile);
 
-          // Also upsert profile directly into public.profiles
           try {
             await supabase.from('profiles').upsert({
               id: data.user.id,
@@ -281,6 +300,125 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: true };
   };
 
+  // Send Password Reset Link Email (Default Supabase Link)
+  const sendPasswordResetLink = async (emailOrUsername: string): Promise<{ success: boolean; error?: string }> => {
+    const email = normalizeAuthEmail(emailOrUsername);
+
+    if (isSupabaseConfigured) {
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/#type=recovery`,
+        });
+
+        if (error) {
+          let friendly = error.message;
+          if (error.message.toLowerCase().includes('rate limit')) {
+            friendly = 'Batas pengiriman email tercapai. Coba beberapa saat lagi.';
+          } else if (error.message.toLowerCase().includes('error sending') || error.message.toLowerCase().includes('smtp')) {
+            friendly = 'Gagal mengirim email. Pastikan toggle Custom SMTP di Supabase Anda sudah di-OFF / nonaktifkan agar kembali memakai server bawaan Supabase.';
+          }
+          return { success: false, error: friendly };
+        }
+
+        return { success: true };
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Gagal mengirim email reset kata sandi.';
+        return { success: false, error: msg };
+      }
+    }
+
+    return { success: true };
+  };
+
+  // Send Password Reset OTP Email
+  const sendPasswordResetOtp = async (emailOrUsername: string): Promise<{ success: boolean; error?: string }> => {
+    return sendPasswordResetLink(emailOrUsername);
+  };
+
+  // Verify OTP and Update Password
+  const verifyOtpAndResetPassword = async (
+    emailOrUsername: string,
+    otp: string,
+    newPassword: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    const email = normalizeAuthEmail(emailOrUsername);
+
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error: verifyError } = await supabase.auth.verifyOtp({
+          email,
+          token: otp.trim(),
+          type: 'recovery',
+        });
+
+        if (verifyError) {
+          let friendly = verifyError.message;
+          if (verifyError.message.toLowerCase().includes('invalid') || verifyError.message.toLowerCase().includes('expired')) {
+            friendly = 'Kode OTP tidak valid atau telah kedaluwarsa. Silakan periksa kembali email Anda.';
+          }
+          return { success: false, error: friendly };
+        }
+
+        const { error: updateError } = await supabase.auth.updateUser({
+          password: newPassword,
+        });
+
+        if (updateError) {
+          return { success: false, error: updateError.message };
+        }
+
+        if (data.user) {
+          const meta = data.user.user_metadata || {};
+          const profile: UserProfile = {
+            id: data.user.id,
+            name: meta.full_name || meta.name || email.split('@')[0],
+            email: data.user.email || email,
+            role: meta.role || 'Pemain',
+            rating: meta.rating || 1400,
+            avatarColor: '#e11d48',
+            isGuest: false,
+          };
+          setUser(profile);
+        }
+
+        return { success: true };
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Gagal memverifikasi dan mengganti kata sandi.';
+        return { success: false, error: msg };
+      }
+    }
+
+    return { success: true };
+  };
+
+  // Directly update password (used after user clicks reset link from email)
+  const updateUserPassword = async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    if (isSupabaseConfigured) {
+      try {
+        const { error } = await supabase.auth.updateUser({
+          password: newPassword,
+        });
+
+        if (error) {
+          return { success: false, error: error.message };
+        }
+
+        setIsPasswordRecoveryMode(false);
+        // Clean url hash
+        if (window.location.hash) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+        return { success: true };
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Gagal menyimpan kata sandi baru.';
+        return { success: false, error: msg };
+      }
+    }
+
+    setIsPasswordRecoveryMode(false);
+    return { success: true };
+  };
+
   const loginAsGuest = () => {
     const guestUser: UserProfile = {
       id: 'guest_user',
@@ -312,9 +450,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         isAuthenticated: !!user,
         isSupabaseOnline: isSupabaseConfigured,
+        isPasswordRecoveryMode,
+        setIsPasswordRecoveryMode,
         login,
         loginWithGoogle,
         register,
+        sendPasswordResetLink,
+        sendPasswordResetOtp,
+        verifyOtpAndResetPassword,
+        updateUserPassword,
         loginAsGuest,
         logout,
       }}
