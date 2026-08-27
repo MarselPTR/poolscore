@@ -4,6 +4,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 export interface UserProfile {
   id: string;
   name: string;
+  username?: string;
   email: string;
   phone?: string;
   role: 'Pemain' | 'Wasit' | 'Pengelola Club';
@@ -24,7 +25,8 @@ interface AuthContextType {
     name: string,
     emailOrPhone: string,
     password?: string,
-    role?: 'Pemain' | 'Wasit' | 'Pengelola Club'
+    role?: 'Pemain' | 'Wasit' | 'Pengelola Club',
+    username?: string
   ) => Promise<{ success: boolean; error?: string }>;
   sendPasswordResetLink: (email: string) => Promise<{ success: boolean; error?: string }>;
   sendPasswordResetOtp: (email: string) => Promise<{ success: boolean; error?: string }>;
@@ -79,6 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const profile: UserProfile = {
           id: u.id,
           name: meta.full_name || meta.name || u.email?.split('@')[0] || 'Player',
+          username: meta.username || u.email?.split('@')[0],
           email: u.email || '',
           role: meta.role || 'Pemain',
           rating: meta.rating || 1400,
@@ -100,6 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const profile: UserProfile = {
           id: u.id,
           name: meta.full_name || meta.name || u.email?.split('@')[0] || 'Player',
+          username: meta.username || u.email?.split('@')[0],
           email: u.email || '',
           role: meta.role || 'Pemain',
           rating: meta.rating || 1400,
@@ -133,10 +137,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (emailOrName: string, password?: string): Promise<{ success: boolean; error?: string }> => {
     if (isSupabaseConfigured && password) {
       try {
-        const email = normalizeAuthEmail(emailOrName);
+        let targetEmail = emailOrName.trim().toLowerCase();
+
+        // If not standard email format, resolve email from profiles table by username, name, or phone
+        if (!targetEmail.includes('@') || !targetEmail.includes('.')) {
+          const clean = emailOrName.trim();
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('email')
+              .or(`username.ilike.${clean},name.ilike.${clean},phone.eq.${clean}`)
+              .maybeSingle();
+
+            if (profile?.email) {
+              targetEmail = profile.email;
+            } else {
+              targetEmail = normalizeAuthEmail(clean);
+            }
+          } catch {
+            targetEmail = normalizeAuthEmail(clean);
+          }
+        }
 
         const { data, error } = await supabase.auth.signInWithPassword({
-          email,
+          email: targetEmail,
           password,
         });
 
@@ -152,10 +176,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (data.user) {
           const meta = data.user.user_metadata || {};
+          const userEmail = data.user.email || targetEmail;
           const profile: UserProfile = {
             id: data.user.id,
-            name: meta.full_name || meta.name || email.split('@')[0],
-            email: data.user.email || email,
+            name: meta.full_name || meta.name || userEmail.split('@')[0],
+            username: meta.username || userEmail.split('@')[0],
+            email: userEmail,
             role: meta.role || 'Pemain',
             rating: meta.rating || 1400,
             avatarColor: '#e11d48',
@@ -177,6 +203,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const loggedUser: UserProfile = {
       id: `usr_${Date.now()}`,
       name: formattedName,
+      username: emailOrName.includes('@') ? emailOrName.split('@')[0] : emailOrName,
       email: normalizeAuthEmail(emailOrName),
       role: 'Pemain',
       rating: 1400,
@@ -209,6 +236,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const googleUser: UserProfile = {
       id: `google_user_${Date.now()}`,
       name: 'Google Player',
+      username: 'google_player',
       email: 'player@gmail.com',
       role: 'Pemain',
       rating: 1400,
@@ -224,7 +252,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     name: string,
     emailOrPhone: string,
     password?: string,
-    role: 'Pemain' | 'Wasit' | 'Pengelola Club' = 'Pemain'
+    role: 'Pemain' | 'Wasit' | 'Pengelola Club' = 'Pemain',
+    username?: string
   ): Promise<{ success: boolean; error?: string }> => {
     const email = normalizeAuthEmail(emailOrPhone);
 
@@ -236,6 +265,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           options: {
             data: {
               full_name: name.trim(),
+              username: username ? username.trim() : undefined,
               role,
             },
           },
@@ -244,9 +274,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (error) {
           let friendlyError = error.message;
           if (error.message.toLowerCase().includes('password should be at least')) {
-            friendlyError = 'Kata sandi minimal 6 karakter.';
+            friendlyError = 'Kata sandi minimal 8 karakter agar akun lebih aman.';
           } else if (error.message.toLowerCase().includes('user already registered')) {
-            friendlyError = 'Email / Username ini sudah terdaftar. Silakan klik Masuk (Sign In).';
+            friendlyError = 'Email / Nomor HP / Username ini sudah terdaftar. Silakan klik Masuk (Sign In).';
           } else if (error.message.toLowerCase().includes('rate limit')) {
             friendlyError = 'Batas email Supabase tercapai. Buka tab Supabase di browser Anda dan matikan "Confirm email" agar pendaftaran instan tanpa batas email.';
           }
@@ -257,6 +287,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const profile: UserProfile = {
             id: data.user.id,
             name: name.trim() || 'Player',
+            username: username ? username.trim() : undefined,
             email: data.user.email || email,
             role,
             rating: 1400,
@@ -269,6 +300,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await supabase.from('profiles').upsert({
               id: data.user.id,
               name: name.trim(),
+              username: username ? username.trim() : undefined,
               email,
               role,
               rating: 1400,

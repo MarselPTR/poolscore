@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Match } from '../../types';
 import { db } from '../../db/database';
+import { pullInitialDataFromSupabase } from '../../services/supabaseService';
 import { formatSeconds, formatTimestampDate, getRelativeGroup } from '../../utils/time';
 import { MatchDetailModal } from './MatchDetailModal';
 import { PlayerAvatar } from '../common/PlayerAvatar';
@@ -18,11 +19,21 @@ export const MatchHistoryView: React.FC<MatchHistoryViewProps> = ({ onOpenShareC
 
   const fetchMatches = async () => {
     try {
-      const all = await db.matches
+      let all = await db.matches
         .where('status')
         .equals('finished')
         .reverse()
         .sortBy('startedAt');
+
+      if (all.length === 0) {
+        await pullInitialDataFromSupabase();
+        all = await db.matches
+          .where('status')
+          .equals('finished')
+          .reverse()
+          .sortBy('startedAt');
+      }
+
       setMatches(all);
     } catch {
       // ignore

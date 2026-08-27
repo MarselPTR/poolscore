@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { Match, Tournament, Player, ClubTable } from '../types';
+import { db } from '../db/database';
 
 // =====================================================================
 // MATCHES SYNC SERVICE
@@ -44,7 +45,7 @@ export async function syncMatchToSupabase(match: Match): Promise<void> {
   }
 }
 
-export async function fetchMatchesFromSupabase(limit = 20): Promise<Match[]> {
+export async function fetchMatchesFromSupabase(limit = 100): Promise<Match[]> {
   if (!isSupabaseConfigured) return [];
 
   try {
@@ -183,6 +184,36 @@ export async function syncTournamentToSupabase(tournament: Tournament): Promise<
   }
 }
 
+export async function fetchTournamentsFromSupabase(): Promise<Tournament[]> {
+  if (!isSupabaseConfigured) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('tournaments')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error || !data) return [];
+
+    return data.map((d) => ({
+      id: d.id,
+      name: d.name,
+      gameType: d.game_type,
+      format: d.format,
+      raceTo: d.race_to,
+      targetSets: d.target_sets || 1,
+      status: d.status,
+      players: d.players || [],
+      matches: d.matches || [],
+      winnerName: d.winner_name,
+      runnerUpName: d.runner_up_name,
+      createdAt: Number(d.created_at),
+    }));
+  } catch {
+    return [];
+  }
+}
+
 // =====================================================================
 // CLUB TABLES SYNC SERVICE
 // =====================================================================
@@ -206,6 +237,70 @@ export async function syncClubTableToSupabase(table: ClubTable): Promise<void> {
     };
 
     await supabase.from('club_tables').upsert(payload, { onConflict: 'id' });
+  } catch {
+    // Fail silently
+  }
+}
+
+export async function fetchClubTablesFromSupabase(): Promise<ClubTable[]> {
+  if (!isSupabaseConfigured) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('club_tables')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (error || !data) return [];
+
+    return data.map((d) => ({
+      id: d.id,
+      name: d.name,
+      status: d.status,
+      activeMatchId: d.active_match_id,
+      player1Name: d.player1_name,
+      player2Name: d.player2_name,
+      score1: d.score1 || 0,
+      score2: d.score2 || 0,
+      gameType: d.game_type,
+      raceTo: d.race_to,
+      startTime: d.start_time,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+// =====================================================================
+// FULL CLOUD SYNC INITIALIZATION
+// =====================================================================
+
+export async function pullInitialDataFromSupabase(): Promise<void> {
+  if (!isSupabaseConfigured) return;
+
+  try {
+    const [cloudPlayers, cloudMatches, cloudTournaments, cloudTables] = await Promise.all([
+      fetchPlayersFromSupabase(),
+      fetchMatchesFromSupabase(100),
+      fetchTournamentsFromSupabase(),
+      fetchClubTablesFromSupabase(),
+    ]);
+
+    if (cloudPlayers.length > 0) {
+      await db.players.bulkPut(cloudPlayers);
+    }
+
+    if (cloudMatches.length > 0) {
+      await db.matches.bulkPut(cloudMatches);
+    }
+
+    if (cloudTournaments.length > 0) {
+      await db.tournaments.bulkPut(cloudTournaments);
+    }
+
+    if (cloudTables.length > 0) {
+      await db.clubTables.bulkPut(cloudTables);
+    }
   } catch {
     // Fail silently
   }

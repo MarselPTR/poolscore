@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useMatch } from '../../context/MatchContext';
 import type { Match } from '../../types';
 import { db } from '../../db/database';
+import { pullInitialDataFromSupabase } from '../../services/supabaseService';
 import { formatSeconds } from '../../utils/time';
 import {
   Play,
@@ -31,12 +32,23 @@ export const HomeView: React.FC<HomeViewProps> = ({
   useEffect(() => {
     const fetchRecent = async () => {
       try {
-        const matches = await db.matches
+        let matches = await db.matches
           .where('status')
           .equals('finished')
           .reverse()
           .limit(5)
           .toArray();
+
+        if (matches.length === 0) {
+          await pullInitialDataFromSupabase();
+          matches = await db.matches
+            .where('status')
+            .equals('finished')
+            .reverse()
+            .limit(5)
+            .toArray();
+        }
+
         setRecentMatches(matches);
       } catch {
         // ignore

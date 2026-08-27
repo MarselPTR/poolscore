@@ -10,6 +10,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   name TEXT NOT NULL,
+  username TEXT UNIQUE,
   email TEXT,
   phone TEXT,
   role TEXT DEFAULT 'Pemain' CHECK (role IN ('Pemain', 'Wasit', 'Pengelola Club')),
@@ -143,14 +144,22 @@ CREATE POLICY "Anyone can update club tables" ON public.club_tables FOR ALL USIN
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, name, email, role, rating)
+  INSERT INTO public.profiles (id, name, username, email, role, rating)
   VALUES (
     new.id,
     COALESCE(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
+    COALESCE(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
     new.email,
     COALESCE(new.raw_user_meta_data->>'role', 'Pemain'),
     1400
-  );
+  )
+  ON CONFLICT (id) DO UPDATE
+  SET
+    name = EXCLUDED.name,
+    username = COALESCE(EXCLUDED.username, public.profiles.username),
+    email = EXCLUDED.email,
+    role = EXCLUDED.role,
+    updated_at = NOW();
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

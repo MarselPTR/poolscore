@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { ClubTable } from '../../types';
 import { db } from '../../db/database';
+import { pullInitialDataFromSupabase } from '../../services/supabaseService';
 import { Plus, Clock, Users, Activity, Tv, LayoutGrid } from 'lucide-react';
 import { PlayerAvatar } from '../common/PlayerAvatar';
 
@@ -19,7 +20,11 @@ export const ClubView: React.FC<ClubViewProps> = ({
 
   const fetchClubData = async () => {
     try {
-      const allTables = await db.clubTables.toArray();
+      let allTables = await db.clubTables.toArray();
+      if (allTables.length === 0) {
+        await pullInitialDataFromSupabase();
+        allTables = await db.clubTables.toArray();
+      }
       setTables(allTables);
 
       // Matches in the last 24 hours

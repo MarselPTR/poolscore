@@ -9,6 +9,7 @@ import {
   Eye,
   EyeOff,
   User,
+  AtSign,
   ArrowRight,
   Sun,
   Moon,
@@ -33,6 +34,7 @@ export const AuthView: React.FC = () => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [regUsername, setRegUsername] = useState('');
   const [regIdentifier, setRegIdentifier] = useState('');
   const [role, setRole] = useState<'Pemain' | 'Wasit' | 'Pengelola Club'>('Pemain');
 
@@ -64,16 +66,22 @@ export const AuthView: React.FC = () => {
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim() || !regIdentifier.trim()) {
+    if (!fullName.trim() || !regUsername.trim() || !regIdentifier.trim()) {
       const label = regMethod === 'email' ? 'Email' : 'Nomor HP';
-      setErrorMsg(`Lengkapi Nama dan ${label} Anda`);
+      setErrorMsg(`Lengkapi Nama Lengkap, Username, dan ${label} Anda`);
       return;
     }
+
+    if (password.length < 8) {
+      setErrorMsg('Kata sandi minimal 8 karakter agar akun Anda lebih aman.');
+      return;
+    }
+
     setErrorMsg('');
     setIsLoading(true);
 
     try {
-      const res = await register(fullName, regIdentifier, password, role);
+      const res = await register(fullName, regIdentifier, password, role, regUsername);
       if (!res.success) {
         setErrorMsg(res.error || 'Gagal mendaftar. Coba lagi.');
       } else {
@@ -328,31 +336,44 @@ export const AuthView: React.FC = () => {
           {/* FORM: REGISTER */}
           {mode === 'register' && (
             <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
-              {/* Full Name */}
+              {/* 1. Full Name */}
               <div className="relative flex items-center">
                 <input
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Your Full Name"
+                  placeholder="Nama Lengkap (Full Name)"
                   className="w-full pl-5 pr-11 py-3.5 bg-surface-2 border border-line rounded-2xl text-xs sm:text-sm font-semibold text-text placeholder-text-muted focus:outline-none focus:border-rose-500 transition-all shadow-inner"
                   required
                 />
                 <User className="w-4 h-4 text-text-dim absolute right-4 pointer-events-none" />
               </div>
 
-              {/* Dynamic In-Field Identifier for Register */}
+              {/* 2. Separate Dedicated Username Field */}
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  value={regUsername}
+                  onChange={(e) => setRegUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                  placeholder="Username"
+                  className="w-full pl-5 pr-11 py-3.5 bg-surface-2 border border-line rounded-2xl text-xs sm:text-sm font-semibold text-text placeholder-text-muted focus:outline-none focus:border-rose-500 transition-all shadow-inner font-mono"
+                  required
+                />
+                <AtSign className="w-4 h-4 text-text-dim absolute right-4 pointer-events-none" />
+              </div>
+
+              {/* 3. Combined Email / Phone Contact Field with 2-Pill Switcher */}
               <div className="relative flex items-center">
                 <input
                   type={regMethod === 'email' ? 'email' : 'tel'}
                   value={regIdentifier}
                   onChange={(e) => setRegIdentifier(e.target.value)}
-                  placeholder={regMethod === 'email' ? 'Email Address' : 'Phone Number'}
+                  placeholder={regMethod === 'email' ? 'Alamat Email' : 'Nomor HP / WhatsApp'}
                   className="w-full pl-5 pr-20 py-3.5 bg-surface-2 border border-line rounded-2xl text-xs sm:text-sm font-semibold text-text placeholder-text-muted focus:outline-none focus:border-rose-500 transition-all shadow-inner"
                   required
                 />
 
-                {/* Sleek In-Field Switcher for Register */}
+                {/* 2-Pill Switcher: Email & Phone */}
                 <div className="absolute right-1.5 flex items-center bg-surface-3 p-0.5 rounded-xl border border-line-strong shadow-sm">
                   <button
                     type="button"
@@ -390,13 +411,13 @@ export const AuthView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Password */}
+              {/* 4. Password */}
               <div className="relative flex items-center">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Create Password"
+                  placeholder="Buat Kata Sandi (Min. 8 Karakter)"
                   className="w-full pl-5 pr-11 py-3.5 bg-surface-2 border border-line rounded-2xl text-xs sm:text-sm font-semibold text-text placeholder-text-muted focus:outline-none focus:border-rose-500 transition-all shadow-inner"
                   required
                 />

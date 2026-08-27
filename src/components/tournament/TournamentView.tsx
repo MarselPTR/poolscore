@@ -20,12 +20,13 @@ interface TournamentViewProps {
   ) => void;
 }
 
-const DEFAULT_NAMES = [
-  'Andi', 'Budi', 'Rizky', 'Dimas', 'Eko', 'Fajar', 'Gilang', 'Hadi',
-  'Irfan', 'Joko', 'Kevin', 'Lukman', 'Maulana', 'Naufal', 'Oki', 'Prasetyo',
-  'Qori', 'Rian', 'Satria', 'Taufik', 'Umar', 'Vicky', 'Wahyu', 'Xavier',
-  'Yusuf', 'Zainal', 'Agus', 'Bambang', 'Candra', 'Doni', 'Edwin', 'Farhan'
-];
+const generateDefaultPlayerNames = (count: number, realPlayers: string[] = []): string[] => {
+  const list: string[] = [];
+  for (let i = 0; i < count; i++) {
+    list.push(realPlayers[i] || `Pemain ${i + 1}`);
+  }
+  return list;
+};
 
 export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTournamentMatch }) => {
   const { success } = useToast();
@@ -33,6 +34,7 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [deletingTournamentId, setDeletingTournamentId] = useState<string | null>(null);
+  const [registeredPlayerNames, setRegisteredPlayerNames] = useState<string[]>([]);
 
   // Form states
   const [tourneyName, setTourneyName] = useState('Kejuaraan Club PoolScore');
@@ -40,7 +42,7 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
   const [tourneyFormat, setTourneyFormat] = useState<TournamentFormat>('Single Elimination');
   const [raceTo, setRaceTo] = useState<number>(7);
   const [numPlayers, setNumPlayers] = useState<number>(8);
-  const [playerNames, setPlayerNames] = useState<string[]>(DEFAULT_NAMES.slice(0, 8));
+  const [playerNames, setPlayerNames] = useState<string[]>(() => generateDefaultPlayerNames(8));
 
   const fetchTournaments = async () => {
     try {
@@ -50,6 +52,10 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
         const updated = await db.tournaments.get(selectedTournament.id);
         if (updated) setSelectedTournament(updated);
       }
+
+      const allPlayers = await db.players.toArray();
+      const names = allPlayers.map(p => p.name).filter(Boolean);
+      setRegisteredPlayerNames(names);
     } catch {
       // ignore
     }
@@ -61,7 +67,7 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
 
   const handlePlayerCountChange = (count: number) => {
     setNumPlayers(count);
-    setPlayerNames(DEFAULT_NAMES.slice(0, count));
+    setPlayerNames(generateDefaultPlayerNames(count, registeredPlayerNames));
   };
 
   const handleCreateTournament = async (e: React.FormEvent) => {
@@ -363,7 +369,7 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
               <span>Daftar Peserta Pemain ({playerNames.length})</span>
               <button
                 type="button"
-                onClick={() => setPlayerNames(DEFAULT_NAMES.slice(0, numPlayers))}
+                onClick={() => setPlayerNames(generateDefaultPlayerNames(numPlayers, registeredPlayerNames))}
                 className="text-[11px] text-rose-400 hover:underline capitalize"
               >
                 Reset Nama

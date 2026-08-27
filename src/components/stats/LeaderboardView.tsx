@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Player } from '../../types';
 import { db } from '../../db/database';
+import { pullInitialDataFromSupabase } from '../../services/supabaseService';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { HeadToHeadModal } from './HeadToHeadModal';
 import { Swords, Search, Trophy, ChevronRight } from 'lucide-react';
@@ -16,7 +17,11 @@ export const LeaderboardView: React.FC = () => {
 
   const fetchPlayers = async () => {
     try {
-      const all = await db.players.toArray();
+      let all = await db.players.toArray();
+      if (all.length === 0) {
+        await pullInitialDataFromSupabase();
+        all = await db.players.toArray();
+      }
       setPlayers(all);
     } catch {
       // ignore

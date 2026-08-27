@@ -18,8 +18,8 @@ export const ResetPasswordDirectModal: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (newPassword.length < 6) {
-      setErrorMsg('Kata sandi baru minimal 6 karakter.');
+    if (newPassword.length < 8) {
+      setErrorMsg('Kata sandi baru minimal 8 karakter.');
       return;
     }
 
@@ -86,7 +86,7 @@ export const ResetPasswordDirectModal: React.FC = () => {
                 type={showPassword ? 'text' : 'password'}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Minimal 6 karakter"
+                placeholder="Minimal 8 karakter"
                 className="w-full pl-10 pr-10 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-rose-500 transition-colors font-medium"
                 required
                 autoFocus
