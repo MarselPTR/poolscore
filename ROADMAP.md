@@ -243,13 +243,22 @@ Kode sisi aplikasi untuk **kelola meja** SELESAI (12 Nov 2026). Butuh migrasi SQ
   lagi di-cache lokal (Dexie v2 menghapus store `clubTables`).
 - ⏳ Verifikasi runtime menunggu migrasi dijalankan.
 
-### Langkah wajib di Supabase (dijalankan pemilik)
-- Supabase → SQL Editor → jalankan **`supabase_migration_fase3_tables.sql`**.
-  **AMAN**: hanya mengganti tabel meja; akun/riwayat/turnamen tidak tersentuh.
+**Turnamen per-tempat (SELESAI 12 Nov 2026):**
+- ✅ Turnamen dimiliki pembuat (`created_by`) + `venue_name`; hanya **venue_admin
+  / super_admin** yang bisa **buat / hapus / jalankan match**; peserta & lainnya
+  **hanya melihat** (read-only), termasuk bagan.
+- ✅ Daftar turnamen dimuat dari Supabase (publik) agar semua peran melihat
+  turnamen yang terbuka; kartu menampilkan nama tempat.
+- ✅ RLS: baca publik, tulis hanya pemilik/super admin.
 
-### Sisa Fase 3 (belum)
-- Turnamen per-tempat, pendaftaran peserta oleh admin, dashboard monitoring
-  admin yang lebih lengkap.
+### Langkah wajib di Supabase (dijalankan pemilik — berurutan)
+1. `supabase_migration_fase3_tables.sql` — meja per-tempat. **AMAN** (hanya meja).
+2. `supabase_migration_fase3_tournaments.sql` — turnamen per-tempat. **AMAN**
+   (hanya menambah kolom + RLS pada `tournaments`).
+
+### Sisa Fase 3 / Fase 4 (belum)
+- Pendaftaran peserta oleh admin (akun terkelola), penugasan Wasit, input skor
+  turnamen multi-sumber → dashboard admin, peringkat berbasis poin.
 
 ---
 
