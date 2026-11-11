@@ -1,32 +1,47 @@
-# React + TypeScript + Vite
+# PoolScore
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Papan skor biliar untuk 8-Ball, 9-Ball, 10-Ball, dan Straight Pool — mencatat
+skor per rack & set, turnamen (single/double elimination, round robin),
+manajemen meja klub, dan tampilan TV untuk penonton.
 
-Currently, two official plugins are available:
+Dibangun dengan **React + TypeScript + Vite**, **Tailwind CSS**, penyimpanan
+lokal **Dexie (IndexedDB)**, dan sinkronisasi opsional ke **Supabase**.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Menjalankan secara lokal
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev        # mode pengembangan
+npm run build      # build produksi (tsc + vite)
+npm run preview    # pratinjau hasil build
+npm run lint       # oxlint
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Konfigurasi Supabase (opsional)
+
+Salin `.env.example` menjadi `.env`, lalu isi dari **Project Settings → API** di
+dashboard Supabase Anda:
+
+```
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+```
+
+Tanpa konfigurasi ini, aplikasi tetap berjalan penuh secara lokal (offline-first);
+sinkronisasi cloud, akun, dan autentikasi akan nonaktif. Skema database ada di
+[`supabase_schema.sql`](supabase_schema.sql).
+
+## Fitur utama
+
+- **Papan skor** per rack & set, aturan break (Winner/Alternate/Loser), pencatatan
+  foul & break, timer, serta mode anti-sentuh (tahan / ketuk dua kali / sekali).
+- **Turnamen** single elimination, double elimination, dan round robin.
+- **Klub** multi-meja dengan status langsung.
+- **Peringkat** pemain dan **riwayat** pertandingan.
+- **Tampilan TV** untuk penonton, berbagi hasil, dan **PWA** (installable).
+- Dua tema: **gelap** (default) dan **terang**.
+
+## Peta jalan pengembangan
+
+Arah pengembangan besar (platform multi-peran & multi-tempat) dan daftar
+perbaikan terdokumentasi di [`ROADMAP.md`](ROADMAP.md).
