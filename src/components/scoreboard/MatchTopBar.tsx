@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Match } from '../../types';
-import { Maximize, Minimize, QrCode, MoreVertical, Tv, Layers, Sun, Moon } from 'lucide-react';
+import { Maximize, Minimize, QrCode, Settings, Tv, Sun, Moon } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 
 interface MatchTopBarProps {
@@ -27,113 +27,84 @@ export const MatchTopBar: React.FC<MatchTopBarProps> = ({
   const isMultiSet = match.targetSets && match.targetSets > 1;
 
   return (
-    <div className="h-14 flex items-center justify-between px-3 sm:px-6 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-xl text-xs select-none shrink-0">
-      {/* Left: Match Info & Game Type */}
-      <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-        <span className="font-semibold text-white uppercase tracking-wider bg-zinc-900 px-2.5 py-1.5 rounded-xl border border-zinc-800 flex items-center gap-1.5 shadow-sm">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          {match.gameType}
+    <div className="h-12 flex items-center justify-between gap-3 pl-4 pr-1.5 border-b border-rule bg-bg select-none shrink-0">
+      {/* Match facts */}
+      <div className="flex items-baseline gap-x-4 min-w-0 overflow-hidden whitespace-nowrap">
+        <span className="display text-xl text-ink">{match.gameType}</span>
+
+        <span className="text-sm text-ink-2">
+          Race to <b className="num text-base text-ink">{match.raceTo}</b>
         </span>
 
-        {/* Set / Babak Counter if Multi-Set */}
+        <span className="text-sm text-ink-2">
+          Rack <b className="num text-base text-ink">{match.currentRack}</b>
+          <span className="text-ink-3">/{maxPossibleRacks}</span>
+        </span>
+
         {isMultiSet && (
-          <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1.5 rounded-xl font-semibold">
-            <Layers className="w-3.5 h-3.5 text-amber-400" />
-            <span>SET {match.currentSet}</span>
-            <span className="text-zinc-500 font-normal hidden sm:inline">(Race to {match.targetSets} Sets)</span>
-          </div>
-        )}
-
-        <span className="text-zinc-400 flex items-center gap-1 font-mono text-xs">
-          RACE TO <b className="text-white font-bold">{match.raceTo}</b>
-        </span>
-
-        <span className="text-zinc-700 hidden xs:inline">·</span>
-
-        <span className="text-zinc-400 font-mono text-xs">
-          RACK <span className="text-white font-bold">{match.currentRack}</span>
-          <span className="text-zinc-600">/{maxPossibleRacks}</span>
-        </span>
-
-        {/* Set Score Banner if Multi-Set */}
-        {isMultiSet && (
-          <div className="hidden lg:flex items-center gap-2 bg-zinc-900 px-2.5 py-1.5 rounded-xl border border-zinc-800 text-xs font-mono font-bold">
-            <span className="text-zinc-500 uppercase text-[10px]">Skor Babak:</span>
-            <span className="text-rose-400">{match.player1Sets}</span>
-            <span className="text-zinc-600">-</span>
-            <span className="text-blue-400">{match.player2Sets}</span>
-          </div>
+          <span className="text-sm text-ink-2">
+            Set <b className="num text-base text-ink">{match.currentSet}</b>
+            <span className="hidden sm:inline text-ink-3">
+              {' '}
+              · skor set{' '}
+              <b className="num text-base text-p1-ink">{match.player1Sets}</b>
+              <span className="mx-0.5">–</span>
+              <b className="num text-base text-p2-ink">{match.player2Sets}</b>
+            </span>
+          </span>
         )}
 
         {match.tableNumber && (
-          <span className="text-zinc-300 font-medium bg-zinc-900 px-2.5 py-1 rounded-xl border border-zinc-800 hidden sm:inline">
-            MEJA {match.tableNumber}
+          <span className="hidden sm:inline text-sm text-ink-2">
+            Meja <b className="num text-base text-ink">{match.tableNumber}</b>
           </span>
         )}
       </div>
 
-      {/* Right: Controls & Indicators */}
-      <div className="flex items-center gap-1.5 sm:gap-2">
-        {/* Wake Lock Status */}
-        <div
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium transition-colors ${
-            isWakeLocked ? 'text-emerald-300 bg-emerald-500/10 border border-emerald-500/30' : 'text-zinc-500 bg-zinc-900/50 border border-zinc-800'
-          }`}
-          title={isWakeLocked ? 'Layar dijaga tetap menyala' : 'Wake Lock tidak aktif'}
-        >
-          <span className={`w-1.5 h-1.5 rounded-full ${isWakeLocked ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-600'}`} />
-          <span className="hidden sm:inline">{isWakeLocked ? 'Screen Awake' : 'Wake Lock Off'}</span>
-        </div>
+      {/* Controls */}
+      <div className="flex items-center shrink-0">
+        {isWakeLocked && (
+          <span
+            className="hidden lg:inline text-[13px] text-ink-3 mr-2"
+            title="Layar dijaga tetap menyala selama pertandingan"
+          >
+            Layar tetap menyala
+          </span>
+        )}
 
-        {/* Live Badge */}
-        <div className="flex items-center gap-1.5 text-rose-300 text-xs font-semibold bg-rose-500/10 px-2.5 py-1 rounded-xl border border-rose-500/30">
-          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-          <span>LIVE</span>
-        </div>
-
-        {/* Quick Theme Toggle */}
         <button
           onClick={toggleTheme}
-          className="p-2 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-all"
-          title={isDarkMode ? 'Mode Siang (Light)' : 'Mode Malam (Dark)'}
+          className="icon-btn"
+          title={isDarkMode ? 'Tema terang' : 'Tema gelap'}
+          aria-label={isDarkMode ? 'Tema terang' : 'Tema gelap'}
         >
-          {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-rose-500" />}
+          {isDarkMode ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
         </button>
 
-        {/* QR Code */}
-        <button
-          onClick={onOpenQR}
-          className="p-2 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-all"
-          title="Bagikan Live Match / QR"
-        >
-          <QrCode className="w-4 h-4" />
+        <button onClick={onOpenQR} className="icon-btn" title="Bagikan pertandingan" aria-label="Bagikan pertandingan">
+          <QrCode className="w-[18px] h-[18px]" />
         </button>
 
-        {/* TV Mode */}
         <button
           onClick={onOpenTV}
-          className="p-2 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-all hidden sm:block"
-          title="Tampilan TV Arena"
+          className="icon-btn hidden sm:inline-flex"
+          title="Tampilan TV"
+          aria-label="Tampilan TV"
         >
-          <Tv className="w-4 h-4" />
+          <Tv className="w-[18px] h-[18px]" />
         </button>
 
-        {/* Fullscreen */}
         <button
           onClick={onToggleFullscreen}
-          className="p-2 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-all"
-          title={isFullscreen ? 'Keluar Fullscreen' : 'Layar Penuh'}
+          className="icon-btn"
+          title={isFullscreen ? 'Keluar layar penuh' : 'Layar penuh'}
+          aria-label={isFullscreen ? 'Keluar layar penuh' : 'Layar penuh'}
         >
-          {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+          {isFullscreen ? <Minimize className="w-[18px] h-[18px]" /> : <Maximize className="w-[18px] h-[18px]" />}
         </button>
 
-        {/* Settings */}
-        <button
-          onClick={onOpenSettings}
-          className="p-2 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-all"
-          title="Pengaturan"
-        >
-          <MoreVertical className="w-4 h-4" />
+        <button onClick={onOpenSettings} className="icon-btn" title="Pengaturan" aria-label="Pengaturan">
+          <Settings className="w-[18px] h-[18px]" />
         </button>
       </div>
     </div>

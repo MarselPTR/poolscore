@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Match } from '../../types';
 import { formatSeconds } from '../../utils/time';
-import { Share2, RotateCcw, PlusCircle, CheckCircle, Trophy, Layers } from 'lucide-react';
+import { Share2, RotateCcw, Plus } from 'lucide-react';
 
 interface MatchResultModalProps {
   isOpen: boolean;
@@ -22,100 +22,77 @@ export const MatchResultModal: React.FC<MatchResultModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const winner = match.winner === 1 ? match.player1 : (match.winner === 2 ? match.player2 : null);
-  const isP1 = match.winner === 1;
+  const winner = match.winner === 1 ? match.player1 : match.winner === 2 ? match.player2 : null;
   const isMultiSet = match.targetSets && match.targetSets > 1;
+  const score1 = isMultiSet ? match.player1Sets : match.player1.score;
+  const score2 = isMultiSet ? match.player2Sets : match.player2.score;
+
+  const bannerClass = match.winner === 1 ? 'bg-p1' : match.winner === 2 ? 'bg-p2' : 'bg-panel-3';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-modal-backdrop select-none">
-      <div className="relative w-full max-w-md bg-zinc-900 rounded-3xl p-6 sm:p-7 text-center border border-zinc-800 shadow-2xl animate-modal-card">
-        {/* Trophy Icon */}
-        <div className="w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto mb-3 text-amber-400">
-          <Trophy className="w-8 h-8 shrink-0" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-backdrop animate-fade select-none">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Pertandingan selesai"
+        className="w-full max-w-md bg-panel text-ink border border-rule rounded-md overflow-hidden animate-rise"
+      >
+        {/* Winner block in the winner's colour */}
+        <div className={`${bannerClass} text-white px-6 py-6 text-center`}>
+          <div className="font-display font-semibold uppercase tracking-[0.14em] text-sm opacity-85">
+            {winner ? 'Pemenang' : 'Pertandingan selesai'}
+          </div>
+          <div className="display text-5xl mt-2 break-words">{winner ? winner.name : 'Seri'}</div>
         </div>
 
-        {/* Status */}
-        <div className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
-          Pertandingan Selesai
-        </div>
-
-        {/* Winner Name */}
-        <div
-          className={`font-bold text-2xl sm:text-3xl uppercase tracking-tight mt-1 ${
-            isP1 ? 'text-rose-400' : 'text-blue-400'
-          }`}
-        >
-          {winner ? winner.name : 'Draw'} Menang!
-        </div>
-
-        {/* Final Score Card */}
-        {isMultiSet ? (
-          <div className="my-4 p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800">
-            <div className="text-[11px] font-semibold text-amber-400 flex items-center justify-center gap-1">
-              <Layers className="w-3.5 h-3.5 shrink-0" /> Hasil Akhir Skor Babak
+        <div className="px-6 pt-5 pb-6">
+          {/* Final score */}
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+            <div className="text-right min-w-0">
+              <div className="text-sm font-semibold text-ink-2 truncate">{match.player1.name}</div>
             </div>
-            <div className="font-mono font-black text-4xl text-white mt-1 font-tabular">
-              <span className="text-rose-400">{match.player1Sets}</span>
-              <span className="text-zinc-600 mx-3">-</span>
-              <span className="text-blue-400">{match.player2Sets}</span>
+            <div className="num text-6xl whitespace-nowrap">
+              <span className="text-p1-ink">{score1}</span>
+              <span className="text-ink-3 mx-2">–</span>
+              <span className="text-p2-ink">{score2}</span>
             </div>
-            <div className="text-[11px] text-zinc-500 mt-1">
-              Rack Terakhir: {match.player1.score} - {match.player2.score}
+            <div className="text-left min-w-0">
+              <div className="text-sm font-semibold text-ink-2 truncate">{match.player2.name}</div>
             </div>
           </div>
-        ) : (
-          <div className="my-4 p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800">
-            <div className="text-[11px] font-semibold text-zinc-400">
-              Skor Akhir Rack ({match.gameType})
-            </div>
-            <div className="font-mono font-black text-4xl text-white mt-1 font-tabular">
-              <span className="text-rose-400">{match.player1.score}</span>
-              <span className="text-zinc-600 mx-3">-</span>
-              <span className="text-blue-400">{match.player2.score}</span>
-            </div>
+
+          <div className="mt-3 text-center text-[13px] text-ink-3">
+            {match.gameType} · {isMultiSet ? `skor set, race to ${match.raceTo} per set` : `race to ${match.raceTo}`}
+            {' · '}
+            {formatSeconds(match.durationSeconds)}
+            {isMultiSet && (
+              <>
+                {' · '}set terakhir {match.player1.score}–{match.player2.score}
+              </>
+            )}
           </div>
-        )}
 
-        {/* Match Duration & Meta */}
-        <div className="text-xs text-zinc-400 font-mono mb-5">
-          Durasi Pertandingan: <span className="text-white font-semibold">{formatSeconds(match.durationSeconds)}</span>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="space-y-2.5">
-          <button
-            onClick={onOpenShareCard}
-            className="w-full py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 text-center"
-          >
-            <Share2 className="w-4 h-4 shrink-0" />
-            <span>Bagikan Kartu Skor</span>
-          </button>
-
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={onRematch}
-              className="py-2.5 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 border border-zinc-700/60 transition-all active:scale-95 truncate"
-            >
-              <RotateCcw className="w-3.5 h-3.5 shrink-0" />
-              <span>Rematch</span>
+          {/* Actions */}
+          <div className="mt-6 space-y-2">
+            <button onClick={onSaveAndFinish} className="btn btn-lg btn-block btn-primary">
+              Simpan dan selesai
             </button>
 
-            <button
-              onClick={onNewMatch}
-              className="py-2.5 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 border border-zinc-700/60 transition-all active:scale-95 truncate"
-            >
-              <PlusCircle className="w-3.5 h-3.5 shrink-0" />
-              <span>Match Baru</span>
-            </button>
+            <div className="grid grid-cols-3 gap-2">
+              <button onClick={onRematch} className="btn btn-secondary !px-2">
+                <RotateCcw className="w-4 h-4 shrink-0" />
+                Rematch
+              </button>
+              <button onClick={onNewMatch} className="btn btn-secondary !px-2">
+                <Plus className="w-4 h-4 shrink-0" />
+                Baru
+              </button>
+              <button onClick={onOpenShareCard} className="btn btn-secondary !px-2">
+                <Share2 className="w-4 h-4 shrink-0" />
+                Bagikan
+              </button>
+            </div>
           </div>
-
-          <button
-            onClick={onSaveAndFinish}
-            className="w-full py-2.5 px-3 rounded-xl text-zinc-500 hover:text-zinc-300 font-medium text-xs flex items-center justify-center gap-1.5 transition-colors text-center"
-          >
-            <CheckCircle className="w-3.5 h-3.5 shrink-0" />
-            <span>Simpan & Selesai</span>
-          </button>
         </div>
       </div>
     </div>

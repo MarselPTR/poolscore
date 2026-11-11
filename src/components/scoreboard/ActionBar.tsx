@@ -1,5 +1,5 @@
 import React from 'react';
-import { History, ArrowLeftRight, Play, Pause, RotateCcw, AlertTriangle, Zap } from 'lucide-react';
+import { History, ArrowLeftRight, Play, Pause, Undo2, Flag, Zap } from 'lucide-react';
 import { formatSeconds } from '../../utils/time';
 
 interface ActionBarProps {
@@ -29,79 +29,59 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   canUndo,
   showRackTimer = true,
 }) => {
+  // Labels collapse to icons on narrow phones; the title keeps them discoverable.
+  const actionClass = 'btn btn-secondary !px-3 sm:!px-4';
+
   return (
-    <div className="flex items-center justify-between px-3 sm:px-6 py-2 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur-lg select-none gap-2">
-      {/* Left Action Buttons */}
-      <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 scrollbar-none">
-        {/* Undo Button */}
-        <button
-          onClick={onUndo}
-          disabled={!canUndo}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-zinc-300 hover:text-white bg-zinc-900 hover:bg-zinc-800 transition-colors text-xs font-medium uppercase tracking-wider disabled:opacity-30 disabled:pointer-events-none active:scale-95 border border-zinc-800"
-          title="Batalkan Aksi Terakhir"
-        >
-          <RotateCcw className="w-3.5 h-3.5 text-zinc-400" />
-          <span className="hidden xs:inline">Undo</span>
+    <div className="flex items-center justify-between gap-2 px-3 sm:px-4 h-14 border-t border-rule bg-bg select-none shrink-0 safe-area-pb">
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        <button onClick={onUndo} disabled={!canUndo} className={actionClass} title="Batalkan aksi terakhir">
+          <Undo2 className="w-4 h-4" />
+          <span className="hidden sm:inline">Undo</span>
         </button>
 
-        {/* Foul Button */}
-        <button
-          onClick={onOpenFoul}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-rose-300 hover:text-white bg-rose-500/15 hover:bg-rose-500/25 transition-colors text-xs font-semibold uppercase tracking-wider active:scale-95 border border-rose-500/30"
-        >
-          <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+        <button onClick={onSwitchTurn} className={actionClass} title="Ganti giliran menembak">
+          <ArrowLeftRight className="w-4 h-4" />
+          <span className="hidden sm:inline">Giliran</span>
+        </button>
+
+        <button onClick={onOpenFoul} className={actionClass} title="Catat foul">
+          <Flag className="w-4 h-4 text-warn" />
           <span>Foul</span>
         </button>
 
-        {/* Break Tracker Button */}
-        <button
-          onClick={onOpenBreak}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-zinc-300 hover:text-white bg-zinc-900 hover:bg-zinc-800 transition-colors text-xs font-medium uppercase tracking-wider active:scale-95 border border-zinc-800"
-        >
-          <Zap className="w-3.5 h-3.5 text-zinc-400" />
-          <span className="hidden xs:inline">Break</span>
+        <button onClick={onOpenBreak} className={actionClass} title="Catat break">
+          <Zap className="w-4 h-4" />
+          <span className="hidden sm:inline">Break</span>
         </button>
 
-        {/* History / Timeline Drawer */}
-        <button
-          onClick={onOpenHistory}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-zinc-300 hover:text-white bg-zinc-900 hover:bg-zinc-800 transition-colors text-xs font-medium uppercase tracking-wider active:scale-95 border border-zinc-800"
-        >
-          <History className="w-3.5 h-3.5 text-zinc-400" />
-          <span className="hidden xs:inline">Log</span>
-        </button>
-
-        {/* Switch Turn Button */}
-        <button
-          onClick={onSwitchTurn}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-zinc-300 hover:text-white bg-zinc-900 hover:bg-zinc-800 transition-colors text-xs font-medium uppercase tracking-wider active:scale-95 border border-zinc-800"
-          title="Alihkan Giliran Menembak"
-        >
-          <ArrowLeftRight className="w-3.5 h-3.5 text-zinc-400" />
-          <span className="hidden sm:inline">Turn</span>
+        <button onClick={onOpenHistory} className={actionClass} title="Riwayat rack dan log">
+          <History className="w-4 h-4" />
+          <span className="hidden sm:inline">Log</span>
         </button>
       </div>
 
-      {/* Right: Match Timer Controls */}
-      <div className="flex items-center gap-2 pl-3 border-l border-zinc-800 font-mono font-tabular shrink-0">
-        <button
-          onClick={onTogglePause}
-          className="p-1.5 rounded-lg text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 transition-colors"
-          title={isPaused ? 'Lanjutkan Timer' : 'Jeda Timer'}
-        >
-          {isPaused ? <Play className="w-3.5 h-3.5 text-rose-400 fill-rose-400" /> : <Pause className="w-3.5 h-3.5" />}
-        </button>
-
+      {/* Match clock */}
+      <div className="flex items-center gap-2 pl-3 border-l border-rule shrink-0">
         <div className="text-right">
-          <div className="text-xs sm:text-sm font-bold text-zinc-200">
+          <div className={`num text-xl ${isPaused ? 'text-ink-3' : 'text-ink'}`}>
             {formatSeconds(durationSeconds)}
           </div>
           {showRackTimer && (
-            <div className="text-[10px] text-zinc-500">
-              Rack: {formatSeconds(rackSeconds)}
+            <div className="text-xs text-ink-3 tabular-nums leading-tight">
+              Rack {formatSeconds(rackSeconds)}
             </div>
           )}
         </div>
+
+        <button
+          onClick={onTogglePause}
+          className="icon-btn"
+          title={isPaused ? 'Lanjutkan timer' : 'Jeda timer'}
+          aria-label={isPaused ? 'Lanjutkan timer' : 'Jeda timer'}
+        >
+          {isPaused ? <Play className="w-[18px] h-[18px]" /> : <Pause className="w-[18px] h-[18px]" />}
+        </button>
       </div>
     </div>
   );

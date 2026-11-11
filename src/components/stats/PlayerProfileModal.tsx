@@ -1,7 +1,6 @@
 import React from 'react';
 import { Modal } from '../common/Modal';
 import type { Player } from '../../types';
-import { Trophy, Swords, Zap, Flame } from 'lucide-react';
 import { PlayerAvatar } from '../common/PlayerAvatar';
 
 interface PlayerProfileModalProps {
@@ -27,89 +26,63 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
     ? ((player.racksWon / (player.racksWon + player.racksLost)) * 100).toFixed(1)
     : '0.0';
 
+  const stats: { label: string; value: string }[] = [
+    { label: 'Menang – kalah', value: `${player.winsCount}–${player.lossesCount}` },
+    { label: 'Rack menang – kalah', value: `${player.racksWon}–${player.racksLost}` },
+    { label: 'Persentase rack', value: `${rackWinRate}%` },
+    { label: 'Beruntun saat ini', value: `${player.winStreak}` },
+    { label: 'Beruntun terbaik', value: `${player.bestWinStreak}` },
+    { label: 'Break and run', value: `${player.breakRunOuts || 0}` },
+    { label: 'Turnamen dimenangkan', value: `${player.tournamentsWon || 0}` },
+  ];
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Profil & Statistik Pemain">
-      <div className="space-y-4 select-none">
-        {/* Profile Card Header */}
-        <div className="p-4 rounded-2xl bg-zinc-950 border border-zinc-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <PlayerAvatar name={player.name} size="lg" />
-            <div>
-              <div className="font-bold text-lg text-white">
-                {player.name}
-              </div>
-              <div className="text-xs text-zinc-400 font-medium">
-                Pemain Terdaftar
-              </div>
+    <Modal isOpen={isOpen} onClose={onClose} title="Profil pemain">
+      <div className="space-y-5 select-none">
+        <div className="flex items-center gap-3">
+          <PlayerAvatar name={player.name} size="lg" />
+          <div className="min-w-0">
+            <div className="display text-3xl truncate">{player.name}</div>
+          </div>
+        </div>
+
+        {/* Headline figures */}
+        <div className="grid grid-cols-3 border-y border-rule divide-x divide-rule">
+          <div className="py-3 pr-3">
+            <div className="eyebrow">Rating</div>
+            <div className="num text-4xl text-ink mt-1.5">{player.rating}</div>
+          </div>
+          <div className="py-3 px-3">
+            <div className="eyebrow">Menang</div>
+            <div className="num text-4xl text-ink mt-1.5">
+              {winRate}
+              <span className="text-xl text-ink-3">%</span>
             </div>
           </div>
+          <div className="py-3 pl-3">
+            <div className="eyebrow">Main</div>
+            <div className="num text-4xl text-ink mt-1.5">{player.matchesCount}</div>
+          </div>
+        </div>
 
-          <div className="text-right">
-            <div className="text-xs font-semibold uppercase text-rose-400">Elo Rating</div>
-            <div className="font-mono font-black text-2xl text-white">
-              {player.rating}
+        <dl className="rows">
+          {stats.map((s) => (
+            <div key={s.label} className="flex items-baseline justify-between gap-4 py-2">
+              <dt className="text-sm text-ink-2">{s.label}</dt>
+              <dd className="num text-lg text-ink">{s.value}</dd>
             </div>
-          </div>
-        </div>
+          ))}
+        </dl>
 
-        {/* Core Metrics Grid */}
-        <div className="grid grid-cols-3 gap-2 text-center font-tabular">
-          <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800">
-            <div className="text-xs text-zinc-500 font-medium">Win Rate</div>
-            <div className="font-mono font-bold text-lg text-rose-400 mt-0.5">{winRate}%</div>
-            <div className="text-[10px] text-zinc-500">{player.winsCount} Menang / {player.lossesCount} Kalah</div>
-          </div>
-
-          <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800">
-            <div className="text-xs text-zinc-500 font-medium">Total Match</div>
-            <div className="font-mono font-bold text-lg text-white mt-0.5">{player.matchesCount}</div>
-            <div className="text-[10px] text-zinc-500">Pertandingan</div>
-          </div>
-
-          <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800">
-            <div className="text-xs text-zinc-500 font-medium">Rack WR</div>
-            <div className="font-mono font-bold text-lg text-white mt-0.5">{rackWinRate}%</div>
-            <div className="text-[10px] text-zinc-500">{player.racksWon}W / {player.racksLost}L</div>
-          </div>
-        </div>
-
-        {/* Additional Stats */}
-        <div className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2 text-xs">
-          <div className="flex items-center justify-between py-1.5 border-b border-zinc-800/80">
-            <span className="text-zinc-400 flex items-center gap-1.5">
-              <Trophy className="w-3.5 h-3.5 text-zinc-400 shrink-0" /> Turnamen Dimenangkan:
-            </span>
-            <span className="font-semibold text-white font-tabular">{player.tournamentsWon || 0} Trofi</span>
-          </div>
-
-          <div className="flex items-center justify-between py-1.5 border-b border-zinc-800/80">
-            <span className="text-zinc-400 flex items-center gap-1.5">
-              <Zap className="w-3.5 h-3.5 text-zinc-400 shrink-0" /> Break & Run-Outs:
-            </span>
-            <span className="font-semibold text-white font-tabular">{player.breakRunOuts || 0} Kali</span>
-          </div>
-
-          <div className="flex items-center justify-between py-1.5">
-            <span className="text-zinc-400 flex items-center gap-1.5">
-              <Flame className="w-3.5 h-3.5 text-rose-400 shrink-0" /> Rekor Menang Beruntun:
-            </span>
-            <span className="font-semibold text-rose-400 font-tabular">
-              {player.winStreak} / {player.bestWinStreak} Match
-            </span>
-          </div>
-        </div>
-
-        {/* Action Button */}
         {onOpenH2H && (
           <button
             onClick={() => {
               onClose();
               onOpenH2H(player.name);
             }}
-            className="w-full py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 text-center"
+            className="btn btn-lg btn-block btn-primary"
           >
-            <Swords className="w-4 h-4 shrink-0" />
-            <span>Bandingkan Head-to-Head</span>
+            Bandingkan head-to-head
           </button>
         )}
       </div>

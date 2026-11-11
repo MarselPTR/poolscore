@@ -6,8 +6,7 @@ import { initializeDatabase } from './db/database';
 import { Header } from './components/common/Header';
 import { BottomNav } from './components/common/BottomNav';
 import { LandscapeBanner } from './components/common/LandscapeBanner';
-import { ScoreboardLandscape } from './components/scoreboard/ScoreboardLandscape';
-import { ScoreboardPortrait } from './components/scoreboard/ScoreboardPortrait';
+import { Scoreboard } from './components/scoreboard/Scoreboard';
 import { HomeView } from './components/home/HomeView';
 import { MatchHistoryView } from './components/history/MatchHistoryView';
 import { LeaderboardView } from './components/stats/LeaderboardView';
@@ -74,7 +73,12 @@ export const App: React.FC = () => {
     return <TVScoreboardView onBack={() => setIsTVMode(false)} />;
   }
 
-  const isMatchRunning = activeMatch !== null && activeMatch.status === 'in_progress';
+  // Keep the scoreboard mounted while a match is in progress AND once it has
+  // finished — the finished state is where the result screen (rematch, share,
+  // save) lives. We only leave the scoreboard when the match is cleared to null.
+  const isMatchRunning =
+    activeMatch !== null &&
+    (activeMatch.status === 'in_progress' || activeMatch.status === 'finished');
 
   // Handle launch match from tournament tree
   const handleLaunchTournamentMatch = async (
@@ -107,25 +111,16 @@ export const App: React.FC = () => {
   // 3. Active Match View (Full Screen Immersion)
   if (isMatchRunning) {
     return (
-      <div className="relative min-h-screen bg-bg text-text">
+      <div className="h-dvh flex flex-col overflow-hidden bg-bg text-ink">
         <LandscapeBanner />
-        {isLandscapeOrientation ? (
-          <ScoreboardLandscape
-            onOpenQR={() => setIsQROpen(true)}
-            onOpenTV={() => setIsTVMode(true)}
-            onOpenSettings={() => setIsSettingsOpen(true)}
-            onOpenShareCard={() => setShareCardMatch(activeMatch)}
-            onNewMatchModal={() => setIsQuickMatchOpen(true)}
-          />
-        ) : (
-          <ScoreboardPortrait
-            onOpenQR={() => setIsQROpen(true)}
-            onOpenTV={() => setIsTVMode(true)}
-            onOpenSettings={() => setIsSettingsOpen(true)}
-            onOpenShareCard={() => setShareCardMatch(activeMatch)}
-            onNewMatchModal={() => setIsQuickMatchOpen(true)}
-          />
-        )}
+        <Scoreboard
+          orientation={isLandscapeOrientation ? 'landscape' : 'portrait'}
+          onOpenQR={() => setIsQROpen(true)}
+          onOpenTV={() => setIsTVMode(true)}
+          onOpenSettings={() => setIsSettingsOpen(true)}
+          onOpenShareCard={() => setShareCardMatch(activeMatch)}
+          onNewMatchModal={() => setIsQuickMatchOpen(true)}
+        />
 
         {/* Global Modals */}
         <QuickMatchModal
@@ -160,7 +155,7 @@ export const App: React.FC = () => {
 
   // 4. Normal Application Dashboard View
   return (
-    <div className="min-h-screen flex flex-col bg-bg text-text">
+    <div className="min-h-screen flex flex-col bg-bg text-ink">
       <Header
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
@@ -168,8 +163,8 @@ export const App: React.FC = () => {
         onOpenTV={() => setIsTVMode(true)}
       />
 
-      <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6">
-        <div key={currentTab} className="animate-page-enter">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 pt-6 sm:pt-8 pb-24 md:pb-12">
+        <div key={currentTab} className="animate-fade">
           {currentTab === 'home' && (
             <HomeView
               onOpenQuickMatch={() => {

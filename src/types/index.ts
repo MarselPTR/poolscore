@@ -8,7 +8,7 @@ export type FoulType = 'Scratch' | 'Illegal Hit' | 'No Rail' | 'Wrong Ball' | 'O
 
 export type TouchProtectionMode = 'hold' | 'confirm' | 'quick';
 
-export type ThemeMode = 'dark' | 'light' | 'obsidian' | 'felt-green' | 'carbon' | 'navy';
+export type ThemeMode = 'dark' | 'light';
 
 export interface MatchEvent {
   id: string;
@@ -21,6 +21,7 @@ export interface MatchEvent {
   metadata?: {
     foulType?: FoulType;
     breakDetails?: {
+      breaker: 1 | 2;
       isLegal: boolean;
       ballsPocketed: number;
       isDry: boolean;
@@ -37,6 +38,7 @@ export interface MatchEvent {
     prevCurrentSet?: number;
     newCurrentSet?: number;
     savedRackHistory?: RackHistoryItem[];
+    prevTurn?: 1 | 2;
   };
 }
 

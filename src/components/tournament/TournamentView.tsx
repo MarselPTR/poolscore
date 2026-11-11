@@ -6,7 +6,7 @@ import { generateTournamentMatches } from '../../utils/tournamentGenerator';
 import { syncTournamentToSupabase } from '../../services/supabaseService';
 import { useToast } from '../../context/ToastContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
-import { Plus, ArrowLeft, Users, Trash2, Trophy, ChevronRight } from 'lucide-react';
+import { Plus, ArrowLeft, Trash2, ChevronRight } from 'lucide-react';
 import { Modal } from '../common/Modal';
 
 interface TournamentViewProps {
@@ -28,6 +28,12 @@ const generateDefaultPlayerNames = (count: number, realPlayers: string[] = []): 
   return list;
 };
 
+const FORMAT_LABEL: Record<TournamentFormat, string> = {
+  'Single Elimination': 'Gugur tunggal',
+  'Double Elimination': 'Gugur ganda',
+  'Round Robin': 'Round robin',
+};
+
 export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTournamentMatch }) => {
   const { success } = useToast();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -37,7 +43,7 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
   const [registeredPlayerNames, setRegisteredPlayerNames] = useState<string[]>([]);
 
   // Form states
-  const [tourneyName, setTourneyName] = useState('Kejuaraan Club PoolScore');
+  const [tourneyName, setTourneyName] = useState('Kejuaraan Klub');
   const [gameType, setGameType] = useState<GameType>('9-Ball');
   const [tourneyFormat, setTourneyFormat] = useState<TournamentFormat>('Single Elimination');
   const [raceTo, setRaceTo] = useState<number>(7);
@@ -102,7 +108,7 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
       if (selectedTournament?.id === deletingTournamentId) {
         setSelectedTournament(null);
       }
-      success('Turnamen Dihapus', 'Data bagan turnamen berhasil dihapus.');
+      success('Turnamen dihapus', 'Bagan dan skor turnamen sudah dihapus.');
       fetchTournaments();
     } catch {
       // ignore
@@ -111,143 +117,106 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
     }
   };
 
+  const formatOptions: { id: TournamentFormat; label: string; desc: string }[] = [
+    { id: 'Single Elimination', label: 'Gugur tunggal', desc: 'Kalah sekali, tersingkir' },
+    { id: 'Double Elimination', label: 'Gugur ganda', desc: 'Dua kali kalah' },
+    { id: 'Round Robin', label: 'Round robin', desc: 'Grup lalu playoff' },
+  ];
+
   return (
-    <div className="space-y-5 max-w-4xl mx-auto pb-20 select-none animate-fade-in px-2 sm:px-0 font-sans">
+    <div className="w-full space-y-6 select-none">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
+      {selectedTournament ? (
         <div>
-          <div className="flex items-center gap-2">
-            {selectedTournament && (
-              <button
-                onClick={() => setSelectedTournament(null)}
-                className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 mr-1 transition-all active:scale-95"
-                title="Kembali ke Daftar Turnamen"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </button>
-            )}
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-              <Trophy className="w-6 h-6 text-rose-500" />
-              {selectedTournament ? selectedTournament.name : 'Turnamen & Bagan Bracket'}
-            </h2>
-          </div>
-          <p className="text-zinc-400 text-xs mt-1">
-            {selectedTournament
-              ? `${selectedTournament.gameType} · Format ${selectedTournament.format} (${selectedTournament.players.length} Pemain) · Race to ${selectedTournament.raceTo}`
-              : 'Kelola kompetisi biliar sistem Single Elimination, Double Elimination, atau Sistem Grup Round Robin.'}
+          <button
+            onClick={() => setSelectedTournament(null)}
+            className="flex items-center gap-1.5 text-[13px] font-medium text-ink-2 hover:text-ink mb-3"
+          >
+            <ArrowLeft className="w-4 h-4" /> Semua turnamen
+          </button>
+          <h1 className="page-title break-words">{selectedTournament.name}</h1>
+          <p className="text-sm text-ink-2 mt-1.5">
+            {selectedTournament.gameType} · {FORMAT_LABEL[selectedTournament.format] || selectedTournament.format} ·{' '}
+            {selectedTournament.players.length} pemain · race to {selectedTournament.raceTo}
           </p>
         </div>
-
-        {!selectedTournament && (
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-sm transition-all self-start sm:self-auto active:scale-95"
-          >
+      ) : (
+        <div className="flex items-end justify-between gap-4">
+          <h1 className="page-title">Turnamen</h1>
+          <button onClick={() => setIsCreateModalOpen(true)} className="btn btn-primary shrink-0">
             <Plus className="w-4 h-4" />
-            Buat Turnamen Baru
+            Turnamen baru
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* View 1: Active Tournament Bracket */}
       {selectedTournament ? (
-        <div className="space-y-4">
-          <BracketTree
-            tournament={selectedTournament}
-            onPlayMatch={(m) => {
-              onLaunchTournamentMatch(
-                selectedTournament.id,
-                m.id,
-                m.player1Name,
-                m.player2Name,
-                selectedTournament.gameType,
-                selectedTournament.raceTo
-              );
-            }}
-          />
+        <BracketTree
+          tournament={selectedTournament}
+          onPlayMatch={(m) => {
+            onLaunchTournamentMatch(
+              selectedTournament.id,
+              m.id,
+              m.player1Name,
+              m.player2Name,
+              selectedTournament.gameType,
+              selectedTournament.raceTo
+            );
+          }}
+        />
+      ) : tournaments.length === 0 ? (
+        <div className="py-16 text-center border-y border-rule">
+          <div className="display text-2xl">Belum ada turnamen</div>
+          <p className="text-sm text-ink-2 mt-2 max-w-sm mx-auto">
+            Buat turnamen dan bagan pertandingannya disusun otomatis dari daftar pemain.
+          </p>
+          <button onClick={() => setIsCreateModalOpen(true)} className="btn btn-primary mt-5">
+            <Plus className="w-4 h-4" />
+            Buat turnamen
+          </button>
         </div>
       ) : (
-        /* View 2: Tournament List */
-        <div className="grid gap-3 sm:grid-cols-2">
-          {tournaments.length === 0 ? (
-            <div className="col-span-2 p-12 text-center rounded-2xl bg-zinc-900/60 border border-zinc-800 shadow-sm">
-              <Trophy className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
-              <div className="font-bold text-base text-white">
-                Belum Ada Turnamen
-              </div>
-              <div className="text-xs text-zinc-400 mt-1 max-w-sm mx-auto mb-4">
-                Buat turnamen biliar pertama Anda untuk mengorganisir kompetisi club dengan bagan gugur otomatis.
-              </div>
-              <button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs shadow-sm active:scale-95 transition-all"
-              >
-                + Buat Turnamen Sekarang
-              </button>
-            </div>
-          ) : (
-            tournaments.map((t) => {
-              const isCompleted = t.status === 'completed';
+        <div className="rows border-y border-rule">
+          {tournaments.map((t) => {
+            const isCompleted = t.status === 'completed';
 
-              return (
-                <div
-                  key={t.id}
+            return (
+              <div key={t.id} className="flex items-center gap-2 hover:bg-panel-2">
+                <button
                   onClick={() => setSelectedTournament(t)}
-                  className="p-4 rounded-2xl bg-zinc-900/70 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 transition-all cursor-pointer shadow-sm select-none group flex flex-col justify-between"
+                  className="flex-1 min-w-0 flex items-center gap-4 px-1 py-3.5 text-left"
                 >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[11px] font-semibold text-rose-400 uppercase tracking-wide">
-                        {t.gameType} · RACE TO {t.raceTo}
-                      </span>
-                      <span
-                        className={`text-[10px] px-2 py-0.5 rounded-md font-semibold uppercase ${
-                          isCompleted
-                            ? 'bg-zinc-800 text-zinc-300'
-                            : 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
-                        }`}
-                      >
-                        {isCompleted ? 'SELESAI' : 'BERLANGSUNG'}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2.5">
+                      <span className="font-semibold text-ink truncate">{t.name}</span>
+                      <span className={`tag shrink-0 ${isCompleted ? '' : 'tag-live'}`}>
+                        {isCompleted ? 'Selesai' : 'Berlangsung'}
                       </span>
                     </div>
-
-                    <h3 className="font-bold text-base text-white group-hover:text-rose-400 transition-colors">
-                      {t.name}
-                    </h3>
-
-                    {t.winnerName && (
-                      <div className="text-xs text-rose-400 mt-1 font-medium">
-                        Juara: <strong>{t.winnerName}</strong>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-xs text-zinc-400">
-                    <span className="flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5" />
-                      {t.players.length} Pemain ({t.format})
-                    </span>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeletingTournamentId(t.id);
-                        }}
-                        className="p-1 rounded text-zinc-500 hover:text-rose-400 transition-colors"
-                        title="Hapus Turnamen"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                      <span className="text-zinc-300 group-hover:text-white font-medium text-xs flex items-center gap-0.5">
-                        Buka Bagan <ChevronRight className="w-3.5 h-3.5" />
-                      </span>
+                    <div className="text-[13px] text-ink-3 mt-1 truncate">
+                      {t.gameType} · race to {t.raceTo} · {t.players.length} pemain ·{' '}
+                      {FORMAT_LABEL[t.format] || t.format}
+                      {t.winnerName && (
+                        <>
+                          {' · '}juara <span className="text-ink font-semibold">{t.winnerName}</span>
+                        </>
+                      )}
                     </div>
                   </div>
-                </div>
-              );
-            })
-          )}
+                  <ChevronRight className="w-4 h-4 text-ink-3 shrink-0" />
+                </button>
+
+                <button
+                  onClick={() => setDeletingTournamentId(t.id)}
+                  className="icon-btn hover:!text-danger"
+                  title="Hapus turnamen"
+                  aria-label={`Hapus turnamen ${t.name}`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -255,51 +224,41 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
       <Modal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        title="Buat Turnamen Baru"
+        title="Turnamen baru"
       >
-        <form onSubmit={handleCreateTournament} className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
+        <form onSubmit={handleCreateTournament} className="space-y-5">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-              Nama Turnamen / Event
+            <label htmlFor="t-name" className="label">
+              Nama turnamen
             </label>
             <input
+              id="t-name"
               type="text"
               value={tourneyName}
               onChange={(e) => setTourneyName(e.target.value)}
-              className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-sm font-semibold text-white focus:outline-none focus:border-rose-500 transition-colors"
+              className="field"
               required
             />
           </div>
 
-          {/* Tournament Format Selector */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-              Format Bagan Turnamen
-            </label>
+            <span className="label">Format</span>
             <div className="grid grid-cols-3 gap-2">
-              {[
-                { id: 'Single Elimination', label: 'Single Elim', desc: 'Gugur Tunggal' },
-                { id: 'Double Elimination', label: 'Double Elim', desc: 'Kalah-Menang' },
-                { id: 'Round Robin', label: 'Round Robin', desc: 'Sistem Grup' },
-              ].map((f) => (
+              {formatOptions.map((f) => (
                 <button
                   type="button"
                   key={f.id}
                   onClick={() => {
-                    const nextFormat = f.id as TournamentFormat;
-                    setTourneyFormat(nextFormat);
-                    if (nextFormat === 'Double Elimination' && numPlayers > 16) {
+                    setTourneyFormat(f.id);
+                    if (f.id === 'Double Elimination' && numPlayers > 16) {
                       handlePlayerCountChange(16);
                     }
                   }}
-                  className={`p-2 rounded-xl border text-center transition-all ${
-                    tourneyFormat === f.id
-                      ? 'border-rose-500 bg-rose-600 text-white shadow-sm font-bold'
-                      : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
-                  }`}
+                  data-on={tourneyFormat === f.id}
+                  className="opt !px-1.5"
                 >
-                  <div className="text-xs font-semibold">{f.label}</div>
-                  <div className="text-[10px] text-zinc-400 mt-0.5">{f.desc}</div>
+                  <span>{f.label}</span>
+                  <span className="opt-sub">{f.desc}</span>
                 </button>
               ))}
             </div>
@@ -307,13 +266,14 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-                Varian Game
+              <label htmlFor="t-game" className="label">
+                Permainan
               </label>
               <select
+                id="t-game"
                 value={gameType}
                 onChange={(e) => setGameType(e.target.value as GameType)}
-                className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-white focus:outline-none focus:border-rose-500"
+                className="field"
               >
                 <option value="9-Ball">9-Ball</option>
                 <option value="8-Ball">8-Ball</option>
@@ -323,24 +283,23 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-                Race To (Poin Menang)
+              <label htmlFor="t-race" className="label">
+                Race to
               </label>
               <input
+                id="t-race"
                 type="number"
                 min="1"
                 max="25"
                 value={raceTo}
                 onChange={(e) => setRaceTo(parseInt(e.target.value, 10) || 7)}
-                className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-white focus:outline-none focus:border-rose-500 font-mono"
+                className="field"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-              Jumlah Pemain (Bagan Bracket)
-            </label>
+            <span className="label">Jumlah pemain</span>
             <div className="grid grid-cols-4 gap-2">
               {[4, 8, 16, 32].map((count) => {
                 const disabled = tourneyFormat === 'Double Elimination' && count > 16;
@@ -350,37 +309,31 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
                     key={count}
                     disabled={disabled}
                     onClick={() => handlePlayerCountChange(count)}
-                    className={`py-2 px-1 rounded-xl border text-xs font-semibold transition-all ${
-                      numPlayers === count
-                        ? 'border-rose-500 bg-rose-600 text-white shadow-sm'
-                        : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed'
-                    }`}
+                    data-on={numPlayers === count}
+                    className="opt"
                   >
-                    {count} Pemain
+                    <span className="num text-xl">{count}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Player Names Input */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2 flex items-center justify-between">
-              <span>Daftar Peserta Pemain ({playerNames.length})</span>
+            <div className="flex items-baseline justify-between mb-1.5">
+              <span className="text-[13px] font-medium text-ink-2">Peserta ({playerNames.length})</span>
               <button
                 type="button"
                 onClick={() => setPlayerNames(generateDefaultPlayerNames(numPlayers, registeredPlayerNames))}
-                className="text-[11px] text-rose-400 hover:underline capitalize"
+                className="text-[13px] font-medium text-ink-2 hover:text-ink underline underline-offset-2"
               >
-                Reset Nama
+                Atur ulang nama
               </button>
-            </label>
-            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1 bg-zinc-950/60 rounded-xl border border-zinc-800">
+            </div>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 max-h-52 overflow-y-auto pr-1">
               {playerNames.map((name, idx) => (
-                <div key={idx} className="flex items-center gap-2 bg-zinc-950 border border-zinc-800 px-2.5 py-1.5 rounded-xl">
-                  <span className="text-[11px] font-mono text-zinc-500 font-bold w-4">
-                    #{idx + 1}
-                  </span>
+                <div key={idx} className="flex items-center gap-2">
+                  <span className="num text-base text-ink-3 w-6 text-right shrink-0">{idx + 1}</span>
                   <input
                     type="text"
                     value={name}
@@ -390,7 +343,8 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
                       setPlayerNames(updated);
                     }}
                     placeholder={`Pemain ${idx + 1}`}
-                    className="w-full bg-transparent text-xs text-white focus:outline-none"
+                    aria-label={`Nama peserta ${idx + 1}`}
+                    className="field !h-9 !text-sm"
                     required
                   />
                 </div>
@@ -398,32 +352,24 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
             </div>
           </div>
 
-          <div className="flex gap-2 pt-2">
-            <button
-              type="submit"
-              className="flex-1 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs shadow-md transition-all active:scale-95"
-            >
-              Generate Bagan Turnamen
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsCreateModalOpen(false)}
-              className="px-4 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-xs"
-            >
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={() => setIsCreateModalOpen(false)} className="btn btn-lg btn-secondary">
               Batal
+            </button>
+            <button type="submit" className="btn btn-lg btn-primary flex-1">
+              Buat bagan
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* Delete Tournament Confirm Dialog */}
       <ConfirmDialog
         isOpen={!!deletingTournamentId}
         onClose={() => setDeletingTournamentId(null)}
         onConfirm={handleConfirmDelete}
-        title="Hapus Turnamen Ini?"
-        message="Seluruh bagan pertandingan dan skor pada turnamen ini akan dihapus secara permanen."
-        confirmText="Ya, Hapus"
+        title="Hapus turnamen ini?"
+        message="Seluruh bagan pertandingan dan skor pada turnamen ini akan dihapus permanen."
+        confirmText="Ya, hapus"
         cancelText="Batal"
         iconType="delete"
         type="danger"

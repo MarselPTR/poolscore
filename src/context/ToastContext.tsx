@@ -54,39 +54,39 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       {children}
 
       {/* Floating Toast Notification Stack (Centered Top / Mobile-Friendly) */}
-      <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2.5 w-full max-w-sm px-4 pointer-events-none select-none">
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-full max-w-sm px-4 pointer-events-none select-none">
         {toasts.map((toast) => {
-          let borderClass = 'border-rose-500/40 bg-zinc-950/95 text-white';
-          let icon = <Info className="w-5 h-5 text-rose-500 shrink-0" />;
+          let accentClass = 'border-l-ink-3';
+          let icon = <Info className="w-[18px] h-[18px] text-ink-2 shrink-0 mt-0.5" />;
 
           if (toast.type === 'success') {
-            borderClass = 'border-emerald-500/40 bg-zinc-950/95 text-white';
-            icon = <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />;
+            accentClass = 'border-l-ok';
+            icon = <CheckCircle2 className="w-[18px] h-[18px] text-ok shrink-0 mt-0.5" />;
           } else if (toast.type === 'error') {
-            borderClass = 'border-rose-600/50 bg-zinc-950/95 text-white';
-            icon = <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />;
+            accentClass = 'border-l-danger';
+            icon = <AlertCircle className="w-[18px] h-[18px] text-danger shrink-0 mt-0.5" />;
           } else if (toast.type === 'warning') {
-            borderClass = 'border-amber-500/40 bg-zinc-950/95 text-white';
-            icon = <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />;
+            accentClass = 'border-l-warn';
+            icon = <AlertTriangle className="w-[18px] h-[18px] text-warn shrink-0 mt-0.5" />;
           }
 
           return (
             <div
               key={toast.id}
-              className={`pointer-events-auto p-4 rounded-2xl border shadow-2xl backdrop-blur-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-4 duration-200 transition-all ${borderClass}`}
+              role="status"
+              className={`pointer-events-auto py-3 pl-3 pr-2 bg-panel text-ink border border-rule border-l-[3px] rounded-[4px] shadow-lg flex items-start gap-2.5 animate-rise ${accentClass}`}
             >
               {icon}
-              <div className="flex-1 min-w-0 pr-1">
-                <div className="font-bold text-xs leading-snug">{toast.title}</div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-sm leading-snug">{toast.title}</div>
                 {toast.message && (
-                  <div className="text-[11px] text-zinc-400 mt-0.5 leading-relaxed">
-                    {toast.message}
-                  </div>
+                  <div className="text-[13px] text-ink-2 mt-0.5 leading-snug">{toast.message}</div>
                 )}
               </div>
               <button
                 onClick={() => removeToast(toast.id)}
-                className="text-zinc-500 hover:text-white p-0.5 rounded-lg transition-colors shrink-0"
+                className="icon-btn !w-7 !h-7"
+                aria-label="Tutup"
               >
                 <X className="w-4 h-4" />
               </button>

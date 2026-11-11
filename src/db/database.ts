@@ -24,7 +24,7 @@ export class PoolScoreDatabase extends Dexie {
 export const db = new PoolScoreDatabase();
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  theme: 'obsidian',
+  theme: 'dark',
   touchProtection: 'hold',
   holdDurationMs: 500,
   soundEnabled: true,
@@ -40,14 +40,14 @@ export const DEFAULT_SETTINGS: AppSettings = {
 };
 
 export const DEFAULT_CLUB_TABLES: ClubTable[] = [
-  { id: 1, name: 'Meja 1 (VIP Diamond)', status: 'FREE' },
-  { id: 2, name: 'Meja 2 (Standard Pro)', status: 'FREE' },
-  { id: 3, name: 'Meja 3 (Standard Pro)', status: 'FREE' },
-  { id: 4, name: 'Meja 4 (Standard Pro)', status: 'FREE' },
-  { id: 5, name: 'Meja 5 (Standard Pro)', status: 'FREE' },
-  { id: 6, name: 'Meja 6 (Standard Pro)', status: 'FREE' },
-  { id: 7, name: 'Meja 7 (Practice Table)', status: 'FREE' },
-  { id: 8, name: 'Meja 8 (Practice Table)', status: 'FREE' },
+  { id: 1, name: 'Meja 1', status: 'FREE' },
+  { id: 2, name: 'Meja 2', status: 'FREE' },
+  { id: 3, name: 'Meja 3', status: 'FREE' },
+  { id: 4, name: 'Meja 4', status: 'FREE' },
+  { id: 5, name: 'Meja 5', status: 'FREE' },
+  { id: 6, name: 'Meja 6', status: 'FREE' },
+  { id: 7, name: 'Meja 7', status: 'FREE' },
+  { id: 8, name: 'Meja 8', status: 'FREE' },
 ];
 
 // Clean Database initialization: only default settings & tables, then sync from Supabase

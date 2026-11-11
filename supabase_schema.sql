@@ -107,14 +107,14 @@ CREATE TABLE IF NOT EXISTS public.club_tables (
 -- 7. Insert Initial 8 Billiard Tables if empty
 INSERT INTO public.club_tables (id, name, status)
 VALUES
-  (1, 'Meja 1 (VIP Diamond)', 'FREE'),
-  (2, 'Meja 2 (Standard Pro)', 'FREE'),
-  (3, 'Meja 3 (Standard Pro)', 'FREE'),
-  (4, 'Meja 4 (Standard Pro)', 'FREE'),
-  (5, 'Meja 5 (Standard Pro)', 'FREE'),
-  (6, 'Meja 6 (Standard Pro)', 'FREE'),
-  (7, 'Meja 7 (Match Arena)', 'FREE'),
-  (8, 'Meja 8 (TV Final Arena)', 'FREE')
+  (1, 'Meja 1', 'FREE'),
+  (2, 'Meja 2', 'FREE'),
+  (3, 'Meja 3', 'FREE'),
+  (4, 'Meja 4', 'FREE'),
+  (5, 'Meja 5', 'FREE'),
+  (6, 'Meja 6', 'FREE'),
+  (7, 'Meja 7', 'FREE'),
+  (8, 'Meja 8', 'FREE')
 ON CONFLICT (id) DO NOTHING;
 
 -- 8. Row Level Security (RLS) Policies

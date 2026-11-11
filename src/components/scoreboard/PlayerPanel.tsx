@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { MatchPlayer } from '../../types';
 import { useSettings } from '../../context/SettingsContext';
-import { Minus, Check, Layers } from 'lucide-react';
-import { PlayerAvatar } from '../common/PlayerAvatar';
+import { Minus } from 'lucide-react';
 
 interface PlayerPanelProps {
   player: MatchPlayer;
@@ -10,12 +9,15 @@ interface PlayerPanelProps {
   isActiveTurn: boolean;
   onWinRack: () => void;
   onAdjustScore: (delta: number) => void;
-  onSelectTurn: () => void;
   isGameFinished: boolean;
+  raceTo: number;
   setsWon?: number;
   targetSets?: number;
   fontSizePreference?: 'standard' | 'large' | 'massive';
 }
+
+// Above this the row of win markers gets too small to read, so we show text.
+const MAX_RACE_MARKERS = 13;
 
 export const PlayerPanel: React.FC<PlayerPanelProps> = ({
   player,
@@ -24,6 +26,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
   onWinRack,
   onAdjustScore,
   isGameFinished,
+  raceTo,
   setsWon = 0,
   targetSets = 1,
   fontSizePreference = 'large',
@@ -37,7 +40,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
   const [isConfirming, setIsConfirming] = useState(false);
 
   const isMultiSet = targetSets > 1;
-  const isRed = playerNumber === 1;
+  const mode = settings.touchProtection;
 
   const holdDuration = settings.holdDurationMs || 500;
   const startTimeRef = useRef<number>(0);
@@ -46,7 +49,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
 
   useEffect(() => {
     setScoreBumping(true);
-    const t = setTimeout(() => setScoreBumping(false), 240);
+    const t = setTimeout(() => setScoreBumping(false), 220);
     return () => clearTimeout(t);
   }, [player.score]);
 
@@ -60,18 +63,9 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
   }, []);
 
   const handlePointerDown = () => {
-    if (isGameFinished) return;
+    // Quick and confirm modes act on click; only hold mode starts here.
+    if (isGameFinished || mode === 'quick' || mode === 'confirm') return;
 
-    if (settings.touchProtection === 'quick') {
-      onWinRack();
-      return;
-    }
-
-    if (settings.touchProtection === 'confirm') {
-      return;
-    }
-
-    // Hold mode
     setIsHolding(true);
     startTimeRef.current = performance.now();
 
@@ -94,7 +88,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
   const handleClick = (e: React.MouseEvent) => {
     if (isGameFinished) return;
 
-    if (settings.touchProtection === 'confirm') {
+    if (mode === 'confirm') {
       e.stopPropagation();
       if (!isConfirming) {
         setIsConfirming(true);
@@ -107,7 +101,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
         if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
         onWinRack();
       }
-    } else if (settings.touchProtection === 'quick') {
+    } else if (mode === 'quick') {
       onWinRack();
     }
   };
@@ -118,17 +112,16 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
     if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
   };
 
-  const activePanelStyle = isActiveTurn
-    ? isRed
-      ? 'bg-zinc-900/90 border-rose-500/70 shadow-lg shadow-rose-950/20 ring-1 ring-rose-500/30'
-      : 'bg-zinc-900/90 border-blue-500/70 shadow-lg shadow-blue-950/20 ring-1 ring-blue-500/30'
-    : 'bg-zinc-900/40 border-zinc-800/80 hover:border-zinc-700/80';
+  const scoreScale =
+    fontSizePreference === 'massive' ? 1.12 : fontSizePreference === 'standard' ? 0.82 : 1;
 
-  const scoreSizeClass = fontSizePreference === 'massive'
-    ? 'text-7xl sm:text-8xl md:text-9xl lg:text-[120px]'
-    : fontSizePreference === 'standard'
-    ? 'text-5xl sm:text-6xl md:text-7xl lg:text-8xl'
-    : 'text-6xl sm:text-7xl md:text-8xl lg:text-[105px]';
+  const showMarkers = raceTo <= MAX_RACE_MARKERS;
+  const hint =
+    mode === 'hold'
+      ? 'Tahan untuk menang rack'
+      : mode === 'confirm'
+      ? 'Ketuk dua kali untuk menang rack'
+      : 'Ketuk untuk menang rack';
 
   return (
     <div
@@ -137,157 +130,114 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({
       onPointerLeave={cancelHold}
       onPointerCancel={cancelHold}
       onClick={handleClick}
-      className={`relative flex flex-col items-center justify-between p-3.5 sm:p-5 h-full rounded-2xl border transition-all duration-200 select-none cursor-pointer overflow-hidden group active:scale-[0.995] ${activePanelStyle}`}
+      data-turn={isActiveTurn}
+      role="button"
+      aria-label={`${player.name}, skor ${player.score}. ${hint}`}
+      className={`score-half score-half-p${playerNumber} h-full w-full ${
+        isGameFinished ? '' : 'cursor-pointer'
+      }`}
+      style={{ ['--score-scale' as string]: scoreScale }}
     >
-      {/* Hold progress fill overlay */}
-      {settings.touchProtection === 'hold' && isHolding && (
+      {/* Hold progress rises from the bottom edge */}
+      {mode === 'hold' && isHolding && (
         <div
-          className={`absolute inset-0 transition-all pointer-events-none z-0 ${
-            isRed ? 'bg-rose-500/20' : 'bg-blue-500/20'
-          }`}
-          style={{
-            height: `${progress * 100}%`,
-            top: 'auto',
-            bottom: 0,
-          }}
+          className="absolute inset-x-0 bottom-0 bg-white/25 pointer-events-none"
+          style={{ height: `${progress * 100}%` }}
         />
       )}
 
-      {/* Top Section: Player Header & Sets Badge */}
-      <div className="flex flex-col items-center gap-2 z-10 pointer-events-none w-full">
-        <div className="flex items-center justify-center gap-3">
-          {isRed && (
-            <PlayerAvatar
-              playerNumber={1}
-              name={player.name}
-              size="sm"
-              isActiveTurn={isActiveTurn}
-            />
-          )}
+      {/* Turn marker: a solid bar along the top of the shooter's half */}
+      {isActiveTurn && <div className="absolute inset-x-0 top-0 h-2 bg-white" />}
 
-          <h2
-            className={`font-semibold tracking-tight text-base sm:text-xl lg:text-2xl truncate max-w-[150px] sm:max-w-[200px] ${
-              isActiveTurn
-                ? isRed
-                  ? 'text-rose-400 font-bold'
-                  : 'text-blue-400 font-bold'
-                : 'text-zinc-400'
-            }`}
-          >
-            {player.name}
-          </h2>
-
-          {!isRed && (
-            <PlayerAvatar
-              playerNumber={2}
-              name={player.name}
-              size="sm"
-              isActiveTurn={isActiveTurn}
-            />
-          )}
-        </div>
-
-        {/* Set Score Pill */}
-        {isMultiSet && (
-          <div
-            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold uppercase ${
-              isRed
-                ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
-                : 'bg-blue-500/15 text-blue-300 border border-blue-500/30'
-            }`}
-          >
-            <Layers className="w-3 h-3" />
-            <span>{setsWon} / {targetSets} SET</span>
-          </div>
-        )}
-      </div>
-
-      {/* Center Section: Tabular Score Numerals with Tactile Minus Correction Only */}
-      <div className="relative flex items-center justify-center my-auto py-2 z-10 w-full">
-        {/* Giant Crisp Tabular Score Numeral */}
-        <div
-          className={`font-mono font-black font-tabular tracking-tight leading-none transition-all duration-150 pointer-events-none ${scoreSizeClass} ${
-            scoreBumping ? 'animate-score-bump' : ''
-          } ${
-            isActiveTurn
-              ? isRed
-                ? 'text-rose-500'
-                : 'text-blue-500'
-              : 'text-zinc-600'
-          }`}
-        >
-          {player.score}
-        </div>
-
-        {/* Tactile Manual Minus Correction Button (No Plus button) */}
-        {player.score > 0 && !isGameFinished && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onAdjustScore(-1);
-            }}
-            title="Koreksi: Kurangi 1 poin (-1)"
-            className="absolute right-2 sm:right-4 p-2 sm:p-2.5 rounded-xl bg-zinc-800/90 hover:bg-rose-500/20 hover:border-rose-500/40 border border-zinc-700/80 text-zinc-300 hover:text-rose-400 transition-all active:scale-90 z-20 shadow-md flex items-center justify-center"
-          >
-            <Minus className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-        )}
-      </div>
-
-      {/* Bottom Area: Turn Cue & Action Target */}
-      <div className="flex flex-col items-center gap-1.5 w-full z-10 pointer-events-none">
-        {/* Active Shooter Status */}
-        <div className="h-4 flex items-center justify-center">
-          {isActiveTurn ? (
+      <div className="relative h-full flex flex-col items-center justify-between px-4 pt-[6cqh] pb-[4cqh] pointer-events-none">
+        {/* Name and turn */}
+        <div className="flex flex-col items-center gap-[1.5cqh] w-full min-w-0">
+          <h2 className="score-name max-w-full truncate px-2">{player.name}</h2>
+          <div className="flex items-center gap-3 h-5">
             <span
-              className={`inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider ${
-                isRed ? 'text-rose-400' : 'text-blue-400'
+              className={`font-display font-semibold uppercase tracking-[0.12em] text-sm ${
+                isActiveTurn ? 'opacity-100' : 'opacity-0'
               }`}
             >
-              <span className={`w-1.5 h-1.5 rounded-full ${isRed ? 'bg-rose-500' : 'bg-blue-500'}`} />
-              Giliran Menembak
+              Giliran
             </span>
-          ) : (
-            <span className="text-[10px] text-zinc-600 uppercase font-mono">
-              {isMultiSet ? 'Rack Menang' : 'Poin Game'}
-            </span>
-          )}
+            {isMultiSet && (
+              <span className="flex items-center gap-1.5" aria-label={`Set ${setsWon} dari ${targetSets}`}>
+                <span className="font-display font-semibold uppercase tracking-[0.12em] text-sm opacity-80">
+                  Set
+                </span>
+                {Array.from({ length: targetSets }).map((_, i) => (
+                  <span
+                    key={i}
+                    className={`w-3 h-3 ${i < setsWon ? 'bg-white' : 'bg-white/25'}`}
+                  />
+                ))}
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Action Prompt Pill */}
-        <div className="w-full max-w-[200px] flex justify-center pointer-events-auto">
-          {settings.touchProtection === 'confirm' && isConfirming ? (
-            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-              <button
-                onClick={handleClick}
-                className={`px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-lg ${
-                  isRed ? 'bg-rose-600 hover:bg-rose-500' : 'bg-blue-600 hover:bg-blue-500'
-                } text-white shadow-sm flex items-center gap-1 active:scale-95`}
-              >
-                <Check className="w-3.5 h-3.5" /> Konfirmasi
-              </button>
-              <button
-                onClick={handleCancelConfirm}
-                className="px-2.5 py-1.5 text-xs font-medium uppercase rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white"
-              >
-                Batal
-              </button>
+        {/* Score */}
+        <div className={`score-num ${scoreBumping ? 'animate-score-bump' : ''}`}>{player.score}</div>
+
+        {/* Race progress and action hint */}
+        <div className="flex flex-col items-center gap-[2cqh] w-full">
+          {showMarkers ? (
+            <div
+              className="flex items-center justify-center gap-1 w-full max-w-[420px]"
+              aria-label={`${player.score} dari ${raceTo} rack`}
+            >
+              {Array.from({ length: raceTo }).map((_, i) => (
+                <span
+                  key={i}
+                  className={`h-2.5 flex-1 max-w-8 ${i < player.score ? 'bg-white' : 'bg-white/25'}`}
+                />
+              ))}
             </div>
           ) : (
-            <div
-              className={`w-full py-1.5 px-3 rounded-lg border text-center font-semibold text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
-                isRed
-                  ? 'border-rose-500/30 bg-rose-500/10 text-rose-300 group-hover:bg-rose-500/20'
-                  : 'border-blue-500/30 bg-blue-500/10 text-blue-300 group-hover:bg-blue-500/20'
-              }`}
-            >
-              <span>
-                {settings.touchProtection === 'hold' ? 'Tahan untuk Win Rack' : 'Tekan untuk Win Rack'}
-              </span>
+            <div className="font-display font-semibold uppercase tracking-[0.12em] text-sm opacity-80">
+              Race to {raceTo}
             </div>
           )}
+
+          <div className="h-9 flex items-center justify-center pointer-events-auto">
+            {isGameFinished ? null : mode === 'confirm' && isConfirming ? (
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={handleClick}
+                  className="h-9 px-4 rounded-[4px] bg-white text-black text-sm font-semibold"
+                >
+                  Ya, menang rack
+                </button>
+                <button
+                  onClick={handleCancelConfirm}
+                  className="h-9 px-3 rounded-[4px] border border-white/50 text-white text-sm font-semibold"
+                >
+                  Batal
+                </button>
+              </div>
+            ) : (
+              <span className="text-[13px] opacity-75 pointer-events-none">{hint}</span>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Manual correction */}
+      {player.score > 0 && !isGameFinished && (
+        <button
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            onAdjustScore(-1);
+          }}
+          title="Koreksi: kurangi 1"
+          aria-label={`Kurangi 1 skor ${player.name}`}
+          className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center rounded-[4px] border border-white/40 bg-black/20 text-white hover:bg-black/35"
+        >
+          <Minus className="w-5 h-5" />
+        </button>
+      )}
     </div>
   );
 };

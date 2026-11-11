@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { ClubTable } from '../../types';
 import { db } from '../../db/database';
 import { pullInitialDataFromSupabase } from '../../services/supabaseService';
-import { Plus, Clock, Users, Activity, Tv, LayoutGrid } from 'lucide-react';
-import { PlayerAvatar } from '../common/PlayerAvatar';
+import { Tv } from 'lucide-react';
 
 interface ClubViewProps {
   onOpenQuickMatchForTable: (tableNumber: number) => void;
@@ -51,154 +50,90 @@ export const ClubView: React.FC<ClubViewProps> = ({
 
   const activeTablesCount = tables.filter((t) => t.status === 'LIVE').length;
 
-  return (
-    <div className="space-y-5 max-w-5xl mx-auto pb-20 select-none animate-fade-in px-2 sm:px-0">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-            <LayoutGrid className="w-6 h-6 text-rose-500" />
-            Club Dashboard & Multi-Table Arena
-          </h2>
-          <p className="text-zinc-400 text-xs mt-1">
-            Pantau status operasional dan skor setiap meja billiard di arena Anda secara terpusat.
-          </p>
-        </div>
+  const stats = [
+    { label: 'Meja dipakai', value: `${activeTablesCount}`, suffix: `/ ${tables.length}` },
+    { label: 'Pertandingan 24 jam', value: `${matchesToday}` },
+    { label: 'Pemain 24 jam', value: `${playersToday}` },
+  ];
 
-        <button
-          onClick={onOpenTVView}
-          className="px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-white font-medium text-xs flex items-center justify-center gap-2 transition-all self-start sm:self-auto shadow-sm active:scale-95"
-        >
-          <Tv className="w-4 h-4 text-zinc-400" />
-          Buka Tampilan TV
+  return (
+    <div className="w-full space-y-6 select-none">
+      <div className="flex items-end justify-between gap-4">
+        <h1 className="page-title">Klub</h1>
+        <button onClick={onOpenTVView} className="btn btn-secondary shrink-0">
+          <Tv className="w-4 h-4" />
+          Tampilan TV
         </button>
       </div>
 
-      {/* Metrics Row (Unified Clean Neutral Zinc with Crimson Highlight) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-tabular">
-        <div className="p-4 rounded-2xl bg-zinc-900/70 border border-zinc-800">
-          <div className="text-[11px] text-zinc-500 uppercase font-semibold flex items-center gap-1.5">
-            <Activity className="w-3.5 h-3.5 text-rose-500" /> Meja Live
+      {/* Figures */}
+      <div className="grid grid-cols-3 border-y border-rule divide-x divide-rule">
+        {stats.map((s, i) => (
+          <div key={s.label} className={`py-3 ${i === 0 ? 'pr-3' : 'px-3'}`}>
+            <div className="eyebrow">{s.label}</div>
+            <div className="num text-4xl text-ink mt-1.5">
+              {s.value}
+              {s.suffix && <span className="text-xl text-ink-3 ml-1.5">{s.suffix}</span>}
+            </div>
           </div>
-          <div className="font-bold text-2xl text-rose-400 mt-1">
-            {activeTablesCount} <span className="text-xs font-normal text-zinc-500">/ {tables.length}</span>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-zinc-900/70 border border-zinc-800">
-          <div className="text-[11px] text-zinc-500 uppercase font-semibold flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-zinc-400" /> Match (24 Jam)
-          </div>
-          <div className="font-bold text-2xl text-white mt-1">
-            {matchesToday}
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-zinc-900/70 border border-zinc-800">
-          <div className="text-[11px] text-zinc-500 uppercase font-semibold flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5 text-zinc-400" /> Pemain Aktif
-          </div>
-          <div className="font-bold text-2xl text-white mt-1">
-            {playersToday}
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-zinc-900/70 border border-zinc-800">
-          <div className="text-[11px] text-zinc-500 uppercase font-semibold flex items-center gap-1.5">
-            <LayoutGrid className="w-3.5 h-3.5 text-zinc-400" /> Total Meja
-          </div>
-          <div className="font-bold text-2xl text-white mt-1">
-            {tables.length}
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Tables Grid */}
-      <div>
-        <h3 className="font-bold text-base text-white mb-3 px-0.5">
-          Daftar Meja Arena
-        </h3>
+      {/* Tables */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {tables.map((table) => {
+          const isLive = table.status === 'LIVE';
+          const isMaintenance = table.status === 'MAINTENANCE';
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          {tables.map((table) => {
-            const isLive = table.status === 'LIVE';
+          return (
+            <div
+              key={table.id}
+              className={`flex flex-col bg-panel border rounded-[4px] min-h-[150px] ${
+                isLive ? 'border-ink' : 'border-rule'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2 px-3 h-10 border-b border-rule">
+                <span className="display text-lg truncate">{table.name}</span>
+                <span className={`tag shrink-0 ${isLive ? 'tag-live' : ''}`}>
+                  {isLive ? 'Dipakai' : isMaintenance ? 'Perbaikan' : 'Kosong'}
+                </span>
+              </div>
 
-            return (
-              <div
-                key={table.id}
-                className={`p-4 rounded-2xl border transition-all ${isLive
-                    ? 'border-rose-500/40 bg-zinc-900 shadow-sm'
-                    : 'border-zinc-800 bg-zinc-900/60 hover:border-zinc-700'
-                  }`}
-              >
-                {/* Table Header */}
-                <div className="flex items-center justify-between mb-3">
-                  <span className="font-bold text-sm text-white flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${isLive ? 'bg-rose-500 animate-pulse' : 'bg-zinc-600'}`} />
-                    {table.name}
-                  </span>
-
-                  <span
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase ${isLive
-                        ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
-                        : 'bg-zinc-800 text-zinc-400'
-                      }`}
-                  >
-                    {isLive ? 'LIVE' : 'KOSONG'}
-                  </span>
-                </div>
-
-                {/* Table Content */}
-                {isLive ? (
-                  <div className="space-y-2">
-                    <div className="text-xs text-rose-400 font-semibold">
-                      {table.gameType || 'Match'} Berlangsung
+              {isLive ? (
+                <div className="flex-1 flex flex-col justify-center">
+                  <div className="rows">
+                    <div className="flex items-center gap-2.5 h-11 pr-3">
+                      <span className="w-1 self-stretch bg-p1" />
+                      <span className="flex-1 truncate text-[15px] text-ink">{table.player1Name}</span>
+                      <span className="num text-2xl text-ink">{table.score1 ?? 0}</span>
                     </div>
-
-                    {/* Players & Score */}
-                    <div className="p-2.5 rounded-xl bg-zinc-950/80 border border-zinc-800">
-                      <div className="flex items-center justify-between text-xs py-1">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <PlayerAvatar playerNumber={1} size="xs" name={table.player1Name} />
-                          <span className="font-medium text-white truncate max-w-[110px]">
-                            {table.player1Name}
-                          </span>
-                        </div>
-                        <span className="font-mono font-bold text-rose-400 text-sm ml-2">
-                          {table.score1 ?? 0}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between text-xs py-1 border-t border-zinc-800/80">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <PlayerAvatar playerNumber={2} size="xs" name={table.player2Name} />
-                          <span className="font-medium text-white truncate max-w-[110px]">
-                            {table.player2Name}
-                          </span>
-                        </div>
-                        <span className="font-mono font-bold text-blue-400 text-sm ml-2">
-                          {table.score2 ?? 0}
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-2.5 h-11 pr-3">
+                      <span className="w-1 self-stretch bg-p2" />
+                      <span className="flex-1 truncate text-[15px] text-ink">{table.player2Name}</span>
+                      <span className="num text-2xl text-ink">{table.score2 ?? 0}</span>
                     </div>
                   </div>
-                ) : (
-                  <div className="py-5 text-center space-y-2.5">
-                    <div className="text-xs text-zinc-500">
-                      Meja siap digunakan
-                    </div>
+                  <div className="px-3 py-2 border-t border-rule text-[13px] text-ink-3">
+                    {table.gameType || 'Pertandingan'} sedang berlangsung
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center p-3">
+                  {isMaintenance ? (
+                    <span className="text-sm text-ink-3">Tidak tersedia</span>
+                  ) : (
                     <button
                       onClick={() => onOpenQuickMatchForTable(table.id)}
-                      className="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white font-medium text-xs border border-zinc-700/60 transition-all flex items-center justify-center gap-1.5 mx-auto active:scale-95 shadow-sm"
+                      className="btn btn-secondary btn-block"
                     >
-                      <Plus className="w-3.5 h-3.5" /> Mulai Match di Meja Ini
+                      Mulai di meja ini
                     </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

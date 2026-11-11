@@ -12,6 +12,10 @@ interface SettingsContextType {
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
+// Older versions stored extra dark variants (obsidian, carbon, navy,
+// felt-green). Anything that is not "light" now maps to the single dark theme.
+const normalizeTheme = (theme: unknown): ThemeMode => (theme === 'light' ? 'light' : 'dark');
+
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
 
@@ -25,6 +29,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       document.documentElement.classList.add('dark');
       document.documentElement.classList.remove('light');
     }
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', isLight ? '#f3f3f1' : '#0b0c0e');
   };
 
   useEffect(() => {
@@ -32,29 +38,31 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       try {
         const stored = await db.settings.get('global_settings');
         if (stored) {
-          setSettings(stored);
-          applyTheme(stored.theme);
+          const theme = normalizeTheme(stored.theme);
+          setSettings({ ...stored, theme });
+          applyTheme(theme);
         } else {
           await db.settings.put({ ...DEFAULT_SETTINGS, id: 'global_settings' });
           applyTheme(DEFAULT_SETTINGS.theme);
         }
       } catch {
-        applyTheme('obsidian');
+        applyTheme('dark');
       }
     };
     loadSettings();
   }, []);
 
   const toggleTheme = () => {
-    const nextTheme: ThemeMode = settings.theme === 'light' ? 'obsidian' : 'light';
+    const nextTheme: ThemeMode = settings.theme === 'light' ? 'dark' : 'light';
     updateSettings({ theme: nextTheme });
   };
 
   const updateSettings = async (newPartial: Partial<AppSettings>) => {
     const updated = { ...settings, ...newPartial };
+    updated.theme = normalizeTheme(updated.theme);
     setSettings(updated);
     if (newPartial.theme) {
-      applyTheme(newPartial.theme);
+      applyTheme(updated.theme);
     }
     try {
       await db.settings.put({ ...updated, id: 'global_settings' });

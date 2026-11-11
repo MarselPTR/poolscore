@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import type { FoulType } from '../../types';
-import { PlayerAvatar } from '../common/PlayerAvatar';
-import { AlertTriangle, Check } from 'lucide-react';
 
 interface FoulModalProps {
   isOpen: boolean;
@@ -25,11 +23,11 @@ export const FoulModal: React.FC<FoulModalProps> = ({
   const [selectedFoul, setSelectedFoul] = useState<FoulType>('Scratch');
 
   const foulTypes: { type: FoulType; label: string; desc: string }[] = [
-    { type: 'Scratch', label: 'Scratch (Cue Ball Masuk)', desc: 'Bola putih masuk ke dalam lubang kantong meja' },
-    { type: 'Illegal Hit', label: 'Illegal Hit', desc: 'Tidak mengenai bola sasaran yang sah terlebih dahulu' },
-    { type: 'No Rail', label: 'No Rail Contact', desc: 'Tidak ada bola yang menyentuh bantalan (rail) setelah kontak' },
-    { type: 'Wrong Ball', label: 'Wrong Ball (Salah Bola)', desc: 'Menembak nomor bola yang tidak sesuai urutan/grup' },
-    { type: 'Other', label: 'Pelanggaran Lainnya', desc: 'Sentuhan tangan/stik, bola melompat keluar meja, dll.' },
+    { type: 'Scratch', label: 'Scratch', desc: 'Bola putih masuk ke kantong' },
+    { type: 'Illegal Hit', label: 'Illegal hit', desc: 'Tidak mengenai bola sasaran yang sah lebih dulu' },
+    { type: 'No Rail', label: 'No rail', desc: 'Tidak ada bola menyentuh ban setelah kontak' },
+    { type: 'Wrong Ball', label: 'Salah bola', desc: 'Menembak bola yang tidak sesuai urutan atau grup' },
+    { type: 'Other', label: 'Lainnya', desc: 'Sentuhan tangan atau stik, bola keluar meja, dan lain-lain' },
   ];
 
   const handleSubmit = () => {
@@ -37,82 +35,69 @@ export const FoulModal: React.FC<FoulModalProps> = ({
     onClose();
   };
 
+  const opponentName = selectedPlayer === 1 ? player2Name : player1Name;
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Catat Pelanggaran (Foul)">
-      <div className="space-y-4 select-none">
-        {/* Player Selector */}
+    <Modal isOpen={isOpen} onClose={onClose} title="Catat foul">
+      <div className="space-y-5 select-none">
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
-            Pemain yang Melakukan Foul
-          </label>
-          <div className="grid grid-cols-2 gap-2.5">
+          <span className="label">Pemain yang melakukan foul</span>
+          <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => setSelectedPlayer(1)}
-              className={`p-3 rounded-xl border flex items-center justify-center gap-2.5 font-semibold transition-all ${
-                selectedPlayer === 1
-                  ? 'border-rose-500/60 bg-rose-500/15 text-rose-300 shadow-sm'
-                  : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
-              }`}
+              data-on={selectedPlayer === 1}
+              className="opt opt-p1 !min-h-12"
             >
-              <PlayerAvatar playerNumber={1} name={player1Name} size="xs" isActiveTurn={selectedPlayer === 1} />
-              <span className="truncate text-sm">{player1Name}</span>
+              <span className="truncate max-w-full">{player1Name}</span>
             </button>
             <button
               onClick={() => setSelectedPlayer(2)}
-              className={`p-3 rounded-xl border flex items-center justify-center gap-2.5 font-semibold transition-all ${
-                selectedPlayer === 2
-                  ? 'border-blue-500/60 bg-blue-500/15 text-blue-300 shadow-sm'
-                  : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
-              }`}
+              data-on={selectedPlayer === 2}
+              className="opt opt-p2 !min-h-12"
             >
-              <PlayerAvatar playerNumber={2} name={player2Name} size="xs" isActiveTurn={selectedPlayer === 2} />
-              <span className="truncate text-sm">{player2Name}</span>
+              <span className="truncate max-w-full">{player2Name}</span>
             </button>
           </div>
         </div>
 
-        {/* Foul Type Selector */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
-            Jenis Pelanggaran
-          </label>
-          <div className="space-y-1.5">
-            {foulTypes.map((f) => (
-              <button
-                key={f.type}
-                onClick={() => setSelectedFoul(f.type)}
-                className={`w-full p-2.5 rounded-xl border text-left flex items-start justify-between transition-all ${
-                  selectedFoul === f.type
-                    ? 'border-amber-500/50 bg-amber-500/10 text-white shadow-sm'
-                    : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                <div>
-                  <div className="text-xs font-semibold text-white">{f.label}</div>
-                  <div className="text-[11px] text-zinc-500 mt-0.5">{f.desc}</div>
-                </div>
-                {selectedFoul === f.type && (
-                  <Check className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                )}
-              </button>
-            ))}
+          <span className="label">Jenis pelanggaran</span>
+          <div className="border border-rule rounded-[4px] rows" role="radiogroup">
+            {foulTypes.map((f) => {
+              const isOn = selectedFoul === f.type;
+              return (
+                <button
+                  key={f.type}
+                  role="radio"
+                  aria-checked={isOn}
+                  onClick={() => setSelectedFoul(f.type)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-left ${
+                    isOn ? 'bg-panel-2' : 'hover:bg-panel-2'
+                  }`}
+                >
+                  <span
+                    className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
+                      isOn ? 'border-ink' : 'border-rule-strong'
+                    }`}
+                  >
+                    {isOn && <span className="w-2 h-2 rounded-full bg-ink" />}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-ink">{f.label}</span>
+                    <span className="block text-[13px] text-ink-2">{f.desc}</span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Ball in Hand Notice */}
-        <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center gap-2.5 text-xs text-zinc-400">
-          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-          <span>
-            Giliran menembak akan otomatis dialihkan ke lawan dengan hak <strong>Ball in Hand</strong>.
-          </span>
-        </div>
+        <p className="notice notice-warn">
+          Giliran berpindah ke <strong>{opponentName}</strong> dengan ball in hand.
+        </p>
 
-        {/* Action Button */}
-        <button
-          onClick={handleSubmit}
-          className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs uppercase tracking-wider shadow-sm transition-all active:scale-95"
-        >
-          Konfirmasi Foul
+        <button onClick={handleSubmit} className="btn btn-lg btn-block btn-warn">
+          Catat foul
         </button>
       </div>
     </Modal>

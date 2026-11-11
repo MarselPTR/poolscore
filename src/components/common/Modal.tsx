@@ -34,35 +34,25 @@ export const Modal: React.FC<ModalProps> = ({
   if (!isOpen) return null;
 
   const modalContent = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto select-none">
-      {/* 1. Backdrop Glass Blur like Homepage */}
-      <div 
-        className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity animate-modal-backdrop" 
-        onClick={onClose} 
-      />
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-6">
+      <div className="fixed inset-0 bg-backdrop animate-fade" onClick={onClose} />
 
-      {/* 2. Elevated Modal Dialog Card */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`relative z-20 w-full ${maxWidth} bg-zinc-900 rounded-2xl p-5 sm:p-6 shadow-2xl border border-zinc-800 text-white max-h-[90vh] flex flex-col animate-modal-card`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className={`relative z-20 w-full ${maxWidth} bg-panel text-ink border border-rule sm:rounded-md max-h-[92vh] flex flex-col animate-rise`}
       >
         {title && (
-          <div className="flex items-center justify-between pb-3.5 border-b border-zinc-800 mb-4 shrink-0">
-            <h3 className="font-bold text-base sm:text-lg text-white">
-              {title}
-            </h3>
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
-              aria-label="Tutup"
-            >
-              <X className="w-4 h-4 shrink-0" />
+          <div className="flex items-center justify-between gap-3 pl-5 pr-3 h-14 border-b border-rule shrink-0">
+            <h3 className="display text-xl truncate">{title}</h3>
+            <button onClick={onClose} className="icon-btn" aria-label="Tutup">
+              <X className="w-5 h-5" />
             </button>
           </div>
         )}
-        <div className="overflow-y-auto pr-1 flex-1">
-          {children}
-        </div>
+        <div className="overflow-y-auto p-5 flex-1">{children}</div>
       </div>
     </div>
   );

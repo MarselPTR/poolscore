@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import type React from 'react';
 import { Modal } from '../common/Modal';
 import { useSettings } from '../../context/SettingsContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
-import type { TouchProtectionMode, GameType } from '../../types';
+import type { TouchProtectionMode, GameType, AppSettings } from '../../types';
 import { db } from '../../db/database';
-import { Sun, Moon, Smartphone, Database, Download, Upload, Trash2, Check, Sliders, User, LogOut } from 'lucide-react';
+import { Sun, Moon, Download, Upload, Trash2, LogOut } from 'lucide-react';
 import { PlayerAvatar } from '../common/PlayerAvatar';
 
 interface SettingsModalProps {
@@ -18,7 +19,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   const { settings, updateSettings, resetSettings } = useSettings();
   const { user, logout } = useAuth();
   const { success, error, info } = useToast();
-  const [copiedMsg] = useState<string>('');
 
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
@@ -90,207 +90,244 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
   const isLight = settings.theme === 'light';
 
+  const touchModes: { id: TouchProtectionMode; label: string; desc: string }[] = [
+    { id: 'hold', label: 'Tahan', desc: 'Paling aman' },
+    { id: 'confirm', label: 'Dua ketukan', desc: 'Ketuk lalu konfirmasi' },
+    { id: 'quick', label: 'Satu ketukan', desc: 'Paling cepat' },
+  ];
+
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} title="Pengaturan PoolScore">
-        <div className="space-y-5 select-none text-xs">
-          {copiedMsg && (
-            <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 font-medium flex items-center gap-2">
-              <Check className="w-4 h-4" /> {copiedMsg}
-            </div>
-          )}
-
-          {/* 0. User Account Card */}
+      <Modal isOpen={isOpen} onClose={onClose} title="Pengaturan">
+        <div className="space-y-7 select-none">
+          {/* Account */}
           {user && (
-            <div>
-              <label className="block uppercase tracking-wider text-zinc-400 font-semibold mb-2 flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-rose-500" /> Akun Terhubung
-              </label>
-
-              <div className="p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800 flex items-center justify-between gap-3 shadow-inner">
+            <section>
+              <h4 className="eyebrow pb-2 border-b border-rule">Akun</h4>
+              <div className="flex items-center justify-between gap-3 pt-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <PlayerAvatar name={user.name} size="md" />
                   <div className="min-w-0">
-                    <div className="font-bold text-sm text-white truncate">{user.name}</div>
-                    <div className="text-[11px] text-zinc-400 truncate">{user.email}</div>
-                    <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-400 text-[10px] font-semibold">
-                      <span>{user.role}</span>
-                      <span>·</span>
-                      <span>Rating {user.rating}</span>
+                    <div className="font-semibold text-ink truncate">{user.name}</div>
+                    <div className="text-[13px] text-ink-3 truncate">
+                      {user.isGuest ? 'Mode tamu' : user.email} · {user.role} · rating {user.rating}
                     </div>
                   </div>
                 </div>
 
-                <button
-                  onClick={() => setIsLogoutConfirmOpen(true)}
-                  className="px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-rose-400 text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 active:scale-95"
-                >
-                  <LogOut className="w-3.5 h-3.5" /> Keluar
+                <button onClick={() => setIsLogoutConfirmOpen(true)} className="btn btn-secondary btn-sm shrink-0">
+                  <LogOut className="w-4 h-4" /> Keluar
                 </button>
               </div>
-            </div>
+            </section>
           )}
 
-          {/* 1. Theme Selector */}
-          <div>
-            <label className="block uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-              Tema Tampilan
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => updateSettings({ theme: 'dark' })}
-                className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-semibold transition-all ${
-                  !isLight
-                    ? 'border-rose-500 bg-rose-600 text-white shadow-sm'
-                    : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
-                }`}
-              >
-                <Moon className="w-4 h-4" /> Dark Mode
-              </button>
-              <button
-                onClick={() => updateSettings({ theme: 'light' })}
-                className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-semibold transition-all ${
-                  isLight
-                    ? 'border-rose-500 bg-rose-600 text-white shadow-sm'
-                    : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
-                }`}
-              >
-                <Sun className="w-4 h-4" /> Light Mode
-              </button>
-            </div>
-          </div>
-
-          {/* 2. Default Game & Race To */}
-          <div>
-            <label className="block uppercase tracking-wider text-zinc-400 font-semibold mb-2 flex items-center gap-1.5">
-              <Sliders className="w-3.5 h-3.5 text-zinc-400" /> Preferensi Pertandingan
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <span className="text-[11px] text-zinc-400 block mb-1">Game Bawaan</span>
-                <select
-                  value={settings.defaultGame}
-                  onChange={(e) => updateSettings({ defaultGame: e.target.value as GameType })}
-                  className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white focus:outline-none focus:border-rose-500 font-medium"
-                >
-                  <option value="9-Ball">9-Ball</option>
-                  <option value="8-Ball">8-Ball</option>
-                  <option value="10-Ball">10-Ball</option>
-                  <option value="Straight Pool">Straight Pool</option>
-                </select>
-              </div>
-
-              <div>
-                <span className="text-[11px] text-zinc-400 block mb-1">Default Race To</span>
-                <input
-                  type="number"
-                  min="1"
-                  max="50"
-                  value={settings.defaultRace}
-                  onChange={(e) => updateSettings({ defaultRace: parseInt(e.target.value, 10) || 7 })}
-                  className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-white focus:outline-none focus:border-rose-500 font-mono"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Audio Sound Effects */}
-          <div>
-            <label className="block uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-              Efek Suara Audio
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => updateSettings({ soundEnabled: true })}
-                className={`py-2 px-3 rounded-xl border text-center font-semibold transition-all ${
-                  settings.soundEnabled
-                    ? 'border-rose-500 bg-rose-600 text-white shadow-sm'
-                    : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
-                }`}
-              >
-                Suara Aktif (ON)
-              </button>
-              <button
-                onClick={() => updateSettings({ soundEnabled: false })}
-                className={`py-2 px-3 rounded-xl border text-center font-semibold transition-all ${
-                  !settings.soundEnabled
-                    ? 'border-rose-500 bg-rose-600 text-white shadow-sm'
-                    : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
-                }`}
-              >
-                Mute (OFF)
-              </button>
-            </div>
-          </div>
-
-          {/* 4. Touch Protection Mode */}
-          <div>
-            <label className="block uppercase tracking-wider text-zinc-400 font-semibold mb-2 flex items-center gap-1.5">
-              <Smartphone className="w-3.5 h-3.5 text-zinc-400" /> Proteksi Layar Sentuh Wasit
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { id: 'single_tap', label: '1 Tap', desc: 'Instan' },
-                { id: 'double_tap', label: '2 Tap', desc: 'Aman' },
-                { id: 'hold_to_confirm', label: 'Tahan 1s', desc: 'Anti Sentuh' },
-              ].map((m) => (
+          {/* Display */}
+          <section>
+            <h4 className="eyebrow pb-2 border-b border-rule">Tampilan</h4>
+            <div className="pt-3">
+              <span className="label">Tema</span>
+              <div className="grid grid-cols-2 gap-2">
                 <button
-                  key={m.id}
-                  onClick={() => updateSettings({ touchProtection: m.id as TouchProtectionMode })}
-                  className={`p-2 rounded-xl border text-center transition-all ${
-                    settings.touchProtection === m.id
-                      ? 'border-rose-500 bg-rose-600 text-white shadow-sm font-bold'
-                      : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
-                  }`}
+                  onClick={() => updateSettings({ theme: 'dark' })}
+                  data-on={!isLight}
+                  className="opt !flex-row !gap-2"
                 >
-                  <div className="text-xs font-semibold">{m.label}</div>
-                  <div className="text-[10px] text-zinc-400 mt-0.5">{m.desc}</div>
+                  <Moon className="w-4 h-4" /> Gelap
                 </button>
-              ))}
-            </div>
-          </div>
+                <button
+                  onClick={() => updateSettings({ theme: 'light' })}
+                  data-on={isLight}
+                  className="opt !flex-row !gap-2"
+                >
+                  <Sun className="w-4 h-4" /> Terang
+                </button>
+              </div>
 
-          {/* 5. Database & Backup Controls */}
-          <div>
-            <label className="block uppercase tracking-wider text-zinc-400 font-semibold mb-2 flex items-center gap-1.5">
-              <Database className="w-3.5 h-3.5 text-zinc-400" /> Manajemen Backup Data
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={handleExportBackup}
-                className="py-2.5 px-3 rounded-xl bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-xs font-semibold flex items-center justify-center gap-1.5 text-zinc-200 transition-all active:scale-95"
-              >
-                <Download className="w-4 h-4 text-zinc-400" /> Ekspor Backup
+              <div className="mt-4">
+                <span className="label">Ukuran angka skor</span>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { id: 'standard', label: 'Sedang' },
+                    { id: 'large', label: 'Besar' },
+                    { id: 'massive', label: 'Raksasa' },
+                  ] as { id: AppSettings['fontSize']; label: string }[]).map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => updateSettings({ fontSize: f.id })}
+                      data-on={settings.fontSize === f.id}
+                      className="opt"
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Match */}
+          <section>
+            <h4 className="eyebrow pb-2 border-b border-rule">Pertandingan</h4>
+            <div className="pt-3 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="set-game" className="label">
+                    Permainan bawaan
+                  </label>
+                  <select
+                    id="set-game"
+                    value={settings.defaultGame}
+                    onChange={(e) => updateSettings({ defaultGame: e.target.value as GameType })}
+                    className="field"
+                  >
+                    <option value="9-Ball">9-Ball</option>
+                    <option value="8-Ball">8-Ball</option>
+                    <option value="10-Ball">10-Ball</option>
+                    <option value="Straight Pool">Straight Pool</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="set-race" className="label">
+                    Race to bawaan
+                  </label>
+                  <input
+                    id="set-race"
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={settings.defaultRace}
+                    onChange={(e) => updateSettings({ defaultRace: parseInt(e.target.value, 10) || 7 })}
+                    className="field"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <span className="label">Cara mencatat rack menang</span>
+                <div className="grid grid-cols-3 gap-2">
+                  {touchModes.map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => updateSettings({ touchProtection: m.id })}
+                      data-on={settings.touchProtection === m.id}
+                      className="opt !px-1.5"
+                    >
+                      <span>{m.label}</span>
+                      <span className="opt-sub">{m.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {settings.touchProtection === 'hold' && (
+                <div>
+                  <label htmlFor="set-hold" className="label">
+                    Durasi tahan: {(settings.holdDurationMs / 1000).toFixed(1)} detik
+                  </label>
+                  <input
+                    id="set-hold"
+                    type="range"
+                    min="300"
+                    max="1500"
+                    step="100"
+                    value={settings.holdDurationMs}
+                    onChange={(e) => updateSettings({ holdDurationMs: parseInt(e.target.value, 10) })}
+                    className="w-full accent-[var(--ink)]"
+                  />
+                </div>
+              )}
+
+              <div className="rows border-y border-rule">
+                <label className="flex items-center justify-between gap-4 py-2.5 cursor-pointer">
+                  <span className="text-sm text-ink">Efek suara</span>
+                  <input
+                    type="checkbox"
+                    checked={settings.soundEnabled}
+                    onChange={(e) => updateSettings({ soundEnabled: e.target.checked })}
+                    className="switch"
+                  />
+                </label>
+
+                {settings.soundEnabled && (
+                  <div className="flex items-center justify-between gap-4 py-2.5">
+                    <span className="text-sm text-ink shrink-0">Volume</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={settings.soundVolume}
+                      onChange={(e) => updateSettings({ soundVolume: parseFloat(e.target.value) })}
+                      className="w-40 accent-[var(--ink)]"
+                      aria-label="Volume suara"
+                    />
+                  </div>
+                )}
+
+                <label className="flex items-center justify-between gap-4 py-2.5 cursor-pointer">
+                  <span className="text-sm text-ink">Getaran</span>
+                  <input
+                    type="checkbox"
+                    checked={settings.vibrationEnabled}
+                    onChange={(e) => updateSettings({ vibrationEnabled: e.target.checked })}
+                    className="switch"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between gap-4 py-2.5 cursor-pointer">
+                  <span className="text-sm text-ink">Tampilkan timer</span>
+                  <input
+                    type="checkbox"
+                    checked={settings.showTimer}
+                    onChange={(e) => updateSettings({ showTimer: e.target.checked })}
+                    className="switch"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between gap-4 py-2.5 cursor-pointer">
+                  <span className="text-sm text-ink">Jaga layar tetap menyala</span>
+                  <input
+                    type="checkbox"
+                    checked={settings.wakeLockEnabled}
+                    onChange={(e) => updateSettings({ wakeLockEnabled: e.target.checked })}
+                    className="switch"
+                  />
+                </label>
+              </div>
+            </div>
+          </section>
+
+          {/* Data */}
+          <section>
+            <h4 className="eyebrow pb-2 border-b border-rule">Data</h4>
+            <div className="pt-3 space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={handleExportBackup} className="btn btn-secondary">
+                  <Download className="w-4 h-4" /> Ekspor cadangan
+                </button>
+
+                <label className="btn btn-secondary cursor-pointer">
+                  <Upload className="w-4 h-4" /> Impor cadangan
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleImportBackup}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              <button onClick={() => setIsClearConfirmOpen(true)} className="btn btn-danger btn-block">
+                <Trash2 className="w-4 h-4" /> Hapus semua data lokal
               </button>
-
-              <label className="py-2.5 px-3 rounded-xl bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-xs font-semibold flex items-center justify-center gap-1.5 text-zinc-200 cursor-pointer transition-all active:scale-95">
-                <Upload className="w-4 h-4 text-zinc-400" /> Impor Backup
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleImportBackup}
-                  className="hidden"
-                />
-              </label>
-
-              <button
-                onClick={() => setIsClearConfirmOpen(true)}
-                className="col-span-2 py-2.5 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-xs font-semibold text-rose-300 transition-all flex items-center justify-center gap-1.5 active:scale-95"
-              >
-                <Trash2 className="w-4 h-4" /> Reset Database Lokal
-              </button>
             </div>
-          </div>
+          </section>
 
-          {/* 6. Copyright & Developer Credit */}
-          <div className="pt-3 border-t border-zinc-800/80 text-center space-y-1">
-            <div className="text-[11px] font-medium text-zinc-400">
-              &copy; {new Date().getFullYear()} PoolScore Championship Suite · Versi 1.0.0 Pro
-            </div>
-            <div className="text-[10px] text-zinc-500 font-mono">
-              Designed &amp; Engineered by <span className="text-rose-500 font-semibold">NugrahaTech Innovations</span>
-            </div>
-          </div>
+          <p className="text-[13px] text-ink-3 text-center">
+            PoolScore 1.0.0 · &copy; {new Date().getFullYear()} NugrahaTech Innovations
+          </p>
         </div>
       </Modal>
 

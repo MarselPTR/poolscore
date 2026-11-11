@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, History, Trophy, BarChart3, Building2 } from 'lucide-react';
+import { Home, History, Trophy, BarChart3, LayoutGrid } from 'lucide-react';
 
 interface BottomNavProps {
   currentTab: string;
@@ -15,37 +15,35 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   if (!isVisible) return null;
 
   const items = [
-    { id: 'home', label: 'Home', icon: Home },
+    { id: 'home', label: 'Beranda', icon: Home },
     { id: 'history', label: 'Riwayat', icon: History },
-    { id: 'stats', label: 'Ranking', icon: BarChart3 },
+    { id: 'stats', label: 'Peringkat', icon: BarChart3 },
     { id: 'tournament', label: 'Turnamen', icon: Trophy },
-    { id: 'club', label: 'Club', icon: Building2 },
+    { id: 'club', label: 'Klub', icon: LayoutGrid },
   ];
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-zinc-950/95 backdrop-blur-2xl border-t border-zinc-800 px-3 py-1 select-none flex items-center justify-around shadow-2xl safe-area-pb">
-      {items.map((item) => {
-        const Icon = item.icon;
-        const isActive = currentTab === item.id;
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-bg border-t border-rule select-none safe-area-pb">
+      <div className="grid grid-cols-5">
+        {items.map((item) => {
+          const Icon = item.icon;
+          const isActive = currentTab === item.id;
 
-        return (
-          <button
-            key={item.id}
-            onClick={() => onSelectTab(item.id)}
-            className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all duration-150 ${
-              isActive ? 'text-white font-bold' : 'text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            <div className="relative">
-              <Icon className={`w-5 h-5 ${isActive ? 'text-rose-500 stroke-[2.5]' : 'stroke-[1.75]'}`} />
-              {isActive && (
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-rose-500" />
-              )}
-            </div>
-            <span className="text-[10px] tracking-tight mt-1">{item.label}</span>
-          </button>
-        );
-      })}
-    </div>
+          return (
+            <button
+              key={item.id}
+              onClick={() => onSelectTab(item.id)}
+              aria-current={isActive ? 'page' : undefined}
+              className={`flex flex-col items-center justify-center gap-1 h-14 border-t-2 -mt-px ${
+                isActive ? 'border-ink text-ink' : 'border-transparent text-ink-3'
+              }`}
+            >
+              <Icon className="w-5 h-5" strokeWidth={isActive ? 2.25 : 1.75} />
+              <span className="text-[11px] font-medium leading-none">{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
   );
 };

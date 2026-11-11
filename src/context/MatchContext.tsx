@@ -83,6 +83,28 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     refreshRecentMatches();
   }, [refreshRecentMatches]);
 
+  // Restore an in-progress match after a reload, so refreshing the page mid
+  // match does not drop the scoreboard. Runs once on mount.
+  useEffect(() => {
+    let cancelled = false;
+    const restore = async () => {
+      try {
+        const ongoing = await db.matches.where('status').equals('in_progress').toArray();
+        if (cancelled || ongoing.length === 0) return;
+        // Most recently started in-progress match wins if there are several.
+        const latest = ongoing.sort((a, b) => b.startedAt - a.startedAt)[0];
+        setActiveMatch((prev) => (prev ? prev : latest));
+        setRackSeconds(0);
+      } catch {
+        // ignore
+      }
+    };
+    restore();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Synchronize with broadcast channel on activeMatch state changes
   useEffect(() => {
     broadcastMatch(activeMatch);
@@ -229,6 +251,14 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       const eloRes = calculateElo(r1, r2, s1, s2);
 
+      // Break-and-run = breaker cleared the table and won the rack in one visit.
+      const countBreakRuns = (p: 1 | 2) =>
+        match.rackHistory.filter(
+          (rk) => rk.breakDetails?.isRunOut && rk.breakDetails.breaker === p && rk.winner === p
+        ).length;
+      const p1BreakRuns = countBreakRuns(1);
+      const p2BreakRuns = countBreakRuns(2);
+
       const finalMatch: Match = {
         ...match,
         player1: {
@@ -254,6 +284,7 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           lossesCount: !isP1Winner ? p1Record.lossesCount + 1 : p1Record.lossesCount,
           racksWon: p1Record.racksWon + s1,
           racksLost: p1Record.racksLost + s2,
+          breakRunOuts: (p1Record.breakRunOuts || 0) + p1BreakRuns,
           winStreak: isP1Winner ? p1Record.winStreak + 1 : 0,
           bestWinStreak: isP1Winner ? Math.max(p1Record.bestWinStreak, p1Record.winStreak + 1) : p1Record.bestWinStreak,
           updatedAt: Date.now(),
@@ -268,7 +299,7 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           lossesCount: isP1Winner ? 0 : 1,
           racksWon: s1,
           racksLost: s2,
-          breakRunOuts: 0,
+          breakRunOuts: p1BreakRuns,
           winStreak: isP1Winner ? 1 : 0,
           bestWinStreak: isP1Winner ? 1 : 0,
           createdAt: Date.now(),
@@ -287,6 +318,7 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           lossesCount: !isP2Winner ? p2Record.lossesCount + 1 : p2Record.lossesCount,
           racksWon: p2Record.racksWon + s2,
           racksLost: p2Record.racksLost + s1,
+          breakRunOuts: (p2Record.breakRunOuts || 0) + p2BreakRuns,
           winStreak: isP2Winner ? p2Record.winStreak + 1 : 0,
           bestWinStreak: isP2Winner ? Math.max(p2Record.bestWinStreak, p2Record.winStreak + 1) : p2Record.bestWinStreak,
           updatedAt: Date.now(),
@@ -301,7 +333,7 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           lossesCount: isP2Winner ? 0 : 1,
           racksWon: s2,
           racksLost: s1,
-          breakRunOuts: 0,
+          breakRunOuts: p2BreakRuns,
           winStreak: isP2Winner ? 1 : 0,
           bestWinStreak: isP2Winner ? 1 : 0,
           createdAt: Date.now(),
@@ -424,12 +456,32 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       nextTurn = winnerPlayer === 1 ? 2 : 1;
     }
 
+    // Gather fouls and the break recorded during this rack (they only live on
+    // the event log until the rack is finished) and attach them to the rack.
+    const rackEvents = activeMatch.events.filter(
+      (e) => e.rackNumber === activeMatch.currentRack && e.setNumber === activeMatch.currentSet
+    );
+    const rackFouls: FoulRecord[] = rackEvents
+      .filter((e) => e.type === 'foul' && e.metadata?.foulType)
+      .map((e) => ({
+        rackNumber: activeMatch.currentRack,
+        player: e.player,
+        type: e.metadata!.foulType!,
+        timestamp: e.timestamp,
+      }));
+    const lastBreakEvent = [...rackEvents].reverse().find((e) => e.type === 'break' && e.metadata?.breakDetails);
+    const breakDetails = lastBreakEvent?.metadata?.breakDetails
+      ? { ...lastBreakEvent.metadata.breakDetails, rackNumber: activeMatch.currentRack }
+      : undefined;
+
     const rackItem: RackHistoryItem = {
       rackNumber: activeMatch.currentRack,
       setNumber: activeMatch.currentSet,
       winner: winnerPlayer,
       durationSeconds: rackSeconds,
-      breaker: activeMatch.currentTurn,
+      breaker: breakDetails?.breaker ?? activeMatch.currentTurn,
+      breakDetails,
+      fouls: rackFouls.length > 0 ? rackFouls : undefined,
       timestamp: Date.now(),
     };
 
@@ -451,7 +503,7 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         player: winnerPlayer,
         rackNumber: activeMatch.currentRack,
         setNumber: activeMatch.currentSet,
-        description: `🏆 ${winnerName} memenangkan Set ${activeMatch.currentSet}! Skor Set: ${newSets1} - ${newSets2}`,
+        description: `${winnerName} memenangkan set ${activeMatch.currentSet}. Skor set: ${newSets1}–${newSets2}`,
         metadata: {
           prevScore1: currentScore1,
           prevScore2: currentScore2,
@@ -488,9 +540,9 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Show Set Victory Banner Alert
       if (setTimeoutRef.current) clearTimeout(setTimeoutRef.current);
       setSetWonAlert({
-        text: `🏆 ${winnerName} memenangkan Set ${activeMatch.currentSet}!`,
+        text: `${winnerName} memenangkan set ${activeMatch.currentSet}`,
         player: winnerPlayer,
-        setScoreText: `Skor Babak: ${newSets1} - ${newSets2}`,
+        setScoreText: `Skor set ${newSets1}–${newSets2}`,
       });
       setTimeoutRef.current = setTimeout(() => {
         setSetWonAlert(null);
@@ -508,7 +560,7 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       rackNumber: activeMatch.currentRack,
       setNumber: activeMatch.currentSet,
       description: isMatchWon && targetSets > 1
-        ? `🏆 ${winnerName} memenangkan Match! Skor Babak Akhir: ${newSets1} - ${newSets2}`
+        ? `${winnerName} memenangkan pertandingan. Skor set akhir: ${newSets1}–${newSets2}`
         : `${winnerName} memenangkan Rack ${activeMatch.currentRack}`,
       metadata: {
         prevScore1: currentScore1,
@@ -548,7 +600,7 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         particleCount: 120,
         spread: 80,
         origin: { y: 0.6 },
-        colors: winnerPlayer === 1 ? ['#f04a3a', '#ffffff', '#f2a93b'] : ['#3f7bfa', '#ffffff', '#04e2ac']
+        colors: winnerPlayer === 1 ? ['#d81e3a', '#ffffff'] : ['#1f5fd6', '#ffffff']
       });
       finalizeMatchStats(updatedMatch);
     } else {
@@ -612,7 +664,18 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
       playBallHit();
     } else if (lastEvent.type === 'turn_switch') {
-      const prevTurn = lastEvent.player === 1 ? 2 : 1;
+      // Use the recorded previous turn when available (a switch can target a
+      // specific player, so a plain toggle is not always correct).
+      const prevTurn = lastEvent.metadata?.prevTurn ?? (lastEvent.player === 1 ? 2 : 1);
+      setActiveMatch({
+        ...activeMatch,
+        currentTurn: prevTurn,
+        events: eventsCopy,
+      });
+      playBallHit();
+    } else if (lastEvent.type === 'foul') {
+      // A foul handed the table to the opponent; undo returns the turn.
+      const prevTurn = lastEvent.metadata?.prevTurn ?? lastEvent.player;
       setActiveMatch({
         ...activeMatch,
         currentTurn: prevTurn,
@@ -643,6 +706,8 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const opponentPlayerName = player === 1 ? activeMatch.player2.name : activeMatch.player1.name;
     const opponent: 1 | 2 = player === 1 ? 2 : 1;
 
+    // The foul is kept on the event only. It is attached to the finished rack
+    // (as a FoulRecord) when the rack is won — see collectRackExtras in winRack.
     const newEvent: MatchEvent = {
       id: `evt-${Date.now()}-foul`,
       timestamp: Date.now(),
@@ -650,30 +715,16 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       player,
       rackNumber: activeMatch.currentRack,
       setNumber: activeMatch.currentSet,
-      description: `Foul: ${foulPlayerName} (${type}) ➔ ${opponentPlayerName} Ball in Hand`,
+      description: `Foul ${foulPlayerName} (${type}), ball in hand untuk ${opponentPlayerName}`,
       metadata: {
         foulType: type,
+        prevTurn: activeMatch.currentTurn,
       },
     };
-
-    const foulRecord: FoulRecord = {
-      rackNumber: activeMatch.currentRack,
-      player,
-      type,
-      timestamp: Date.now(),
-    };
-
-    const currentRackHistory = [...activeMatch.rackHistory];
-    const currentRackIndex = currentRackHistory.findIndex(r => r.rackNumber === activeMatch.currentRack && r.setNumber === activeMatch.currentSet);
-    if (currentRackIndex !== -1) {
-      const fouls = currentRackHistory[currentRackIndex].fouls || [];
-      currentRackHistory[currentRackIndex].fouls = [...fouls, foulRecord];
-    }
 
     setActiveMatch({
       ...activeMatch,
       currentTurn: opponent,
-      rackHistory: currentRackHistory,
       events: [...activeMatch.events, newEvent],
     });
 
@@ -688,7 +739,7 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const breakerName = breakData.breaker === 1 ? activeMatch.player1.name : activeMatch.player2.name;
 
     const desc = `${breakerName} Break: ${breakData.isLegal ? 'Legal' : 'Illegal/Foul'} (${breakData.ballsPocketed} bola masuk)${
-      breakData.isRunOut ? ' 🔥 Table Run-Out!' : ''
+      breakData.isRunOut ? ', break and run' : ''
     }`;
 
     const newEvent: MatchEvent = {
@@ -732,6 +783,9 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       rackNumber: activeMatch.currentRack,
       setNumber: activeMatch.currentSet,
       description: `Giliran menembak beralih ke ${nextPlayerName}`,
+      metadata: {
+        prevTurn: activeMatch.currentTurn,
+      },
     };
 
     setActiveMatch({
@@ -798,14 +852,18 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsPaused(prev => !prev);
   };
 
-  // Finish match and save
+  // Finish match and save. A match that ended naturally (via winRack) is
+  // already 'finished' and its stats were already finalized there, so we only
+  // clear the active match — finalizing again would double-count every stat.
   const finishAndSaveMatch = async () => {
     if (!activeMatch) return;
-    await finalizeMatchStats({
-      ...activeMatch,
-      status: 'finished',
-      finishedAt: Date.now(),
-    });
+    if (activeMatch.status !== 'finished') {
+      await finalizeMatchStats({
+        ...activeMatch,
+        status: 'finished',
+        finishedAt: Date.now(),
+      });
+    }
     setActiveMatch(null);
   };
 

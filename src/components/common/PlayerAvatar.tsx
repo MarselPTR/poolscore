@@ -1,27 +1,5 @@
 import React from 'react';
 
-// Color map for name-based avatars (clean modern sports tones)
-const AVATAR_COLORS = [
-  { bg: '#3b82f6', text: '#ffffff' }, // Blue
-  { bg: '#e11d48', text: '#ffffff' }, // Crimson
-  { bg: '#10b981', text: '#ffffff' }, // Emerald
-  { bg: '#f59e0b', text: '#000000' }, // Amber
-  { bg: '#8b5cf6', text: '#ffffff' }, // Purple
-  { bg: '#06b6d4', text: '#ffffff' }, // Cyan
-  { bg: '#ec4899', text: '#ffffff' }, // Pink
-  { bg: '#f97316', text: '#ffffff' }, // Orange
-  { bg: '#64748b', text: '#ffffff' }, // Slate
-];
-
-function getPlayerColor(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const idx = Math.abs(hash) % AVATAR_COLORS.length;
-  return AVATAR_COLORS[idx];
-}
-
 interface PlayerAvatarProps {
   playerNumber?: 1 | 2;
   name?: string;
@@ -30,6 +8,11 @@ interface PlayerAvatarProps {
   className?: string;
 }
 
+/**
+ * Initials badge. Colour carries meaning here: red and blue are only used
+ * when the badge stands for player 1 or player 2 of a match. Everywhere else
+ * (leaderboard, profile, account) it stays neutral.
+ */
 export const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
   playerNumber,
   name = '',
@@ -37,14 +20,6 @@ export const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
   isActiveTurn = false,
   className = '',
 }) => {
-  const isP1 = playerNumber === 1;
-
-  const color = playerNumber
-    ? isP1
-      ? { bg: '#e11d48', text: '#ffffff' }
-      : { bg: '#2563eb', text: '#ffffff' }
-    : getPlayerColor(name || 'Player');
-
   const initials = name
     ? name
         .trim()
@@ -59,78 +34,49 @@ export const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
     : 'P';
 
   const sizeClasses = {
-    xs: 'w-6 h-6 text-[11px] rounded-lg',
-    sm: 'w-8 h-8 text-xs rounded-xl',
-    md: 'w-10 h-10 text-sm rounded-xl',
-    lg: 'w-12 h-12 text-base rounded-2xl',
-    xl: 'w-16 h-16 text-xl rounded-2xl',
+    xs: 'w-6 h-6 text-[13px]',
+    sm: 'w-8 h-8 text-[15px]',
+    md: 'w-10 h-10 text-lg',
+    lg: 'w-12 h-12 text-xl',
+    xl: 'w-16 h-16 text-3xl',
   }[size];
 
-  // Clean, self-contained border that never clips or creates jagged ring-offsets
-  const borderClass = isActiveTurn
-    ? isP1
-      ? 'border-2 border-rose-300 shadow-sm'
-      : 'border-2 border-blue-300 shadow-sm'
-    : 'border border-white/20';
+  const colorClasses =
+    playerNumber === 1
+      ? 'bg-p1 text-white'
+      : playerNumber === 2
+      ? 'bg-p2 text-white'
+      : 'bg-panel-3 text-ink';
+
+  const ringClass = isActiveTurn ? 'outline outline-2 outline-offset-1 outline-ink' : '';
 
   return (
     <div
-      className={`inline-flex items-center justify-center font-bold tracking-tight select-none shrink-0 transition-transform duration-150 ${sizeClasses} ${borderClass} ${className}`}
-      style={{ backgroundColor: color.bg, color: color.text }}
+      className={`inline-flex items-center justify-center rounded-[3px] font-display font-semibold select-none shrink-0 ${sizeClasses} ${colorClasses} ${ringClass} ${className}`}
     >
       <span className="leading-none">{initials}</span>
     </div>
   );
 };
 
-/** Clean, Professional Leaderboard Rank Badge */
 interface RankMedallionProps {
   rank: number;
   size?: 'sm' | 'md' | 'lg';
 }
 
+/** Leaderboard position. The top three are set in full ink, the rest are muted. */
 export const RankMedallion: React.FC<RankMedallionProps> = ({ rank, size = 'md' }) => {
   const sizeClasses = {
-    sm: 'w-6 h-6 text-[11px]',
-    md: 'w-7 h-7 text-xs',
-    lg: 'w-9 h-9 text-sm',
+    sm: 'w-6 text-base',
+    md: 'w-7 text-lg',
+    lg: 'w-9 text-2xl',
   }[size];
 
-  if (rank === 1) {
-    return (
-      <div
-        className={`inline-flex items-center justify-center font-bold rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/30 ${sizeClasses}`}
-      >
-        1
-      </div>
-    );
-  }
-
-  if (rank === 2) {
-    return (
-      <div
-        className={`inline-flex items-center justify-center font-bold rounded-lg bg-zinc-200/15 text-zinc-300 border border-zinc-400/30 ${sizeClasses}`}
-      >
-        2
-      </div>
-    );
-  }
-
-  if (rank === 3) {
-    return (
-      <div
-        className={`inline-flex items-center justify-center font-bold rounded-lg bg-amber-700/15 text-amber-600 border border-amber-700/30 ${sizeClasses}`}
-      >
-        3
-      </div>
-    );
-  }
-
   return (
-    <div
-      className={`inline-flex items-center justify-center font-medium rounded-lg text-zinc-500 bg-zinc-900/60 border border-zinc-800 ${sizeClasses}`}
+    <span
+      className={`num inline-block text-center ${sizeClasses} ${rank <= 3 ? 'text-ink' : 'text-ink-3'}`}
     >
       {rank}
-    </div>
+    </span>
   );
 };

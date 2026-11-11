@@ -23,25 +23,12 @@ export const LandscapeBanner: React.FC = () => {
   if (!isPortrait || isDismissed) return null;
 
   return (
-    <div className="fixed top-3 left-3 right-3 z-40 bg-surface-2/95 border border-amber/40 shadow-xl rounded-xl p-3 flex items-center justify-between text-xs text-text animate-fade-in backdrop-blur-md">
-      <div className="flex items-center gap-2.5">
-        <div className="p-1.5 rounded-lg bg-amber/20 text-amber flex items-center justify-center animate-pulse">
-          <RotateCw className="w-4 h-4" />
-        </div>
-        <div>
-          <span className="font-bold text-amber block">Rekomendasi Landscape</span>
-          <span className="text-text-dim text-[11px]">Putar HP Anda mendatar untuk papan skor simetris merah & biru.</span>
-        </div>
-      </div>
-      <div className="flex items-center gap-1.5 shrink-0">
-        <button
-          onClick={() => setIsDismissed(true)}
-          className="p-1 text-text-faint hover:text-text rounded-md"
-          title="Tutup banner"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
+    <div className="flex items-center gap-2.5 h-9 pl-4 pr-1 bg-panel-2 border-b border-rule text-[13px] text-ink-2">
+      <RotateCw className="w-4 h-4 shrink-0" />
+      <span className="flex-1 truncate">Putar layar mendatar untuk papan skor berdampingan.</span>
+      <button onClick={() => setIsDismissed(true)} className="icon-btn !w-8 !h-8" aria-label="Tutup saran">
+        <X className="w-4 h-4" />
+      </button>
     </div>
   );
 };

@@ -4,8 +4,7 @@ import type { GameType, BreakRule } from '../../types';
 import { useMatch } from '../../context/MatchContext';
 import { useSettings } from '../../context/SettingsContext';
 import { db } from '../../db/database';
-import { Play, Sliders, Layers } from 'lucide-react';
-import { PlayerAvatar } from '../common/PlayerAvatar';
+import { ChevronDown } from 'lucide-react';
 
 interface QuickMatchModalProps {
   isOpen: boolean;
@@ -39,7 +38,7 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
   const [isCustomRaceActive, setIsCustomRaceActive] = useState<boolean>(false);
 
   // Set / Babak System Configuration
-  const [targetSets, setTargetSets] = useState<number>(1);
+  const [targetSets, setTargetSets] = useState<number>(settings.defaultTargetSets || 1);
   const [customSets, setCustomSets] = useState<string>('');
   const [isCustomSetsActive, setIsCustomSetsActive] = useState<boolean>(false);
 
@@ -101,67 +100,45 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Setup Pertandingan Baru">
-      <form onSubmit={handleStart} className="space-y-4 select-none">
-        {/* 1. Game Selection */}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={tableNumber ? `Pertandingan baru · Meja ${tableNumber}` : 'Pertandingan baru'}
+    >
+      <form onSubmit={handleStart} className="space-y-5 select-none">
+        {/* Players */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
-            Pilih Jenis Permainan
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {games.map((g) => (
-              <button
-                type="button"
-                key={g}
-                onClick={() => setGameType(g)}
-                className={`py-2 px-3.5 rounded-xl border text-xs font-semibold transition-all ${
-                  gameType === g
-                    ? 'border-rose-500/50 bg-rose-500/15 text-rose-300 shadow-sm'
-                    : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
-                }`}
-              >
-                {g}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 2. Players Setup */}
-        <div className="space-y-2.5">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400">
-            Nama Pemain
-          </label>
-
-          {/* Player 1 (Red) */}
-          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-zinc-950 border border-rose-500/40 focus-within:border-rose-500 transition-all">
-            <PlayerAvatar playerNumber={1} size="xs" />
-            <input
-              type="text"
-              value={player1Name}
-              onChange={(e) => setPlayer1Name(e.target.value)}
-              placeholder="Nama Pemain 1 (Merah)"
-              className="w-full bg-transparent text-sm font-semibold text-white placeholder-zinc-500 focus:outline-none"
-              required
-            />
+          <span className="label">Pemain</span>
+          <div className="space-y-2">
+            <div className="flex items-stretch">
+              <span className="w-1.5 bg-p1 rounded-l-[4px]" />
+              <input
+                type="text"
+                value={player1Name}
+                onChange={(e) => setPlayer1Name(e.target.value)}
+                placeholder="Nama pemain merah"
+                aria-label="Nama pemain merah"
+                className="field field-lg !rounded-l-none !border-l-0 font-semibold"
+                required
+              />
+            </div>
+            <div className="flex items-stretch">
+              <span className="w-1.5 bg-p2 rounded-l-[4px]" />
+              <input
+                type="text"
+                value={player2Name}
+                onChange={(e) => setPlayer2Name(e.target.value)}
+                placeholder="Nama pemain biru"
+                aria-label="Nama pemain biru"
+                className="field field-lg !rounded-l-none !border-l-0 font-semibold"
+                required
+              />
+            </div>
           </div>
 
-          {/* Player 2 (Blue) */}
-          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-zinc-950 border border-blue-500/40 focus-within:border-blue transition-all">
-            <PlayerAvatar playerNumber={2} size="xs" />
-            <input
-              type="text"
-              value={player2Name}
-              onChange={(e) => setPlayer2Name(e.target.value)}
-              placeholder="Nama Pemain 2 (Biru)"
-              className="w-full bg-transparent text-sm font-semibold text-white placeholder-zinc-500 focus:outline-none"
-              required
-            />
-          </div>
-
-          {/* Quick Player Suggester Chips */}
           {savedPlayers.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-              <span className="text-[11px] text-zinc-500">Tersimpan:</span>
+            <div className="flex items-center gap-1.5 flex-wrap mt-2">
+              <span className="text-[13px] text-ink-3">Jadikan lawan:</span>
               {savedPlayers.slice(0, 5).map((name) => (
                 <button
                   type="button"
@@ -171,79 +148,36 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
                       setPlayer2Name(name);
                     }
                   }}
-                  className="px-2 py-0.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-[11px] text-zinc-300 border border-zinc-700/50"
+                  className="h-7 px-2.5 rounded-[3px] border border-rule-strong text-[13px] text-ink-2 hover:text-ink hover:border-ink-3"
                 >
-                  +{name}
+                  {name}
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* 3. Set / Babak Selection (Target Sets) */}
+        {/* Game */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2 flex items-center gap-1.5">
-            <Layers className="w-3.5 h-3.5 text-amber-400" /> Format Babak / Set
-          </label>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {[
-              { sets: 1, label: '1 Babak', desc: 'Single Set' },
-              { sets: 2, label: 'Best of 3', desc: '2 Set Win' },
-              { sets: 3, label: 'Best of 5', desc: '3 Set Win' },
-            ].map((s) => (
+          <span className="label">Permainan</span>
+          <div className="flex flex-wrap gap-2">
+            {games.map((g) => (
               <button
                 type="button"
-                key={s.sets}
-                onClick={() => {
-                  setTargetSets(s.sets);
-                  setIsCustomSetsActive(false);
-                }}
-                className={`p-2.5 rounded-xl border text-center transition-all ${
-                  targetSets === s.sets && !isCustomSetsActive
-                    ? 'border-amber-500/50 bg-amber-500/15 text-amber-300 shadow-sm'
-                    : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
-                }`}
+                key={g}
+                onClick={() => setGameType(g)}
+                data-on={gameType === g}
+                className="opt"
               >
-                <div className="text-xs font-semibold">{s.label}</div>
-                <div className="text-[10px] text-zinc-500 mt-0.5">{s.desc}</div>
+                {g}
               </button>
             ))}
-
-            <button
-              type="button"
-              onClick={() => setIsCustomSetsActive(true)}
-              className={`p-2.5 rounded-xl border text-center transition-all ${
-                isCustomSetsActive
-                  ? 'border-amber-500/50 bg-amber-500/15 text-amber-300'
-                  : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
-              }`}
-            >
-              <div className="text-xs font-semibold">Custom</div>
-              <div className="text-[10px] text-zinc-500 mt-0.5">Bebas Atur</div>
-            </button>
           </div>
-
-          {isCustomSetsActive && (
-            <div className="mt-2">
-              <input
-                type="number"
-                min="1"
-                max="20"
-                value={customSets}
-                onChange={(e) => setCustomSets(e.target.value)}
-                placeholder="Target kemenangan set (misal: 4 set)"
-                className="p-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm font-mono text-white focus:outline-none focus:border-amber-500 w-full"
-                autoFocus
-              />
-            </div>
-          )}
         </div>
 
-        {/* 4. Race To Selection (Rack per Set) */}
+        {/* Race to */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
-            Target Rack per Babak (Race To)
-          </label>
+          <span className="label">Race to (rack untuk menang{targetSets > 1 || isCustomSetsActive ? ' per set' : ''})</span>
           <div className="flex flex-wrap gap-2">
             {racePresets.map((r) => (
               <button
@@ -253,137 +187,150 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
                   setRaceTo(r);
                   setIsCustomRaceActive(false);
                 }}
-                className={`w-11 h-11 rounded-xl border font-mono font-bold text-sm transition-all flex items-center justify-center ${
-                  raceTo === r && !isCustomRaceActive
-                    ? 'border-rose-500 bg-rose-600 text-white shadow-sm'
-                    : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
-                }`}
+                data-on={raceTo === r && !isCustomRaceActive}
+                className="opt w-12 !px-0"
               >
-                {r}
+                <span className="num text-xl">{r}</span>
               </button>
             ))}
 
             <button
               type="button"
               onClick={() => setIsCustomRaceActive(true)}
-              className={`px-3 h-11 rounded-xl border font-mono text-xs uppercase font-semibold transition-all flex items-center justify-center ${
-                isCustomRaceActive
-                  ? 'border-rose-500/50 bg-rose-500/15 text-rose-300'
-                  : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
-              }`}
+              data-on={isCustomRaceActive}
+              className="opt"
             >
-              Custom
+              Lainnya
             </button>
           </div>
 
           {isCustomRaceActive && (
-            <div className="mt-2 flex items-center gap-2">
-              <input
-                type="number"
-                min="1"
-                max="100"
-                value={customRace}
-                onChange={(e) => setCustomRace(e.target.value)}
-                placeholder="Masukkan angka (misal: 15)"
-                className="p-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-sm font-mono text-white focus:outline-none focus:border-rose-500 w-full"
-                autoFocus
-              />
-            </div>
+            <input
+              type="number"
+              min="1"
+              max="100"
+              value={customRace}
+              onChange={(e) => setCustomRace(e.target.value)}
+              placeholder="Jumlah rack, misalnya 15"
+              aria-label="Race to khusus"
+              className="field mt-2"
+              autoFocus
+            />
           )}
         </div>
 
-        {/* 5. Advanced Settings Toggle */}
-        <div className="pt-1">
+        {/* Sets */}
+        <div>
+          <span className="label">Jumlah set</span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {[
+              { sets: 1, label: 'Satu set', desc: 'Tanpa set' },
+              { sets: 2, label: 'Best of 3', desc: 'Menang 2 set' },
+              { sets: 3, label: 'Best of 5', desc: 'Menang 3 set' },
+            ].map((s) => (
+              <button
+                type="button"
+                key={s.sets}
+                onClick={() => {
+                  setTargetSets(s.sets);
+                  setIsCustomSetsActive(false);
+                }}
+                data-on={targetSets === s.sets && !isCustomSetsActive}
+                className="opt"
+              >
+                <span>{s.label}</span>
+                <span className="opt-sub">{s.desc}</span>
+              </button>
+            ))}
+
+            <button
+              type="button"
+              onClick={() => setIsCustomSetsActive(true)}
+              data-on={isCustomSetsActive}
+              className="opt"
+            >
+              <span>Lainnya</span>
+              <span className="opt-sub">Atur sendiri</span>
+            </button>
+          </div>
+
+          {isCustomSetsActive && (
+            <input
+              type="number"
+              min="1"
+              max="20"
+              value={customSets}
+              onChange={(e) => setCustomSets(e.target.value)}
+              placeholder="Jumlah set untuk menang, misalnya 4"
+              aria-label="Jumlah set khusus"
+              className="field mt-2"
+              autoFocus
+            />
+          )}
+        </div>
+
+        {/* Advanced */}
+        <div className="border-t border-rule pt-3">
           <button
             type="button"
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors"
+            aria-expanded={showAdvanced}
+            className="flex items-center justify-between w-full text-sm font-medium text-ink-2 hover:text-ink"
           >
-            <Sliders className="w-3.5 h-3.5" />
-            {showAdvanced ? 'Sembunyikan Opsi Lanjutan' : 'Opsi Lanjutan (Break, Foul, Wake Lock)'}
+            <span>Opsi lanjutan</span>
+            <ChevronDown className={`w-4 h-4 ${showAdvanced ? 'rotate-180' : ''}`} />
           </button>
 
           {showAdvanced && (
-            <div className="mt-3 p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-3 text-xs">
-              {/* Break Rule */}
+            <div className="mt-4 space-y-4">
               <div>
-                <label className="block text-[11px] uppercase text-zinc-500 font-semibold mb-1.5">
-                  Aturan Giliran Break Berikutnya
-                </label>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {(['Winner Breaks', 'Alternate Breaks', 'Loser Breaks'] as BreakRule[]).map((rule) => (
+                <span className="label">Siapa yang break di rack berikutnya</span>
+                <div className="grid grid-cols-3 gap-2">
+                  {(
+                    [
+                      { rule: 'Winner Breaks', label: 'Pemenang' },
+                      { rule: 'Alternate Breaks', label: 'Bergantian' },
+                      { rule: 'Loser Breaks', label: 'Yang kalah' },
+                    ] as { rule: BreakRule; label: string }[]
+                  ).map((o) => (
                     <button
                       type="button"
-                      key={rule}
-                      onClick={() => setBreakRule(rule)}
-                      className={`p-2 rounded-lg border text-[11px] font-medium text-center transition-all ${
-                        breakRule === rule
-                          ? 'border-rose-500/50 bg-rose-500/15 text-rose-300'
-                          : 'border-zinc-800 bg-zinc-900 text-zinc-400'
-                      }`}
+                      key={o.rule}
+                      onClick={() => setBreakRule(o.rule)}
+                      data-on={breakRule === o.rule}
+                      className="opt !px-1.5"
                     >
-                      {rule.split(' ')[0]}
+                      {o.label}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Toggles */}
-              <div className="space-y-2 pt-1 border-t border-zinc-800/80">
-                <div className="flex items-center justify-between">
-                  <span className="text-zinc-300">Foul Tracking & Ball in Hand</span>
-                  <input
-                    type="checkbox"
-                    checked={isFoulTracking}
-                    onChange={(e) => setIsFoulTracking(e.target.checked)}
-                    className="w-4 h-4 accent-rose-600 rounded"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-zinc-300">Match & Rack Timer</span>
-                  <input
-                    type="checkbox"
-                    checked={isTimerEnabled}
-                    onChange={(e) => setIsTimerEnabled(e.target.checked)}
-                    className="w-4 h-4 accent-rose-600 rounded"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-zinc-300">Layar Tetap Menyala (Wake Lock)</span>
-                  <input
-                    type="checkbox"
-                    checked={isWakeLockEnabled}
-                    onChange={(e) => setIsWakeLockEnabled(e.target.checked)}
-                    className="w-4 h-4 accent-rose-600 rounded"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-zinc-300">Efek Suara Audio</span>
-                  <input
-                    type="checkbox"
-                    checked={isSoundEnabled}
-                    onChange={(e) => setIsSoundEnabled(e.target.checked)}
-                    className="w-4 h-4 accent-rose-600 rounded"
-                  />
-                </div>
+              <div className="rows border-y border-rule">
+                {[
+                  { label: 'Pencatatan foul', checked: isFoulTracking, set: setIsFoulTracking },
+                  { label: 'Timer pertandingan dan rack', checked: isTimerEnabled, set: setIsTimerEnabled },
+                  { label: 'Layar tetap menyala', checked: isWakeLockEnabled, set: setIsWakeLockEnabled },
+                  { label: 'Efek suara', checked: isSoundEnabled, set: setIsSoundEnabled },
+                ].map((t) => (
+                  <label key={t.label} className="flex items-center justify-between gap-4 py-2.5 cursor-pointer">
+                    <span className="text-sm text-ink">{t.label}</span>
+                    <input
+                      type="checkbox"
+                      checked={t.checked}
+                      onChange={(e) => t.set(e.target.checked)}
+                      className="switch"
+                    />
+                  </label>
+                ))}
               </div>
             </div>
           )}
         </div>
 
-        {/* Start Button */}
-        <div className="pt-2">
-          <button
-            type="submit"
-            className="w-full py-3.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-md shadow-rose-950/40 transition-all active:scale-[0.99]"
-          >
-            <Play className="w-4 h-4 fill-white" />
-            Mulai Pertandingan
-          </button>
-        </div>
+        <button type="submit" className="btn btn-lg btn-block btn-primary">
+          Mulai pertandingan
+        </button>
       </form>
     </Modal>
   );

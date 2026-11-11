@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { Mail, KeyRound, ArrowRight, CheckCircle2, RotateCcw, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface ForgotPasswordModalProps {
   isOpen: boolean;
@@ -53,7 +53,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
       if (!res.success) {
         setErrorMsg(res.error || 'Gagal mengirim tautan reset. Periksa kembali email Anda.');
       } else {
-        success('Tautan Terkirim', `Tautan reset kata sandi telah dikirimkan ke ${email}.`);
+        success('Tautan terkirim', `Tautan reset kata sandi dikirim ke ${email}.`);
         setIsSent(true);
         setCountdown(60);
       }
@@ -65,117 +65,85 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in select-none font-sans">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-backdrop animate-fade">
       <div
-        className="w-full max-w-md rounded-3xl bg-zinc-950 border border-zinc-800 p-6 sm:p-7 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200 relative"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Lupa kata sandi"
+        className="w-full max-w-md bg-panel text-ink border border-rule rounded-md animate-rise"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 text-zinc-500 hover:text-white p-1 rounded-xl bg-zinc-900/60 border border-zinc-800/80 transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
-
-        {/* Header */}
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-500 shadow-inner">
-            <KeyRound className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="font-extrabold text-lg text-white tracking-tight">
-              {isSent ? 'Tautan Reset Terkirim!' : 'Lupa Kata Sandi?'}
-            </h3>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              {isSent
-                ? `Pesan pemulihan telah dikirim ke ${email}`
-                : 'Masukkan email akun Anda untuk menerima tautan pemulihan.'}
-            </p>
-          </div>
+        <div className="flex items-center justify-between gap-3 pl-5 pr-3 h-14 border-b border-rule">
+          <h3 className="display text-xl">{isSent ? 'Periksa email Anda' : 'Lupa kata sandi'}</h3>
+          <button onClick={onClose} className="icon-btn" aria-label="Tutup">
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Error Alert */}
-        {errorMsg && (
-          <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs font-medium animate-shake">
-            {errorMsg}
-          </div>
-        )}
+        <div className="p-5 space-y-4">
+          {errorMsg && (
+            <div role="alert" className="notice notice-danger">
+              {errorMsg}
+            </div>
+          )}
 
-        {!isSent ? (
-          /* FORM: REQUEST RESET LINK */
-          <form onSubmit={handleSendResetLink} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-                Alamat Email Akun
-              </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          {!isSent ? (
+            <form onSubmit={handleSendResetLink} className="space-y-4">
+              <p className="text-sm text-ink-2">
+                Masukkan email akun Anda. Kami kirimkan tautan untuk membuat kata sandi baru.
+              </p>
+              <div>
+                <label htmlFor="forgot-email" className="label">
+                  Email akun
+                </label>
                 <input
+                  id="forgot-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="contoh@gmail.com"
-                  className="w-full pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-rose-500 transition-colors font-medium"
+                  placeholder="nama@email.com"
+                  className="field field-lg"
                   required
                   autoFocus
                 />
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-rose-950/40 transition-all active:scale-[0.98] disabled:opacity-50"
-            >
-              <span>{isLoading ? 'Mengirim Pesan...' : 'Kirim Tautan Pemulihan'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
-        ) : (
-          /* STATE: SENT SUCCESS INSTRUCTIONS */
-          <div className="space-y-4 pt-1">
-            <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-3">
-              <div className="flex items-center gap-2.5 text-emerald-400 font-bold text-xs">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>Email Berhasil Dikirimkan</span>
+              <button type="submit" disabled={isLoading} className="btn btn-lg btn-block btn-primary">
+                {isLoading ? 'Mengirim…' : 'Kirim tautan'}
+              </button>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              <div className="notice notice-ok">
+                Tautan dikirim ke <strong>{email}</strong>. Buka email tersebut dan ikuti tautan reset di
+                dalamnya. Jika belum muncul dalam satu menit, periksa folder spam atau promosi.
               </div>
-              <p className="text-xs text-zinc-300 leading-relaxed">
-                Silakan buka kotak masuk email <strong>{email}</strong> dan klik tombol <strong>"Reset password"</strong> di dalam email tersebut.
-              </p>
-              <p className="text-[11px] text-zinc-500 leading-normal">
-                *Jika email belum muncul dalam 1 menit, periksa folder <em>Spam / Promosi</em>.
-              </p>
-            </div>
 
-            <div className="flex items-center justify-between text-xs pt-1">
-              <button
-                type="button"
-                onClick={() => setIsSent(false)}
-                className="text-zinc-400 hover:text-white transition-colors flex items-center gap-1"
-              >
-                <RotateCcw className="w-3.5 h-3.5" /> Ganti Email
-              </button>
+              <div className="flex items-center justify-between text-sm">
+                <button
+                  type="button"
+                  onClick={() => setIsSent(false)}
+                  className="font-medium text-ink-2 hover:text-ink underline underline-offset-2"
+                >
+                  Ganti email
+                </button>
 
-              <button
-                type="button"
-                disabled={countdown > 0 || isLoading}
-                onClick={handleSendResetLink}
-                className="text-rose-400 hover:text-rose-300 font-semibold disabled:text-zinc-600 disabled:cursor-not-allowed"
-              >
-                {countdown > 0 ? `Kirim Ulang (${countdown}s)` : 'Kirim Ulang Email'}
+                <button
+                  type="button"
+                  disabled={countdown > 0 || isLoading}
+                  onClick={handleSendResetLink}
+                  className="font-medium text-ink hover:opacity-80 disabled:text-ink-3 tabular-nums"
+                >
+                  {countdown > 0 ? `Kirim ulang dalam ${countdown} dtk` : 'Kirim ulang'}
+                </button>
+              </div>
+
+              <button type="button" onClick={onClose} className="btn btn-lg btn-block btn-secondary">
+                Tutup
               </button>
             </div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-full py-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-bold text-xs transition-all active:scale-95"
-            >
-              Tutup Jendela Ini
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

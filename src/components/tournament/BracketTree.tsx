@@ -1,12 +1,65 @@
 import React, { useState } from 'react';
 import type { Tournament, TournamentMatch, TournamentGroupStanding } from '../../types';
-import { Play, CheckCircle, Trophy, ZoomIn, ZoomOut, RotateCcw, Award, Layers } from 'lucide-react';
-import { PlayerAvatar } from '../common/PlayerAvatar';
+import { ZoomIn, ZoomOut } from 'lucide-react';
 
 interface BracketTreeProps {
   tournament: Tournament;
   onPlayMatch: (tMatch: TournamentMatch) => void;
 }
+
+const MatchCard: React.FC<{
+  match: TournamentMatch;
+  onPlay: () => void;
+}> = ({ match: m, onPlay }) => {
+  const isReady = m.status === 'ready';
+  const isCompleted = m.status === 'completed';
+  const hasPlayers = m.player1Name && m.player2Name;
+
+  const row = (playerNumber: 1 | 2, name: string, score: number | undefined) => {
+    const won = !!m.winnerName && m.winnerName === name;
+    const lost = isCompleted && !won;
+    return (
+      <div className="flex items-center gap-2 h-9 pr-2.5">
+        <span className={`w-1 self-stretch ${playerNumber === 1 ? 'bg-p1' : 'bg-p2'}`} />
+        <span
+          className={`flex-1 truncate text-sm ${
+            won ? 'font-semibold text-ink' : lost ? 'text-ink-3' : 'text-ink'
+          }`}
+        >
+          {name || 'Menunggu'}
+        </span>
+        <span className={`num text-lg ${won ? 'text-ink' : 'text-ink-3'}`}>{score ?? '–'}</span>
+      </div>
+    );
+  };
+
+  return (
+    <div
+      className={`w-full bg-panel border rounded-[4px] overflow-hidden ${
+        isReady ? 'border-ink' : 'border-rule'
+      } ${!isReady && !isCompleted ? 'opacity-55' : ''}`}
+    >
+      <div className="flex items-center justify-between px-2.5 h-6 border-b border-rule text-xs text-ink-3">
+        <span>{m.groupName ? m.groupName : `Match ${m.matchIndex + 1}`}</span>
+        {isCompleted && <span>Selesai</span>}
+      </div>
+
+      <div className="rows">
+        {row(1, m.player1Name, m.player1Score)}
+        {row(2, m.player2Name, m.player2Score)}
+      </div>
+
+      {isReady && hasPlayers && (
+        <button
+          onClick={onPlay}
+          className="w-full h-9 bg-primary text-on-primary text-sm font-semibold hover:opacity-90"
+        >
+          Mulai match
+        </button>
+      )}
+    </div>
+  );
+};
 
 export const BracketTree: React.FC<BracketTreeProps> = ({
   tournament,
@@ -105,29 +158,29 @@ export const BracketTree: React.FC<BracketTreeProps> = ({
 
     let title = `Babak ${r}`;
     if (format === 'Single Elimination') {
-      if (r === maxRound) title = 'Grand Final';
-      else if (r === maxRound - 1) title = 'Semi Final';
-      else if (r === maxRound - 2) title = 'Quarter Final';
-      else if (r === maxRound - 3) title = 'Round of 16 (R16)';
-      else if (r === maxRound - 4) title = 'Round of 32 (R32)';
+      if (r === maxRound) title = 'Final';
+      else if (r === maxRound - 1) title = 'Semifinal';
+      else if (r === maxRound - 2) title = 'Perempat final';
+      else if (r === maxRound - 3) title = '16 besar';
+      else if (r === maxRound - 4) title = '32 besar';
     } else if (format === 'Double Elimination') {
       if (deActiveTab === 'winners') {
-        if (r === maxRound) title = 'Winners Final';
-        else if (r === maxRound - 1) title = 'Winners Semi Final';
-        else title = `Winners Round ${r}`;
+        if (r === maxRound) title = 'Final winners';
+        else if (r === maxRound - 1) title = 'Semifinal winners';
+        else title = `Winners babak ${r}`;
       } else if (deActiveTab === 'losers') {
-        if (r === maxRound) title = 'Losers Final';
-        else if (r === maxRound - 1) title = 'Losers Semi Final';
-        else title = `Losers Round ${r}`;
+        if (r === maxRound) title = 'Final losers';
+        else if (r === maxRound - 1) title = 'Semifinal losers';
+        else title = `Losers babak ${r}`;
       } else {
-        title = 'Grand Final Championship';
+        title = 'Grand final';
       }
     } else if (format === 'Round Robin') {
       if (rrActiveTab === 'playoffs') {
-        if (r === maxRound) title = 'Championship Final';
-        else title = 'Playoff Semifinal';
+        if (r === maxRound) title = 'Final';
+        else title = 'Semifinal playoff';
       } else {
-        title = `Jadwal Pertandingan Grup`;
+        title = 'Jadwal grup';
       }
     }
 
@@ -137,287 +190,211 @@ export const BracketTree: React.FC<BracketTreeProps> = ({
   const standings = calculateGroupStandings();
   const groupNames = Array.from(new Set(standings.map((s) => s.groupName)));
 
+  const isGroupStage = format === 'Round Robin' && rrActiveTab === 'standings';
+
+  // How a round feeds the next one decides which connector lines to draw.
+  const linkToNext = (i: number): 'pair' | 'straight' | 'none' => {
+    const next = rounds[i + 1];
+    if (!next) return 'none';
+    if (next.matches.length * 2 === rounds[i].matches.length) return 'pair';
+    if (next.matches.length === rounds[i].matches.length) return 'straight';
+    return 'none';
+  };
+
   return (
-    <div className="p-4 sm:p-6 rounded-2xl bg-zinc-900/60 border border-zinc-800 overflow-x-auto select-none space-y-4 font-sans">
-      
-      {/* 1. Champion Banner if completed */}
+    <div className="space-y-5 select-none">
+      {/* Champion */}
       {tournament.winnerName && (
-        <div className="mb-4 p-4 rounded-xl bg-zinc-950 border border-rose-500/40 flex items-center justify-between animate-fade-in shadow-md">
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
-              <Trophy className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="text-xs font-semibold uppercase text-rose-400">Juara Turnamen</div>
-              <div className="font-bold text-xl text-white">
-                {tournament.winnerName}
-              </div>
-            </div>
+        <div className="bg-primary text-on-primary px-5 py-4 rounded-[4px]">
+          <div className="font-display font-semibold uppercase tracking-[0.14em] text-sm opacity-70">
+            Juara turnamen
           </div>
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-semibold">
-            <Award className="w-4 h-4 text-rose-500" />
-            <span>Turnamen Selesai</span>
-          </div>
+          <div className="display text-4xl mt-1.5 break-words">{tournament.winnerName}</div>
         </div>
       )}
 
-      {/* 2. Format Selector & Zoom Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800">
-        
-        {/* Double Elimination Tabs */}
-        {format === 'Double Elimination' && (
-          <div className="inline-flex p-1 rounded-xl bg-zinc-950 border border-zinc-800 text-xs font-semibold">
-            <button
-              onClick={() => setDeActiveTab('winners')}
-              className={`py-1.5 px-3 rounded-lg transition-all flex items-center gap-1.5 ${
-                deActiveTab === 'winners' ? 'bg-rose-600 text-white shadow-sm font-bold' : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              <Trophy className="w-3.5 h-3.5" />
-              <span>Winners Bracket</span>
-            </button>
-            <button
-              onClick={() => setDeActiveTab('losers')}
-              className={`py-1.5 px-3 rounded-lg transition-all flex items-center gap-1.5 ${
-                deActiveTab === 'losers' ? 'bg-rose-600 text-white shadow-sm font-bold' : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Losers Bracket</span>
-            </button>
-            <button
-              onClick={() => setDeActiveTab('finals')}
-              className={`py-1.5 px-3 rounded-lg transition-all flex items-center gap-1.5 ${
-                deActiveTab === 'finals' ? 'bg-amber-600 text-white shadow-sm font-bold' : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              <Award className="w-3.5 h-3.5" />
-              <span>Grand Final</span>
-            </button>
-          </div>
-        )}
+      {/* View switch and zoom */}
+      <div className="flex items-end justify-between gap-3 border-b border-rule">
+        <div className="flex overflow-x-auto no-scrollbar">
+          {format === 'Double Elimination' && (
+            <>
+              <button onClick={() => setDeActiveTab('winners')} data-on={deActiveTab === 'winners'} className="tab">
+                Winners
+              </button>
+              <button onClick={() => setDeActiveTab('losers')} data-on={deActiveTab === 'losers'} className="tab">
+                Losers
+              </button>
+              <button onClick={() => setDeActiveTab('finals')} data-on={deActiveTab === 'finals'} className="tab">
+                Grand final
+              </button>
+            </>
+          )}
 
-        {/* Round Robin Tabs */}
-        {format === 'Round Robin' && (
-          <div className="inline-flex p-1 rounded-xl bg-zinc-950 border border-zinc-800 text-xs font-semibold">
-            <button
-              onClick={() => setRrActiveTab('standings')}
-              className={`py-1.5 px-3 rounded-lg transition-all flex items-center gap-1.5 ${
-                rrActiveTab === 'standings' ? 'bg-rose-600 text-white shadow-sm font-bold' : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Klasemen & Jadwal Grup</span>
-            </button>
-            <button
-              onClick={() => setRrActiveTab('playoffs')}
-              className={`py-1.5 px-3 rounded-lg transition-all flex items-center gap-1.5 ${
-                rrActiveTab === 'playoffs' ? 'bg-rose-600 text-white shadow-sm font-bold' : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              <Trophy className="w-3.5 h-3.5" />
-              <span>Bagan Playoff Knockout</span>
-            </button>
-          </div>
-        )}
+          {format === 'Round Robin' && (
+            <>
+              <button
+                onClick={() => setRrActiveTab('standings')}
+                data-on={rrActiveTab === 'standings'}
+                className="tab"
+              >
+                Klasemen dan jadwal
+              </button>
+              <button
+                onClick={() => setRrActiveTab('playoffs')}
+                data-on={rrActiveTab === 'playoffs'}
+                className="tab"
+              >
+                Playoff
+              </button>
+            </>
+          )}
 
-        {/* Single Elimination Badge */}
-        {format === 'Single Elimination' && (
-          <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-rose-500" />
-            <span>Bagan Single Elimination ({tournament.players.length} Pemain)</span>
-          </div>
-        )}
-
-        {/* Zoom Controls */}
-        <div className="flex items-center gap-1 self-end sm:self-auto">
-          <button
-            onClick={() => setZoomLevel((prev) => Math.max(0.7, prev - 0.1))}
-            className="p-1.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white transition-all"
-            title="Zoom Out"
-          >
-            <ZoomOut className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setZoomLevel(1)}
-            className="px-2 py-1 rounded-lg bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-[11px] font-mono text-zinc-400 hover:text-white transition-all"
-            title="Reset Zoom"
-          >
-            {Math.round(zoomLevel * 100)}%
-          </button>
-          <button
-            onClick={() => setZoomLevel((prev) => Math.min(1.4, prev + 0.1))}
-            className="p-1.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white transition-all"
-            title="Zoom In"
-          >
-            <ZoomIn className="w-4 h-4" />
-          </button>
+          {format === 'Single Elimination' && (
+            <span className="tab !cursor-default" data-on="true">
+              Bagan
+            </span>
+          )}
         </div>
+
+        {!isGroupStage && (
+          <div className="flex items-center pb-1 shrink-0">
+            <button
+              onClick={() => setZoomLevel((prev) => Math.max(0.7, prev - 0.1))}
+              className="icon-btn"
+              title="Perkecil"
+              aria-label="Perkecil bagan"
+            >
+              <ZoomOut className="w-[18px] h-[18px]" />
+            </button>
+            <button
+              onClick={() => setZoomLevel(1)}
+              className="num text-base text-ink-2 hover:text-ink w-12 text-center"
+              title="Kembalikan ukuran"
+            >
+              {Math.round(zoomLevel * 100)}%
+            </button>
+            <button
+              onClick={() => setZoomLevel((prev) => Math.min(1.4, prev + 0.1))}
+              className="icon-btn"
+              title="Perbesar"
+              aria-label="Perbesar bagan"
+            >
+              <ZoomIn className="w-[18px] h-[18px]" />
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* 3. ROUND ROBIN: Standings Table View */}
-      {format === 'Round Robin' && rrActiveTab === 'standings' && (
-        <div className="space-y-4 animate-fade-in">
+      {/* Round robin: standings, then the group schedule */}
+      {isGroupStage && (
+        <div className="space-y-8">
           {groupNames.map((grpName) => {
             const grpStandings = standings.filter((s) => s.groupName === grpName);
             return (
-              <div key={grpName} className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-4 shadow-sm space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                    {grpName}
-                  </h3>
-                  <span className="text-[11px] text-zinc-400">Top 2 Lolos ke Playoff</span>
+              <section key={grpName}>
+                <div className="flex items-baseline justify-between pb-2 border-b border-rule-strong">
+                  <h3 className="display text-xl">{grpName}</h3>
+                  <span className="text-[13px] text-ink-3">Dua teratas lolos ke playoff</span>
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-xs text-left">
+                  <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="border-b border-zinc-800 text-zinc-400 font-mono text-[11px]">
-                        <th className="py-2 px-2 w-10 text-center">#</th>
-                        <th className="py-2 px-3">Pemain</th>
-                        <th className="py-2 px-2 text-center">Main</th>
-                        <th className="py-2 px-2 text-center text-emerald-400">M</th>
-                        <th className="py-2 px-2 text-center text-rose-400">K</th>
-                        <th className="py-2 px-2 text-center">Selisih</th>
-                        <th className="py-2 px-3 text-center font-bold text-white">Poin</th>
+                      <tr className="border-b border-rule">
+                        <th className="eyebrow font-semibold py-2 w-8 text-center">#</th>
+                        <th className="eyebrow font-semibold py-2 pl-2">Pemain</th>
+                        <th className="eyebrow font-semibold py-2 text-right pl-4">Main</th>
+                        <th className="eyebrow font-semibold py-2 text-right pl-4">M</th>
+                        <th className="eyebrow font-semibold py-2 text-right pl-4">K</th>
+                        <th className="eyebrow font-semibold py-2 text-right pl-4">Selisih</th>
+                        <th className="eyebrow font-semibold py-2 text-right pl-4 pr-1">Poin</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-zinc-800/60 font-mono">
-                      {grpStandings.map((s, idx) => (
-                        <tr
-                          key={s.playerName}
-                          className={`hover:bg-zinc-900/60 transition-colors ${
-                            idx < 2 ? 'bg-rose-500/5 font-semibold' : ''
-                          }`}
-                        >
-                          <td className="py-2.5 px-2 text-center font-mono text-zinc-400">
-                            {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx + 1}
-                          </td>
-                          <td className="py-2.5 px-3 flex items-center gap-2 font-sans">
-                            <PlayerAvatar playerNumber={(idx % 2 + 1) as 1 | 2} size="xs" name={s.playerName} />
-                            <span className="text-zinc-200">{s.playerName}</span>
-                            {idx < 2 && (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-400 font-bold">
-                                Lolos
+                    <tbody>
+                      {grpStandings.map((s, idx) => {
+                        const diff = s.rackWon - s.rackLost;
+                        const qualifies = idx < 2;
+                        return (
+                          <tr key={s.playerName} className="border-b border-rule">
+                            <td className={`py-2.5 text-center num text-lg ${qualifies ? 'text-ink' : 'text-ink-3'}`}>
+                              {idx + 1}
+                            </td>
+                            <td className="py-2.5 pl-2">
+                              <span className={`text-[15px] ${qualifies ? 'font-semibold text-ink' : 'text-ink-2'}`}>
+                                {s.playerName}
                               </span>
-                            )}
-                          </td>
-                          <td className="py-2.5 px-2 text-center text-zinc-400">{s.played}</td>
-                          <td className="py-2.5 px-2 text-center text-emerald-400 font-bold">{s.won}</td>
-                          <td className="py-2.5 px-2 text-center text-rose-400">{s.lost}</td>
-                          <td className="py-2.5 px-2 text-center text-zinc-400">
-                            {s.rackWon - s.rackLost > 0 ? `+${s.rackWon - s.rackLost}` : s.rackWon - s.rackLost}
-                          </td>
-                          <td className="py-2.5 px-3 text-center font-bold text-rose-400 text-sm">
-                            {s.points}
-                          </td>
-                        </tr>
-                      ))}
+                              {qualifies && <span className="tag ml-2 align-middle">Lolos</span>}
+                            </td>
+                            <td className="py-2.5 text-right pl-4 num text-lg text-ink-2">{s.played}</td>
+                            <td className="py-2.5 text-right pl-4 num text-lg text-ink-2">{s.won}</td>
+                            <td className="py-2.5 text-right pl-4 num text-lg text-ink-2">{s.lost}</td>
+                            <td className="py-2.5 text-right pl-4 num text-lg text-ink-2">
+                              {diff > 0 ? `+${diff}` : diff}
+                            </td>
+                            <td className="py-2.5 text-right pl-4 pr-1 num text-xl text-ink">{s.points}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </section>
             );
           })}
+
+          <section>
+            <h3 className="eyebrow pb-2 border-b border-rule-strong">Jadwal grup</h3>
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 pt-3">
+              {matchesToRender.map((m) => (
+                <MatchCard key={m.id} match={m} onPlay={() => onPlayMatch(m)} />
+              ))}
+            </div>
+          </section>
         </div>
       )}
 
-      {/* 4. BRACKET TREE: Visual Match Cards Columns */}
-      {!(format === 'Round Robin' && rrActiveTab === 'standings') && (
-        <div className="overflow-x-auto pb-4 pt-2">
-          <div
-            className="flex items-start gap-6 sm:gap-8 transition-transform duration-200 origin-top-left"
-            style={{
-              transform: `scale(${zoomLevel})`,
-              minWidth: rounds.length > 3 ? `${rounds.length * 280}px` : '100%',
-            }}
-          >
-            {rounds.map((round) => (
-              <div key={round.roundNumber} className="flex-1 min-w-[240px] max-w-[320px] flex flex-col">
-                
-                {/* Round Title Header */}
-                <div className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-3 text-center pb-2 border-b border-zinc-800">
-                  {round.title}
-                </div>
+      {/* Bracket columns */}
+      {!isGroupStage && (
+        <div className="overflow-x-auto pb-4">
+          {rounds.length === 0 ? (
+            <p className="py-10 text-center text-sm text-ink-3">Belum ada pertandingan di tahap ini.</p>
+          ) : (
+            <div
+              className="flex items-stretch gap-8 origin-top-left"
+              style={{
+                transform: `scale(${zoomLevel})`,
+                width: `${rounds.length * 232 + (rounds.length - 1) * 32}px`,
+              }}
+            >
+              {rounds.map((round, i) => {
+                const out = linkToNext(i);
+                const incoming = i > 0 ? linkToNext(i - 1) : 'none';
 
-                {/* Match Cards Stack */}
-                <div className="flex-1 flex flex-col justify-around gap-4">
-                  {round.matches.map((m) => {
-                    const isReady = m.status === 'ready';
-                    const isCompleted = m.status === 'completed';
-                    const hasPlayers = m.player1Name && m.player2Name;
+                return (
+                  <div key={round.roundNumber} className="w-[232px] shrink-0 flex flex-col">
+                    <div className="eyebrow pb-2 border-b border-rule-strong">{round.title}</div>
 
-                    return (
-                      <div
-                        key={m.id}
-                        className={`rounded-xl border transition-all p-3 shadow-sm ${
-                          isCompleted
-                            ? 'border-zinc-800 bg-zinc-950/80'
-                            : isReady
-                            ? 'border-rose-500/50 bg-zinc-950 shadow-rose-950/20'
-                            : 'border-zinc-800/60 bg-zinc-950/40 opacity-60'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between text-[11px] text-zinc-500 mb-2">
-                          <span>{m.groupName ? m.groupName : `Match #${m.matchIndex + 1}`}</span>
-                          {isCompleted && (
-                            <span className="text-zinc-400 flex items-center gap-1 font-medium text-[10px]">
-                              <CheckCircle className="w-3 h-3 text-rose-400" /> Selesai
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Player 1 Row */}
+                    <div className="bracket-round pt-1">
+                      {round.matches.map((m, idx) => (
                         <div
-                          className={`flex items-center justify-between py-1.5 px-2 rounded-lg text-xs font-mono mb-1 transition-colors ${
-                            m.winnerName && m.winnerName === m.player1Name
-                              ? 'bg-rose-500/15 text-rose-300 font-bold'
-                              : 'text-zinc-200 bg-zinc-900/40'
-                          }`}
+                          key={m.id}
+                          className="bracket-slot"
+                          data-out={out !== 'none'}
+                          data-in={incoming !== 'none'}
+                          data-join={out === 'pair' ? (idx % 2 === 0 ? 'top' : 'bottom') : undefined}
                         >
-                          <div className="flex items-center gap-2 truncate">
-                            <PlayerAvatar playerNumber={1} size="xs" name={m.player1Name || 'TBD'} />
-                            <span className="truncate font-sans font-medium text-xs">{m.player1Name || 'TBD'}</span>
-                          </div>
-                          <span className="font-bold">{m.player1Score ?? '-'}</span>
+                          <MatchCard match={m} onPlay={() => onPlayMatch(m)} />
+                          {out === 'pair' && <span className="bracket-join" />}
                         </div>
-
-                        {/* Player 2 Row */}
-                        <div
-                          className={`flex items-center justify-between py-1.5 px-2 rounded-lg text-xs font-mono mb-2 transition-colors ${
-                            m.winnerName && m.winnerName === m.player2Name
-                              ? 'bg-blue-500/15 text-blue-300 font-bold'
-                              : 'text-zinc-200 bg-zinc-900/40'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 truncate">
-                            <PlayerAvatar playerNumber={2} size="xs" name={m.player2Name || 'TBD'} />
-                            <span className="truncate font-sans font-medium text-xs">{m.player2Name || 'TBD'}</span>
-                          </div>
-                          <span className="font-bold">{m.player2Score ?? '-'}</span>
-                        </div>
-
-                        {/* Action Button if Match is Ready */}
-                        {isReady && hasPlayers && (
-                          <button
-                            onClick={() => onPlayMatch(m)}
-                            className="w-full mt-1 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95"
-                          >
-                            <Play className="w-3 h-3 fill-white" />
-                            Mulai Match
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
-
     </div>
   );
 };
