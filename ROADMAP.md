@@ -229,6 +229,30 @@ verifikasi Supabase, lalu mulai Fase 0 → Fase 1.
 
 ---
 
+## 10. Fase 3 (berjalan) — Kelola meja per-tempat
+
+Kode sisi aplikasi untuk **kelola meja** SELESAI (12 Nov 2026). Butuh migrasi SQL.
+
+- ✅ Meja jadi **milik per-tempat** (`club_tables.owner_id`); admin hanya lihat &
+  kelola mejanya sendiri; super admin memantau semua; RLS per pemilik.
+- ✅ **Auto-buat 4 meja** untuk admin tempat baru; tombol **"Tambah meja"**,
+  **"Atur jumlah"** sekaligus, **rename** inline, **hapus** (meja non-aktif).
+- ✅ **Skor live meja** diperbarui ke Supabase saat match berjalan (menyelesaikan
+  audit #2); meja otomatis FREE saat match selesai.
+- ✅ Match menyimpan `tableId`/`tableLabel` (menggantikan `tableNumber`); meja tak
+  lagi di-cache lokal (Dexie v2 menghapus store `clubTables`).
+- ⏳ Verifikasi runtime menunggu migrasi dijalankan.
+
+### Langkah wajib di Supabase (dijalankan pemilik)
+- Supabase → SQL Editor → jalankan **`supabase_migration_fase3_tables.sql`**.
+  **AMAN**: hanya mengganti tabel meja; akun/riwayat/turnamen tidak tersentuh.
+
+### Sisa Fase 3 (belum)
+- Turnamen per-tempat, pendaftaran peserta oleh admin, dashboard monitoring
+  admin yang lebih lengkap.
+
+---
+
 ## 9. Spesifikasi Fase 2 — Sistem akun & peran (FINAL)
 
 Disepakati 12 Nov 2026. **Kode sisi aplikasi SELESAI & teruji (alur Tamu).**
