@@ -7,6 +7,7 @@ import { useSoundEffects } from '../hooks/useSoundEffects';
 import { useSettings } from './SettingsContext';
 import { useAuth } from './AuthContext';
 import { syncMatchToSupabase, syncPlayerToSupabase, syncTournamentToSupabase, updateTableLive, setTableStatus } from '../services/supabaseService';
+import { applyMatchResult } from '../lib/tournamentProgress';
 import confetti from 'canvas-confetti';
 
 interface StartMatchParams {
@@ -378,57 +379,14 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setTableStatus(match.tableId, 'FREE').catch(() => {});
       }
 
-      // Update Tournament Match if from tournament
+      // Update Tournament bracket if this match belongs to a tournament.
       if (match.tournamentId && match.tournamentMatchId) {
-        const t = await db.tournaments.get(match.tournamentId);
-        if (t) {
-          const matchIdx = t.matches.findIndex(m => m.id === match.tournamentMatchId);
-          if (matchIdx !== -1) {
-            const currentTMatch = t.matches[matchIdx];
-            currentTMatch.status = 'completed';
-            currentTMatch.player1Score = s1;
-            currentTMatch.player2Score = s2;
-            currentTMatch.winnerName = match.winner === 1 ? match.player1.name : match.player2.name;
-
-            // Advance winner to next round match
-            if (currentTMatch.nextMatchIndex !== undefined && t.matches[currentTMatch.nextMatchIndex]) {
-              const nextM = t.matches[currentTMatch.nextMatchIndex];
-              if (!nextM.player1Name || nextM.player1Name.startsWith('Pemenang') || nextM.player1Name.startsWith('Juara')) {
-                nextM.player1Name = currentTMatch.winnerName;
-              } else if (!nextM.player2Name || nextM.player2Name.startsWith('Pemenang') || nextM.player2Name.startsWith('Juara')) {
-                nextM.player2Name = currentTMatch.winnerName;
-              }
-              if (nextM.player1Name && nextM.player2Name && !nextM.player1Name.startsWith('Pemenang') && !nextM.player2Name.startsWith('Pemenang')) {
-                nextM.status = 'ready';
-              }
-            }
-
-            // For Double Elimination: Advance loser to losers bracket
-            if (currentTMatch.nextLoserMatchIndex !== undefined && t.matches[currentTMatch.nextLoserMatchIndex]) {
-              const loserName = match.winner === 1 ? match.player2.name : match.player1.name;
-              const loserM = t.matches[currentTMatch.nextLoserMatchIndex];
-              if (!loserM.player1Name || loserM.player1Name.startsWith('Kalah') || loserM.player1Name.startsWith('Pemenang')) {
-                loserM.player1Name = loserName;
-              } else if (!loserM.player2Name || loserM.player2Name.startsWith('Kalah') || loserM.player2Name.startsWith('Pemenang')) {
-                loserM.player2Name = loserName;
-              }
-              if (loserM.player1Name && loserM.player2Name && !loserM.player1Name.startsWith('Kalah') && !loserM.player2Name.startsWith('Kalah')) {
-                loserM.status = 'ready';
-              }
-            }
-
-            // Check if tournament is completely finished (final match won)
-            const finalMatch = t.matches[t.matches.length - 1];
-            if (finalMatch && finalMatch.status === 'completed') {
-              t.status = 'completed';
-              t.winnerName = finalMatch.winnerName;
-            } else {
-              t.status = 'in_progress';
-            }
-
-            await db.tournaments.put(t);
-            syncTournamentToSupabase(t).catch(() => {});
-          }
+        const existing = await db.tournaments.get(match.tournamentId);
+        if (existing) {
+          const winnerName = match.winner === 1 ? match.player1.name : match.player2.name;
+          const updated = applyMatchResult(existing, match.tournamentMatchId, winnerName, s1, s2);
+          await db.tournaments.put(updated);
+          syncTournamentToSupabase(updated).catch(() => {});
         }
       }
 
