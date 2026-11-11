@@ -229,6 +229,35 @@ verifikasi Supabase, lalu mulai Fase 0 → Fase 1.
 
 ---
 
+## 11. Fase 4 (berjalan) — Peringkat poin & bagan benar
+
+Inti SELESAI & tervalidasi lewat simulasi (12 Nov 2026). **Tidak perlu migrasi SQL baru.**
+
+- ✅ **Perbaikan logika bagan** (#5 double-elim, #6 round-robin playoff):
+  modul murni `lib/tournamentProgress.ts` — penempatan slot dihitung dari
+  struktur (bukan tebak teks), seeding playoff round-robin dari klasemen,
+  deteksi juara/runner-up. **Teruji**: semua format (single/double/round-robin)
+  pada 4/8/16/32 pemain tuntas dengan satu juara, tanpa slot placeholder.
+- ✅ **Peringkat berbasis poin → persentase** (`lib/ranking.ts`): poin dari
+  hasil turnamen (menang + bonus juara/runner-up), **dinormalkan ke % per
+  turnamen** (bobot setara), peringkat global = rata-rata %. Halaman Peringkat
+  ditulis ulang (menggantikan Elo kasual); modul profil/H2H Elo lama dihapus.
+- ✅ `MatchContext` memakai `applyMatchResult` (menggantikan advancement lama
+  yang buggy).
+
+### Catatan skema poin
+Saat ini pakai skema default tetap (menang=10, juara=50, runner-up=25). Opsi
+**admin menentukan poin sendiri** = refinement berikutnya (butuh kolom
+`points_scheme` + UI).
+
+### Sisa Fase 4 (belum — paling besar, perlu keputusan)
+- **Peserta = akun** (registrasi mandiri / oleh admin, profil terkelola) —
+  turnamen masih berbasis nama bebas; peringkat memakai nama.
+- **Penugasan Wasit** per-turnamen + **input skor multi-sumber** (peserta/wasit/
+  admin) tersinkron realtime ke **dashboard monitoring admin**.
+
+---
+
 ## 10. Fase 3 (berjalan) — Kelola meja per-tempat
 
 Kode sisi aplikasi untuk **kelola meja** SELESAI (12 Nov 2026). Butuh migrasi SQL.
