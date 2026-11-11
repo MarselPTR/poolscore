@@ -3,8 +3,9 @@ import type { Tournament, GameType, TournamentFormat } from '../../types';
 import { db } from '../../db/database';
 import { BracketTree } from './BracketTree';
 import { generateTournamentMatches } from '../../utils/tournamentGenerator';
-import { syncTournamentToSupabase } from '../../services/supabaseService';
+import { syncTournamentToSupabase, fetchTournamentsFromSupabase, deleteTournamentFromSupabase } from '../../services/supabaseService';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Plus, ArrowLeft, Trash2, ChevronRight } from 'lucide-react';
 import { Modal } from '../common/Modal';
@@ -36,6 +37,14 @@ const FORMAT_LABEL: Record<TournamentFormat, string> = {
 
 export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTournamentMatch }) => {
   const { success } = useToast();
+  const { user } = useAuth();
+  // Only venue admins (and super admins) create & manage tournaments. Everyone
+  // else sees them read-only.
+  const canManage = !!user && !user.isGuest && (user.role === 'venue_admin' || user.role === 'super_admin');
+  const isSuperAdmin = user?.role === 'super_admin';
+  const ownsTournament = (t: Tournament | null) =>
+    !!t && !!user && (t.createdBy === user.id || isSuperAdmin);
+
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -52,10 +61,19 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
 
   const fetchTournaments = async () => {
     try {
-      const all = await db.tournaments.reverse().sortBy('createdAt');
+      // Tournaments are public: read the shared list from the cloud so
+      // participants see every venue's open tournaments. Fall back to local.
+      const cloud = await fetchTournamentsFromSupabase();
+      let all: Tournament[];
+      if (cloud.length > 0) {
+        await db.tournaments.bulkPut(cloud);
+        all = cloud;
+      } else {
+        all = await db.tournaments.reverse().sortBy('createdAt');
+      }
       setTournaments(all);
       if (selectedTournament) {
-        const updated = await db.tournaments.get(selectedTournament.id);
+        const updated = all.find((t) => t.id === selectedTournament.id);
         if (updated) setSelectedTournament(updated);
       }
 
@@ -78,6 +96,7 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
 
   const handleCreateTournament = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManage || !user) return;
     const tId = `TOURNEY-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     const cleanedPlayers = playerNames.map((p, idx) => p.trim() || `Pemain ${idx + 1}`);
     const matches = generateTournamentMatches(tId, cleanedPlayers, tourneyFormat, numPlayers);
@@ -91,6 +110,9 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
       status: 'in_progress',
       players: cleanedPlayers,
       matches,
+      venueName: user.venueName,
+      isPublic: true,
+      createdBy: user.id,
       createdAt: Date.now(),
     };
 
@@ -105,6 +127,7 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
     if (!deletingTournamentId) return;
     try {
       await db.tournaments.delete(deletingTournamentId);
+      deleteTournamentFromSupabase(deletingTournamentId).catch(() => {});
       if (selectedTournament?.id === deletingTournamentId) {
         setSelectedTournament(null);
       }
@@ -136,6 +159,7 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
           </button>
           <h1 className="page-title break-words">{selectedTournament.name}</h1>
           <p className="text-sm text-ink-2 mt-1.5">
+            {selectedTournament.venueName ? `${selectedTournament.venueName} · ` : ''}
             {selectedTournament.gameType} · {FORMAT_LABEL[selectedTournament.format] || selectedTournament.format} ·{' '}
             {selectedTournament.players.length} pemain · race to {selectedTournament.raceTo}
           </p>
@@ -143,16 +167,19 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
       ) : (
         <div className="flex items-end justify-between gap-4">
           <h1 className="page-title">Turnamen</h1>
-          <button onClick={() => setIsCreateModalOpen(true)} className="btn btn-primary shrink-0">
-            <Plus className="w-4 h-4" />
-            Turnamen baru
-          </button>
+          {canManage && (
+            <button onClick={() => setIsCreateModalOpen(true)} className="btn btn-primary shrink-0">
+              <Plus className="w-4 h-4" />
+              Turnamen baru
+            </button>
+          )}
         </div>
       )}
 
       {selectedTournament ? (
         <BracketTree
           tournament={selectedTournament}
+          readOnly={!ownsTournament(selectedTournament)}
           onPlayMatch={(m) => {
             onLaunchTournamentMatch(
               selectedTournament.id,
@@ -168,12 +195,16 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
         <div className="py-16 text-center border-y border-rule">
           <div className="display text-2xl">Belum ada turnamen</div>
           <p className="text-sm text-ink-2 mt-2 max-w-sm mx-auto">
-            Buat turnamen dan bagan pertandingannya disusun otomatis dari daftar pemain.
+            {canManage
+              ? 'Buat turnamen dan bagan pertandingannya disusun otomatis dari daftar pemain.'
+              : 'Belum ada turnamen terbuka. Turnamen yang dibuat pengelola tempat akan muncul di sini.'}
           </p>
-          <button onClick={() => setIsCreateModalOpen(true)} className="btn btn-primary mt-5">
-            <Plus className="w-4 h-4" />
-            Buat turnamen
-          </button>
+          {canManage && (
+            <button onClick={() => setIsCreateModalOpen(true)} className="btn btn-primary mt-5">
+              <Plus className="w-4 h-4" />
+              Buat turnamen
+            </button>
+          )}
         </div>
       ) : (
         <div className="rows border-y border-rule">
@@ -194,6 +225,7 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
                       </span>
                     </div>
                     <div className="text-[13px] text-ink-3 mt-1 truncate">
+                      {t.venueName ? `${t.venueName} · ` : ''}
                       {t.gameType} · race to {t.raceTo} · {t.players.length} pemain ·{' '}
                       {FORMAT_LABEL[t.format] || t.format}
                       {t.winnerName && (
@@ -206,14 +238,16 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
                   <ChevronRight className="w-4 h-4 text-ink-3 shrink-0" />
                 </button>
 
-                <button
-                  onClick={() => setDeletingTournamentId(t.id)}
-                  className="icon-btn hover:!text-danger"
-                  title="Hapus turnamen"
-                  aria-label={`Hapus turnamen ${t.name}`}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {(t.createdBy === user?.id || isSuperAdmin) && (
+                  <button
+                    onClick={() => setDeletingTournamentId(t.id)}
+                    className="icon-btn hover:!text-danger"
+                    title="Hapus turnamen"
+                    aria-label={`Hapus turnamen ${t.name}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             );
           })}

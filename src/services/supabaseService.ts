@@ -176,12 +176,25 @@ export async function syncTournamentToSupabase(tournament: Tournament): Promise<
       matches: tournament.matches,
       winner_name: tournament.winnerName || null,
       runner_up_name: tournament.runnerUpName || null,
+      venue_name: tournament.venueName || null,
+      is_public: tournament.isPublic ?? true,
+      created_by: tournament.createdBy || null,
       created_at: tournament.createdAt,
     };
 
     await supabase.from('tournaments').upsert(payload, { onConflict: 'id' });
   } catch {
     // Fail silently
+  }
+}
+
+export async function deleteTournamentFromSupabase(id: string): Promise<boolean> {
+  if (!isSupabaseConfigured) return false;
+  try {
+    const { error } = await supabase.from('tournaments').delete().eq('id', id);
+    return !error;
+  } catch {
+    return false;
   }
 }
 
@@ -208,6 +221,9 @@ export async function fetchTournamentsFromSupabase(): Promise<Tournament[]> {
       matches: d.matches || [],
       winnerName: d.winner_name,
       runnerUpName: d.runner_up_name,
+      venueName: d.venue_name,
+      isPublic: d.is_public,
+      createdBy: d.created_by,
       createdAt: Number(d.created_at),
     }));
   } catch {

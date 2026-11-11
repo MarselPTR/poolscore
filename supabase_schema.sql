@@ -122,6 +122,8 @@ CREATE TABLE public.tournaments (
   matches JSONB NOT NULL DEFAULT '[]'::jsonb,
   winner_name TEXT,
   runner_up_name TEXT,
+  venue_name TEXT,
+  is_public BOOLEAN NOT NULL DEFAULT TRUE,
   created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at BIGINT NOT NULL
 );
@@ -183,12 +185,17 @@ CREATE POLICY "user updates own matches" ON public.matches
 CREATE POLICY "user deletes own matches" ON public.matches
   FOR DELETE USING (auth.uid() = created_by OR public.is_super_admin());
 
--- TOURNAMENTS: publik dibaca semua; ditulis user terautentikasi (dibatasi per
--- venue di Fase 3).
+-- TOURNAMENTS: dibaca semua (publik); hanya pemilik (admin pembuat) atau super
+-- admin yang boleh menulis.
 CREATE POLICY "tournaments readable by all" ON public.tournaments
   FOR SELECT USING (true);
-CREATE POLICY "auth writes tournaments" ON public.tournaments
-  FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "owner inserts tournaments" ON public.tournaments
+  FOR INSERT WITH CHECK (auth.uid() = created_by);
+CREATE POLICY "owner updates own tournaments" ON public.tournaments
+  FOR UPDATE USING (auth.uid() = created_by OR public.is_super_admin())
+  WITH CHECK (auth.uid() = created_by OR public.is_super_admin());
+CREATE POLICY "owner deletes own tournaments" ON public.tournaments
+  FOR DELETE USING (auth.uid() = created_by OR public.is_super_admin());
 
 -- CLUB TABLES: dibaca semua (untuk tampilan TV); dikelola oleh pemiliknya
 -- (admin tempat) dan super admin.

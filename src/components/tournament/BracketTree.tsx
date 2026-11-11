@@ -5,12 +5,15 @@ import { ZoomIn, ZoomOut } from 'lucide-react';
 interface BracketTreeProps {
   tournament: Tournament;
   onPlayMatch: (tMatch: TournamentMatch) => void;
+  /** Hide the "Mulai match" action for viewers who don't own the tournament. */
+  readOnly?: boolean;
 }
 
 const MatchCard: React.FC<{
   match: TournamentMatch;
   onPlay: () => void;
-}> = ({ match: m, onPlay }) => {
+  readOnly?: boolean;
+}> = ({ match: m, onPlay, readOnly }) => {
   const isReady = m.status === 'ready';
   const isCompleted = m.status === 'completed';
   const hasPlayers = m.player1Name && m.player2Name;
@@ -49,7 +52,7 @@ const MatchCard: React.FC<{
         {row(2, m.player2Name, m.player2Score)}
       </div>
 
-      {isReady && hasPlayers && (
+      {isReady && hasPlayers && !readOnly && (
         <button
           onClick={onPlay}
           className="w-full h-9 bg-primary text-on-primary text-sm font-semibold hover:opacity-90"
@@ -64,6 +67,7 @@ const MatchCard: React.FC<{
 export const BracketTree: React.FC<BracketTreeProps> = ({
   tournament,
   onPlayMatch,
+  readOnly,
 }) => {
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [deActiveTab, setDeActiveTab] = useState<'winners' | 'losers' | 'finals'>('winners');
@@ -346,7 +350,7 @@ export const BracketTree: React.FC<BracketTreeProps> = ({
             <h3 className="eyebrow pb-2 border-b border-rule-strong">Jadwal grup</h3>
             <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 pt-3">
               {matchesToRender.map((m) => (
-                <MatchCard key={m.id} match={m} onPlay={() => onPlayMatch(m)} />
+                <MatchCard key={m.id} match={m} readOnly={readOnly} onPlay={() => onPlayMatch(m)} />
               ))}
             </div>
           </section>
@@ -383,7 +387,7 @@ export const BracketTree: React.FC<BracketTreeProps> = ({
                           data-in={incoming !== 'none'}
                           data-join={out === 'pair' ? (idx % 2 === 0 ? 'top' : 'bottom') : undefined}
                         >
-                          <MatchCard match={m} onPlay={() => onPlayMatch(m)} />
+                          <MatchCard match={m} readOnly={readOnly} onPlay={() => onPlayMatch(m)} />
                           {out === 'pair' && <span className="bracket-join" />}
                         </div>
                       ))}

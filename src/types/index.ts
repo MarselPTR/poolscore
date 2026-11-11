@@ -183,6 +183,9 @@ export interface Tournament {
   matches: TournamentMatch[];
   winnerName?: string;
   runnerUpName?: string;
+  venueName?: string;
+  isPublic?: boolean;
+  createdBy?: string;
   createdAt: number;
 }
 
