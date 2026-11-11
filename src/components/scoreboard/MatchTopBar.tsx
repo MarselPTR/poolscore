@@ -54,10 +54,8 @@ export const MatchTopBar: React.FC<MatchTopBarProps> = ({
           </span>
         )}
 
-        {match.tableNumber && (
-          <span className="hidden sm:inline text-sm text-ink-2">
-            Meja <b className="num text-base text-ink">{match.tableNumber}</b>
-          </span>
+        {match.tableLabel && (
+          <span className="hidden sm:inline text-sm text-ink-2">{match.tableLabel}</span>
         )}
       </div>
 

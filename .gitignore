@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Berkas pribadi / sensitif
+superadmin password.png
+*.local.png

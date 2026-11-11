@@ -118,7 +118,8 @@ export interface Match {
   events: MatchEvent[];
   tournamentId?: string;
   tournamentMatchId?: string;
-  tableNumber?: number;
+  tableId?: string; // club table this match is assigned to (per-venue)
+  tableLabel?: string; // table name, for display on the scoreboard
   createdBy?: string; // auth user id of the recorder (empty for guests)
 }
 
@@ -186,8 +187,10 @@ export interface Tournament {
 }
 
 export interface ClubTable {
-  id: number;
+  id: string;
+  ownerId?: string;
   name: string;
+  position?: number;
   status: 'FREE' | 'LIVE' | 'MAINTENANCE';
   activeMatchId?: string;
   player1Name?: string;

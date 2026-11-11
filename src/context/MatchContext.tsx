@@ -6,7 +6,7 @@ import { useLiveBroadcast } from '../hooks/useLiveSync';
 import { useSoundEffects } from '../hooks/useSoundEffects';
 import { useSettings } from './SettingsContext';
 import { useAuth } from './AuthContext';
-import { syncMatchToSupabase, syncPlayerToSupabase, syncTournamentToSupabase } from '../services/supabaseService';
+import { syncMatchToSupabase, syncPlayerToSupabase, syncTournamentToSupabase, updateTableLive, setTableStatus } from '../services/supabaseService';
 import confetti from 'canvas-confetti';
 
 interface StartMatchParams {
@@ -21,7 +21,8 @@ interface StartMatchParams {
   isTimerEnabled: boolean;
   tournamentId?: string;
   tournamentMatchId?: string;
-  tableNumber?: number;
+  tableId?: string;
+  tableLabel?: string;
 }
 
 interface MatchContextType {
@@ -223,7 +224,8 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ],
       tournamentId: params.tournamentId,
       tournamentMatchId: params.tournamentMatchId,
-      tableNumber: params.tableNumber,
+      tableId: params.tableId,
+      tableLabel: params.tableLabel,
       createdBy: ownerId,
     };
 
@@ -232,28 +234,41 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsPaused(false);
     playBallHit();
 
-    // Update Table status if table is assigned
-    if (params.tableNumber) {
-      try {
-        await db.clubTables.update(params.tableNumber, {
-          status: 'LIVE',
-          activeMatchId: matchId,
-          player1Name: params.player1Name,
-          player2Name: params.player2Name,
-          score1: 0,
-          score2: 0,
-          gameType: params.gameType,
-          startTime: Date.now(),
-        });
-      } catch {
-        // ignore
-      }
+    // Mark the club table LIVE (per-venue, in Supabase).
+    if (params.tableId) {
+      updateTableLive(params.tableId, {
+        status: 'LIVE',
+        activeMatchId: matchId,
+        player1Name: params.player1Name,
+        player2Name: params.player2Name,
+        score1: 0,
+        score2: 0,
+        gameType: params.gameType,
+        raceTo: params.raceTo,
+        startTime: Date.now(),
+      }).catch(() => {});
     }
 
     if (!isGuest) {
       await db.matches.put(newMatch);
     }
     return matchId;
+  };
+
+  // Push the live score of the assigned club table (called as the match plays).
+  const pushTableLive = (match: Match) => {
+    if (!match.tableId) return;
+    updateTableLive(match.tableId, {
+      status: 'LIVE',
+      activeMatchId: match.id,
+      player1Name: match.player1.name,
+      player2Name: match.player2.name,
+      score1: match.player1.score,
+      score2: match.player2.score,
+      gameType: match.gameType,
+      raceTo: match.raceTo,
+      startTime: match.startedAt,
+    }).catch(() => {});
   };
 
   // Finalize statistics, Elo calculations, and save to Dexie
@@ -358,16 +373,9 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         });
       }
 
-      // Update Club Table if assigned
-      if (match.tableNumber) {
-        await db.clubTables.update(match.tableNumber, {
-          status: 'FREE',
-          activeMatchId: undefined,
-          player1Name: undefined,
-          player2Name: undefined,
-          score1: undefined,
-          score2: undefined,
-        });
+      // Free the club table if this match was assigned to one.
+      if (match.tableId) {
+        setTableStatus(match.tableId, 'FREE').catch(() => {});
       }
 
       // Update Tournament Match if from tournament
@@ -553,6 +561,7 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setActiveMatch(updatedMatch);
       setRackSeconds(0);
       playRackWon();
+      pushTableLive(updatedMatch);
 
       // Show Set Victory Banner Alert
       if (setTimeoutRef.current) clearTimeout(setTimeoutRef.current);
@@ -610,6 +619,7 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setActiveMatch(updatedMatch);
     setRackSeconds(0);
+    if (!isMatchWon) pushTableLive(updatedMatch);
 
     if (isMatchWon) {
       playMatchWon();
@@ -850,12 +860,14 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       },
     };
 
-    setActiveMatch({
+    const adjusted: Match = {
       ...activeMatch,
       player1: { ...activeMatch.player1, score: newS1 },
       player2: { ...activeMatch.player2, score: newS2 },
       events: [...activeMatch.events, newEvent],
-    });
+    };
+    setActiveMatch(adjusted);
+    pushTableLive(adjusted);
 
     if (delta > 0) {
       playPocketDrop();

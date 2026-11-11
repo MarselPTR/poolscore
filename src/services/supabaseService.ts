@@ -36,7 +36,7 @@ export async function syncMatchToSupabase(match: Match): Promise<void> {
       events: match.events,
       tournament_id: match.tournamentId || null,
       tournament_match_id: match.tournamentMatchId || null,
-      table_number: match.tableNumber || null,
+      table_number: null,
       created_by: match.createdBy || null,
     };
 
@@ -84,7 +84,6 @@ export async function fetchMatchesFromSupabase(limit = 100): Promise<Match[]> {
       events: d.events || [],
       tournamentId: d.tournament_id,
       tournamentMatchId: d.tournament_match_id,
-      tableNumber: d.table_number,
       createdBy: d.created_by,
     }));
   } catch {
@@ -217,59 +216,143 @@ export async function fetchTournamentsFromSupabase(): Promise<Tournament[]> {
 }
 
 // =====================================================================
-// CLUB TABLES SYNC SERVICE
+// CLUB TABLES (per-venue) — managed by venue admins, synced to Supabase
 // =====================================================================
 
-export async function syncClubTableToSupabase(table: ClubTable): Promise<void> {
-  if (!isSupabaseConfigured) return;
-
-  try {
-    const payload = {
-      id: table.id,
-      name: table.name,
-      status: table.status,
-      active_match_id: table.activeMatchId || null,
-      player1_name: table.player1Name || null,
-      player2_name: table.player2Name || null,
-      score1: table.score1 || 0,
-      score2: table.score2 || 0,
-      game_type: table.gameType || null,
-      race_to: table.raceTo || null,
-      start_time: table.startTime || null,
-    };
-
-    await supabase.from('club_tables').upsert(payload, { onConflict: 'id' });
-  } catch {
-    // Fail silently
-  }
+function mapTableRow(d: Record<string, unknown>): ClubTable {
+  return {
+    id: d.id as string,
+    ownerId: (d.owner_id as string) || undefined,
+    name: d.name as string,
+    position: (d.position as number) ?? 0,
+    status: d.status as ClubTable['status'],
+    activeMatchId: (d.active_match_id as string) || undefined,
+    player1Name: (d.player1_name as string) || undefined,
+    player2Name: (d.player2_name as string) || undefined,
+    score1: (d.score1 as number) || 0,
+    score2: (d.score2 as number) || 0,
+    gameType: (d.game_type as ClubTable['gameType']) || undefined,
+    raceTo: (d.race_to as number) || undefined,
+    startTime: (d.start_time as number) || undefined,
+  };
 }
 
-export async function fetchClubTablesFromSupabase(): Promise<ClubTable[]> {
+/** Tables owned by one venue admin. */
+export async function fetchTablesForOwner(ownerId: string): Promise<ClubTable[]> {
   if (!isSupabaseConfigured) return [];
-
   try {
     const { data, error } = await supabase
       .from('club_tables')
       .select('*')
-      .order('id', { ascending: true });
-
+      .eq('owner_id', ownerId)
+      .order('position', { ascending: true });
     if (error || !data) return [];
-
-    return data.map((d) => ({
-      id: d.id,
-      name: d.name,
-      status: d.status,
-      activeMatchId: d.active_match_id,
-      player1Name: d.player1_name,
-      player2Name: d.player2_name,
-      score1: d.score1 || 0,
-      score2: d.score2 || 0,
-      gameType: d.game_type,
-      raceTo: d.race_to,
-      startTime: d.start_time,
-    }));
+    return data.map(mapTableRow);
   } catch {
     return [];
+  }
+}
+
+/** All tables (super admin monitoring). */
+export async function fetchAllTables(): Promise<ClubTable[]> {
+  if (!isSupabaseConfigured) return [];
+  try {
+    const { data, error } = await supabase
+      .from('club_tables')
+      .select('*')
+      .order('position', { ascending: true });
+    if (error || !data) return [];
+    return data.map(mapTableRow);
+  } catch {
+    return [];
+  }
+}
+
+export async function createTable(ownerId: string, name: string, position: number): Promise<ClubTable | null> {
+  if (!isSupabaseConfigured) return null;
+  try {
+    const id = `tbl_${Math.random().toString(36).substring(2, 10)}`;
+    const { data, error } = await supabase
+      .from('club_tables')
+      .insert({ id, owner_id: ownerId, name, position, status: 'FREE' })
+      .select()
+      .single();
+    if (error || !data) return null;
+    return mapTableRow(data);
+  } catch {
+    return null;
+  }
+}
+
+export async function renameTable(id: string, name: string): Promise<boolean> {
+  if (!isSupabaseConfigured) return false;
+  try {
+    const { error } = await supabase
+      .from('club_tables')
+      .update({ name, updated_at: new Date().toISOString() })
+      .eq('id', id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function setTableStatus(id: string, status: ClubTable['status']): Promise<boolean> {
+  if (!isSupabaseConfigured) return false;
+  try {
+    const patch: Record<string, unknown> = { status, updated_at: new Date().toISOString() };
+    if (status !== 'LIVE') {
+      Object.assign(patch, {
+        active_match_id: null,
+        player1_name: null,
+        player2_name: null,
+        score1: 0,
+        score2: 0,
+        game_type: null,
+        start_time: null,
+      });
+    }
+    const { error } = await supabase.from('club_tables').update(patch).eq('id', id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function deleteTable(id: string): Promise<boolean> {
+  if (!isSupabaseConfigured) return false;
+  try {
+    const { error } = await supabase.from('club_tables').delete().eq('id', id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+/** Update the live snapshot shown on a table card (called as the match plays). */
+export async function updateTableLive(
+  id: string,
+  patch: Partial<Pick<ClubTable, 'status' | 'activeMatchId' | 'player1Name' | 'player2Name' | 'score1' | 'score2' | 'gameType' | 'raceTo' | 'startTime'>>
+): Promise<void> {
+  if (!isSupabaseConfigured) return;
+  try {
+    await supabase
+      .from('club_tables')
+      .update({
+        status: patch.status,
+        active_match_id: patch.activeMatchId ?? null,
+        player1_name: patch.player1Name ?? null,
+        player2_name: patch.player2Name ?? null,
+        score1: patch.score1 ?? 0,
+        score2: patch.score2 ?? 0,
+        game_type: patch.gameType ?? null,
+        race_to: patch.raceTo ?? null,
+        start_time: patch.startTime ?? null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
+  } catch {
+    // Fail silently
   }
 }
 
@@ -336,11 +419,12 @@ export async function pullInitialDataFromSupabase(): Promise<void> {
   if (!isSupabaseConfigured) return;
 
   try {
-    const [cloudPlayers, cloudMatches, cloudTournaments, cloudTables] = await Promise.all([
+    // Club tables are read directly from Supabase (per-venue), not mirrored
+    // into the local DB.
+    const [cloudPlayers, cloudMatches, cloudTournaments] = await Promise.all([
       fetchPlayersFromSupabase(),
       fetchMatchesFromSupabase(100),
       fetchTournamentsFromSupabase(),
-      fetchClubTablesFromSupabase(),
     ]);
 
     if (cloudPlayers.length > 0) {
@@ -353,10 +437,6 @@ export async function pullInitialDataFromSupabase(): Promise<void> {
 
     if (cloudTournaments.length > 0) {
       await db.tournaments.bulkPut(cloudTournaments);
-    }
-
-    if (cloudTables.length > 0) {
-      await db.clubTables.bulkPut(cloudTables);
     }
   } catch {
     // Fail silently

@@ -15,7 +15,8 @@ interface QuickMatchModalProps {
   initialPlayer2?: string;
   tournamentId?: string;
   tournamentMatchId?: string;
-  tableNumber?: number;
+  tableId?: string;
+  tableLabel?: string;
 }
 
 export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
@@ -27,7 +28,8 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
   initialPlayer2,
   tournamentId,
   tournamentMatchId,
-  tableNumber,
+  tableId,
+  tableLabel,
 }) => {
   const { startMatch } = useMatch();
   const { settings, updateSettings } = useSettings();
@@ -93,7 +95,8 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
       isTimerEnabled,
       tournamentId,
       tournamentMatchId,
-      tableNumber,
+      tableId,
+      tableLabel,
     });
 
     onClose();
@@ -103,7 +106,7 @@ export const QuickMatchModal: React.FC<QuickMatchModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={tableNumber ? `Pertandingan baru · Meja ${tableNumber}` : 'Pertandingan baru'}
+      title={tableLabel ? `Pertandingan baru · ${tableLabel}` : 'Pertandingan baru'}
     >
       <form onSubmit={handleStart} className="space-y-5 select-none">
         {/* Players */}

@@ -127,11 +127,13 @@ CREATE TABLE public.tournaments (
 );
 
 -- =====================================================================
--- 6. CLUB TABLES (akan menjadi per-venue di Fase 3)
+-- 6. CLUB TABLES (per-tempat / venue — dimiliki admin tempat)
 -- =====================================================================
 CREATE TABLE public.club_tables (
-  id INTEGER PRIMARY KEY,
+  id TEXT PRIMARY KEY,
+  owner_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
+  position INTEGER DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'FREE'
     CHECK (status IN ('FREE', 'LIVE', 'MAINTENANCE')),
   active_match_id TEXT,
@@ -145,11 +147,7 @@ CREATE TABLE public.club_tables (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-INSERT INTO public.club_tables (id, name, status) VALUES
-  (1, 'Meja 1', 'FREE'), (2, 'Meja 2', 'FREE'), (3, 'Meja 3', 'FREE'),
-  (4, 'Meja 4', 'FREE'), (5, 'Meja 5', 'FREE'), (6, 'Meja 6', 'FREE'),
-  (7, 'Meja 7', 'FREE'), (8, 'Meja 8', 'FREE')
-ON CONFLICT (id) DO NOTHING;
+CREATE INDEX club_tables_owner_idx ON public.club_tables (owner_id);
 
 -- =====================================================================
 -- 7. ROW LEVEL SECURITY
@@ -192,11 +190,14 @@ CREATE POLICY "tournaments readable by all" ON public.tournaments
 CREATE POLICY "auth writes tournaments" ON public.tournaments
   FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
--- CLUB TABLES: dibaca semua; ditulis user terautentikasi (per venue di Fase 3).
+-- CLUB TABLES: dibaca semua (untuk tampilan TV); dikelola oleh pemiliknya
+-- (admin tempat) dan super admin.
 CREATE POLICY "club tables readable by all" ON public.club_tables
   FOR SELECT USING (true);
-CREATE POLICY "auth writes club tables" ON public.club_tables
-  FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "owner manages own tables" ON public.club_tables
+  FOR ALL USING (auth.uid() = owner_id) WITH CHECK (auth.uid() = owner_id);
+CREATE POLICY "super admin manages all tables" ON public.club_tables
+  FOR ALL USING (public.is_super_admin()) WITH CHECK (public.is_super_admin());
 
 -- =====================================================================
 -- 8. TRIGGER: buat profil otomatis saat sign up (membawa peran & info tempat)

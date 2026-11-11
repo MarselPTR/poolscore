@@ -72,7 +72,8 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({
       isTimerEnabled: activeMatch.isTimerEnabled,
       tournamentId: activeMatch.tournamentId,
       tournamentMatchId: activeMatch.tournamentMatchId,
-      tableNumber: activeMatch.tableNumber,
+      tableId: activeMatch.tableId,
+      tableLabel: activeMatch.tableLabel,
     });
   };
 

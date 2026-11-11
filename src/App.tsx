@@ -36,7 +36,7 @@ export const App: React.FC = () => {
   const [shareCardMatch, setShareCardMatch] = useState<Match | null>(null);
 
   // Setup options for table assignment or tournament launch
-  const [tableAssignmentNumber, setTableAssignmentNumber] = useState<number | undefined>(undefined);
+  const [tableAssignment, setTableAssignment] = useState<{ id: string; label: string } | undefined>(undefined);
   const [tournamentSetup] = useState<{
     tournamentId?: string;
     tournamentMatchId?: string;
@@ -114,8 +114,8 @@ export const App: React.FC = () => {
     });
   };
 
-  const handleOpenTableQuickMatch = (tableNum: number) => {
-    setTableAssignmentNumber(tableNum);
+  const handleOpenTableQuickMatch = (tableId: string, tableLabel: string) => {
+    setTableAssignment({ id: tableId, label: tableLabel });
     setIsQuickMatchOpen(true);
   };
 
@@ -179,7 +179,7 @@ export const App: React.FC = () => {
           {safeTab === 'home' && (
             <HomeView
               onOpenQuickMatch={() => {
-                setTableAssignmentNumber(undefined);
+                setTableAssignment(undefined);
                 setIsQuickMatchOpen(true);
               }}
               onSelectTab={setCurrentTab}
@@ -221,9 +221,10 @@ export const App: React.FC = () => {
         isOpen={isQuickMatchOpen}
         onClose={() => {
           setIsQuickMatchOpen(false);
-          setTableAssignmentNumber(undefined);
+          setTableAssignment(undefined);
         }}
-        tableNumber={tableAssignmentNumber}
+        tableId={tableAssignment?.id}
+        tableLabel={tableAssignment?.label}
         initialPlayer1={tournamentSetup.player1}
         initialPlayer2={tournamentSetup.player2}
         initialGameType={tournamentSetup.gameType}

@@ -1,12 +1,11 @@
 import Dexie, { type Table } from 'dexie';
-import type { Match, Player, Tournament, ClubTable, AppSettings } from '../types';
+import type { Match, Player, Tournament, AppSettings } from '../types';
 import { pullInitialDataFromSupabase } from '../services/supabaseService';
 
 export class PoolScoreDatabase extends Dexie {
   matches!: Table<Match, string>;
   players!: Table<Player, string>;
   tournaments!: Table<Tournament, string>;
-  clubTables!: Table<ClubTable, number>;
   settings!: Table<AppSettings & { id: string }, string>;
 
   constructor() {
@@ -17,6 +16,11 @@ export class PoolScoreDatabase extends Dexie {
       tournaments: 'id, name, status, createdAt',
       clubTables: 'id, status',
       settings: 'id'
+    });
+    // v2: club tables moved to Supabase (per-venue); index matches by recorder.
+    this.version(2).stores({
+      matches: 'id, gameType, status, startedAt, finishedAt, tournamentId, createdBy',
+      clubTables: null,
     });
   }
 }
@@ -39,27 +43,12 @@ export const DEFAULT_SETTINGS: AppSettings = {
   fontSize: 'large',
 };
 
-export const DEFAULT_CLUB_TABLES: ClubTable[] = [
-  { id: 1, name: 'Meja 1', status: 'FREE' },
-  { id: 2, name: 'Meja 2', status: 'FREE' },
-  { id: 3, name: 'Meja 3', status: 'FREE' },
-  { id: 4, name: 'Meja 4', status: 'FREE' },
-  { id: 5, name: 'Meja 5', status: 'FREE' },
-  { id: 6, name: 'Meja 6', status: 'FREE' },
-  { id: 7, name: 'Meja 7', status: 'FREE' },
-  { id: 8, name: 'Meja 8', status: 'FREE' },
-];
-
-// Clean Database initialization: only default settings & tables, then sync from Supabase
+// Clean Database initialization: default settings only. Club tables live in
+// Supabase (per-venue) and are not seeded locally.
 export async function initializeDatabase(): Promise<void> {
   const settingsCount = await db.settings.count();
   if (settingsCount === 0) {
     await db.settings.put({ ...DEFAULT_SETTINGS, id: 'global_settings' });
-  }
-
-  const tablesCount = await db.clubTables.count();
-  if (tablesCount === 0) {
-    await db.clubTables.bulkPut(DEFAULT_CLUB_TABLES);
   }
 
   // Pull live data from Supabase in background
