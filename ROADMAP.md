@@ -229,9 +229,41 @@ verifikasi Supabase, lalu mulai Fase 0 → Fase 1.
 
 ---
 
-## 9. Spesifikasi Fase 2 — Sistem akun & peran (FINAL, siap dikerjakan)
+## 9. Spesifikasi Fase 2 — Sistem akun & peran (FINAL)
 
-Disepakati 12 Nov 2026. **Belum dikerjakan** — menunggu perintah "mulai".
+Disepakati 12 Nov 2026. **Kode sisi aplikasi SELESAI & teruji (alur Tamu).**
+Menunggu langkah Supabase dari pemilik (lihat "Langkah wajib di Supabase").
+
+### Status implementasi (12 Nov 2026)
+- ✅ Skema `supabase_schema.sql` ditulis ulang (peran, approval, `created_by`,
+  RLS per peran, pembersihan data lama, trigger, seed super admin).
+- ✅ `AuthContext`: 3 peran + guest; fallback login lokal dihapus; role &
+  approval diambil dari `profiles`; register membawa info tempat.
+- ✅ `AuthView`: daftar sebagai Peserta / Pengelola tempat (+ field tempat).
+- ✅ `PendingApprovalScreen` untuk venue_admin belum disetujui.
+- ✅ Navigasi berbasis peran (`lib/roles.ts`, Header, BottomNav) — Tamu hanya
+  Beranda + Peringkat (teruji).
+- ✅ Riwayat per-akun (`created_by`); pertandingan Tamu tidak disimpan (teruji:
+  IndexedDB = 0).
+- ✅ `SuperAdminPanel` (setujui/tolak pengelola tempat).
+- ⏳ Verifikasi runtime untuk akun login (peran, approval, riwayat lintas
+  perangkat) menunggu skema dijalankan di Supabase.
+
+### Langkah wajib di Supabase (dijalankan pemilik)
+1. Supabase → **SQL Editor** → tempel & jalankan seluruh isi
+   `supabase_schema.sql`. **Peringatan: menghapus data lama** (disepakati).
+2. Di aplikasi, **daftar akun** `superadmin@poolscore.app` (peran: Peserta).
+3. Di SQL Editor, jalankan baris seed (ada di bagian paling bawah skema):
+   `UPDATE public.profiles SET role='super_admin', approval_status='approved' WHERE email='superadmin@poolscore.app';`
+4. Login ulang akun itu → tab **Panel** muncul.
+
+### Belum dikerjakan (lanjut ke fase berikutnya)
+- Pendaftaran peserta oleh admin (offline) → Fase 3/4.
+- Peran Wasit (penugasan per-turnamen) → Fase 4.
+
+---
+
+### Spesifikasi detail (arsip keputusan)
 
 ### Keputusan final
 1. **Wasit = penugasan per-turnamen**, bukan peran akun global.
