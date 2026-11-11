@@ -23,7 +23,9 @@ export const AuthView: React.FC = () => {
   const [fullName, setFullName] = useState('');
   const [regUsername, setRegUsername] = useState('');
   const [regIdentifier, setRegIdentifier] = useState('');
-  const [role, setRole] = useState<'Pemain' | 'Wasit' | 'Pengelola Club'>('Pemain');
+  const [role, setRole] = useState<'participant' | 'venue_admin'>('participant');
+  const [venueName, setVenueName] = useState('');
+  const [venueArea, setVenueArea] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -64,13 +66,27 @@ export const AuthView: React.FC = () => {
       return;
     }
 
+    if (role === 'venue_admin' && (!venueName.trim() || !venueArea.trim())) {
+      setErrorMsg('Lengkapi nama tempat billiard dan daerahnya.');
+      return;
+    }
+
     setErrorMsg('');
     setIsLoading(true);
 
     try {
-      const res = await register(fullName, regIdentifier, password, role, regUsername);
+      const res = await register({
+        name: fullName,
+        emailOrPhone: regIdentifier,
+        password,
+        role,
+        username: regUsername,
+        venue: role === 'venue_admin' ? { name: venueName.trim(), area: venueArea.trim() } : undefined,
+      });
       if (!res.success) {
         setErrorMsg(res.error || 'Gagal mendaftar. Coba lagi.');
+      } else if (role === 'venue_admin') {
+        setSuccessMsg('Pendaftaran terkirim! Akun pengelola menunggu persetujuan Super Admin.');
       } else {
         setSuccessMsg('Pendaftaran berhasil! Mengarahkan ke dashboard...');
       }
@@ -353,21 +369,64 @@ export const AuthView: React.FC = () => {
                 </div>
 
                 <div>
-                  <span className="label">Peran</span>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(['Pemain', 'Wasit', 'Pengelola Club'] as const).map((r) => (
-                      <button
-                        type="button"
-                        key={r}
-                        onClick={() => setRole(r)}
-                        data-on={role === r}
-                        className="opt !px-1.5"
-                      >
-                        {r === 'Pengelola Club' ? 'Pengelola klub' : r}
-                      </button>
-                    ))}
+                  <span className="label">Daftar sebagai</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setRole('participant')}
+                      data-on={role === 'participant'}
+                      className="opt"
+                    >
+                      <span>Peserta</span>
+                      <span className="opt-sub">Main & ikut turnamen</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRole('venue_admin')}
+                      data-on={role === 'venue_admin'}
+                      className="opt"
+                    >
+                      <span>Pengelola tempat</span>
+                      <span className="opt-sub">Kelola meja & turnamen</span>
+                    </button>
                   </div>
                 </div>
+
+                {role === 'venue_admin' && (
+                  <div className="space-y-3 border-l-2 border-rule-strong pl-3">
+                    <p className="text-[13px] text-ink-3">
+                      Akun pengelola perlu disetujui Super Admin sebelum aktif.
+                    </p>
+                    <div>
+                      <label htmlFor="reg-venue" className="label">
+                        Nama tempat billiard
+                      </label>
+                      <input
+                        id="reg-venue"
+                        type="text"
+                        value={venueName}
+                        onChange={(e) => setVenueName(e.target.value)}
+                        placeholder="mis. Amorty Billiard"
+                        className="field field-lg"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="reg-area" className="label">
+                        Daerah / kota
+                      </label>
+                      <input
+                        id="reg-area"
+                        type="text"
+                        value={venueArea}
+                        onChange={(e) => setVenueArea(e.target.value)}
+                        placeholder="mis. Bandung"
+                        className="field field-lg"
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <button type="submit" disabled={isLoading} className="btn btn-lg btn-block btn-primary">
                   {isLoading ? 'Membuat akun…' : 'Buat akun'}

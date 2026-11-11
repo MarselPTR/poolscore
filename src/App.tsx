@@ -18,6 +18,9 @@ import { ShareCardModal } from './components/match/ShareCardModal';
 import { QRModal } from './components/match/QRModal';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { AuthView } from './components/auth/AuthView';
+import { PendingApprovalScreen } from './components/auth/PendingApprovalScreen';
+import { SuperAdminPanel } from './components/admin/SuperAdminPanel';
+import { canAccessTab } from './lib/roles';
 import type { Match, GameType } from './types';
 
 export const App: React.FC = () => {
@@ -68,10 +71,18 @@ export const App: React.FC = () => {
     return <AuthView />;
   }
 
+  // 1b. Venue admin awaiting (or denied) approval cannot use the app yet.
+  if (user.role === 'venue_admin' && user.approvalStatus !== 'approved') {
+    return <PendingApprovalScreen />;
+  }
+
   // 2. TV Fullscreen Spectator Mode
   if (isTVMode) {
     return <TVScoreboardView onBack={() => setIsTVMode(false)} />;
   }
+
+  // Keep the current tab within what this role may access.
+  const safeTab = canAccessTab(user, currentTab) ? currentTab : 'home';
 
   // Keep the scoreboard mounted while a match is in progress AND once it has
   // finished — the finished state is where the result screen (rematch, share,
@@ -157,15 +168,15 @@ export const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-bg text-ink">
       <Header
-        currentTab={currentTab}
+        currentTab={safeTab}
         onSelectTab={setCurrentTab}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenTV={() => setIsTVMode(true)}
       />
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 pt-6 sm:pt-8 pb-24 md:pb-12">
-        <div key={currentTab} className="animate-fade">
-          {currentTab === 'home' && (
+        <div key={safeTab} className="animate-fade">
+          {safeTab === 'home' && (
             <HomeView
               onOpenQuickMatch={() => {
                 setTableAssignmentNumber(undefined);
@@ -176,29 +187,31 @@ export const App: React.FC = () => {
             />
           )}
 
-          {currentTab === 'history' && (
+          {safeTab === 'history' && (
             <MatchHistoryView
               onOpenShareCard={(m) => setShareCardMatch(m)}
             />
           )}
 
-          {currentTab === 'stats' && <LeaderboardView />}
+          {safeTab === 'stats' && <LeaderboardView />}
 
-          {currentTab === 'tournament' && (
+          {safeTab === 'tournament' && (
             <TournamentView onLaunchTournamentMatch={handleLaunchTournamentMatch} />
           )}
 
-          {currentTab === 'club' && (
+          {safeTab === 'club' && (
             <ClubView
               onOpenQuickMatchForTable={handleOpenTableQuickMatch}
               onOpenTVView={() => setIsTVMode(true)}
             />
           )}
+
+          {safeTab === 'admin' && <SuperAdminPanel />}
         </div>
       </main>
 
       <BottomNav
-        currentTab={currentTab}
+        currentTab={safeTab}
         onSelectTab={setCurrentTab}
         isVisible={!isMatchRunning}
       />

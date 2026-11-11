@@ -5,6 +5,7 @@ import { calculateElo } from '../utils/elo';
 import { useLiveBroadcast } from '../hooks/useLiveSync';
 import { useSoundEffects } from '../hooks/useSoundEffects';
 import { useSettings } from './SettingsContext';
+import { useAuth } from './AuthContext';
 import { syncMatchToSupabase, syncPlayerToSupabase, syncTournamentToSupabase } from '../services/supabaseService';
 import confetti from 'canvas-confetti';
 
@@ -56,6 +57,12 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [recentMatches, setRecentMatches] = useState<Match[]>([]);
 
   const { settings } = useSettings();
+  const { user } = useAuth();
+  // Guest matches are never persisted (local or cloud) and never counted in
+  // stats. Logged-in matches are tagged with the recorder's id for per-account
+  // history.
+  const isGuest = !user || !!user.isGuest;
+  const ownerId = user && !user.isGuest ? user.id : undefined;
   const { playPocketDrop, playBallHit, playRackWon, playMatchWon, playFoul } = useSoundEffects(
     settings.soundEnabled,
     settings.soundVolume,
@@ -65,34 +72,39 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const foulTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const setTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load recent matches on mount
+  // Load this account's recent finished matches (guests have none).
   const refreshRecentMatches = useCallback(async () => {
     try {
+      if (isGuest) {
+        setRecentMatches([]);
+        return;
+      }
       const matches = await db.matches
         .where('status')
         .equals('finished')
         .reverse()
         .sortBy('startedAt');
-      setRecentMatches(matches.slice(0, 10));
+      setRecentMatches(matches.filter((m) => m.createdBy === ownerId).slice(0, 10));
     } catch {
       // ignore
     }
-  }, []);
+  }, [isGuest, ownerId]);
 
   useEffect(() => {
     refreshRecentMatches();
   }, [refreshRecentMatches]);
 
   // Restore an in-progress match after a reload, so refreshing the page mid
-  // match does not drop the scoreboard. Runs once on mount.
+  // match does not drop the scoreboard. Only this account's own match.
   useEffect(() => {
+    if (isGuest) return;
     let cancelled = false;
     const restore = async () => {
       try {
         const ongoing = await db.matches.where('status').equals('in_progress').toArray();
-        if (cancelled || ongoing.length === 0) return;
-        // Most recently started in-progress match wins if there are several.
-        const latest = ongoing.sort((a, b) => b.startedAt - a.startedAt)[0];
+        const own = ongoing.filter((m) => m.createdBy === ownerId);
+        if (cancelled || own.length === 0) return;
+        const latest = own.sort((a, b) => b.startedAt - a.startedAt)[0];
         setActiveMatch((prev) => (prev ? prev : latest));
         setRackSeconds(0);
       } catch {
@@ -103,19 +115,19 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isGuest, ownerId]);
 
   // Synchronize with broadcast channel on activeMatch state changes
   useEffect(() => {
     broadcastMatch(activeMatch);
-    if (activeMatch && activeMatch.status === 'in_progress') {
+    if (!isGuest && activeMatch && activeMatch.status === 'in_progress') {
       try {
         db.matches.put(activeMatch);
       } catch {
         // ignore
       }
     }
-  }, [activeMatch, broadcastMatch]);
+  }, [activeMatch, broadcastMatch, isGuest]);
 
   // Match and Rack Timers
   useEffect(() => {
@@ -212,6 +224,7 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       tournamentId: params.tournamentId,
       tournamentMatchId: params.tournamentMatchId,
       tableNumber: params.tableNumber,
+      createdBy: ownerId,
     };
 
     setActiveMatch(newMatch);
@@ -237,12 +250,16 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     }
 
-    await db.matches.put(newMatch);
+    if (!isGuest) {
+      await db.matches.put(newMatch);
+    }
     return matchId;
   };
 
   // Finalize statistics, Elo calculations, and save to Dexie
   const finalizeMatchStats = async (match: Match) => {
+    // Guest matches are ephemeral: no save, no stats, no cloud sync.
+    if (isGuest) return;
     try {
       const s1 = match.player1.score;
       const s2 = match.player2.score;

@@ -37,6 +37,7 @@ export async function syncMatchToSupabase(match: Match): Promise<void> {
       tournament_id: match.tournamentId || null,
       tournament_match_id: match.tournamentMatchId || null,
       table_number: match.tableNumber || null,
+      created_by: match.createdBy || null,
     };
 
     await supabase.from('matches').upsert(payload, { onConflict: 'id' });
@@ -84,6 +85,7 @@ export async function fetchMatchesFromSupabase(limit = 100): Promise<Match[]> {
       tournamentId: d.tournament_id,
       tournamentMatchId: d.tournament_match_id,
       tableNumber: d.table_number,
+      createdBy: d.created_by,
     }));
   } catch {
     return [];
@@ -268,6 +270,61 @@ export async function fetchClubTablesFromSupabase(): Promise<ClubTable[]> {
     }));
   } catch {
     return [];
+  }
+}
+
+// =====================================================================
+// VENUE ADMIN APPROVAL (Super Admin)
+// =====================================================================
+
+export interface VenueAdminRow {
+  id: string;
+  name: string;
+  email: string | null;
+  venueName: string | null;
+  venueArea: string | null;
+  venuePhone: string | null;
+  approvalStatus: 'approved' | 'pending' | 'rejected';
+  createdAt: string | null;
+}
+
+export async function fetchVenueAdmins(): Promise<VenueAdminRow[]> {
+  if (!isSupabaseConfigured) return [];
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, name, email, venue_name, venue_area, venue_phone, approval_status, created_at')
+      .eq('role', 'venue_admin')
+      .order('created_at', { ascending: false });
+    if (error || !data) return [];
+    return data.map((d) => ({
+      id: d.id,
+      name: d.name,
+      email: d.email,
+      venueName: d.venue_name,
+      venueArea: d.venue_area,
+      venuePhone: d.venue_phone,
+      approvalStatus: d.approval_status,
+      createdAt: d.created_at,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function setProfileApproval(
+  id: string,
+  status: 'approved' | 'rejected'
+): Promise<boolean> {
+  if (!isSupabaseConfigured) return false;
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ approval_status: status, updated_at: new Date().toISOString() })
+      .eq('id', id);
+    return !error;
+  } catch {
+    return false;
   }
 }
 

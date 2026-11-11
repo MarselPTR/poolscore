@@ -1,7 +1,8 @@
 import React from 'react';
 import { Tv, Sun, Moon, Settings } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth, ROLE_LABELS } from '../../context/AuthContext';
+import { allowedTabs } from '../../lib/roles';
 import { PlayerAvatar } from './PlayerAvatar';
 
 interface HeaderProps {
@@ -11,13 +12,14 @@ interface HeaderProps {
   onOpenTV: () => void;
 }
 
-const NAV_ITEMS = [
-  { id: 'home', label: 'Beranda' },
-  { id: 'history', label: 'Riwayat' },
-  { id: 'stats', label: 'Peringkat' },
-  { id: 'tournament', label: 'Turnamen' },
-  { id: 'club', label: 'Klub' },
-] as const;
+const NAV_LABELS: Record<string, string> = {
+  home: 'Beranda',
+  history: 'Riwayat',
+  stats: 'Peringkat',
+  tournament: 'Turnamen',
+  club: 'Klub',
+  admin: 'Panel',
+};
 
 export const Header: React.FC<HeaderProps> = ({
   currentTab,
@@ -27,6 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const { isDarkMode, toggleTheme } = useSettings();
   const { user } = useAuth();
+  const navItems = allowedTabs(user).map((id) => ({ id, label: NAV_LABELS[id] }));
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-rule bg-bg select-none">
@@ -43,7 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Desktop navigation */}
         <nav className="hidden md:flex items-stretch h-14 gap-1">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const isActive = currentTab === item.id;
             return (
               <button
@@ -87,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden sm:flex flex-col text-left leading-tight">
                 <span className="text-sm font-semibold text-ink truncate max-w-[120px]">{user.name}</span>
                 <span className="text-xs text-ink-3">
-                  {user.role} · {user.rating}
+                  {user.isGuest ? 'Tamu' : ROLE_LABELS[user.role]} · {user.rating}
                 </span>
               </span>
             </button>

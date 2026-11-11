@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Match } from '../../types';
 import { db } from '../../db/database';
 import { useSettings } from '../../context/SettingsContext';
+import { useAuth } from '../../context/AuthContext';
 import { pullInitialDataFromSupabase } from '../../services/supabaseService';
 import { formatSeconds, formatTimestampDate } from '../../utils/time';
 import { ChevronRight } from 'lucide-react';
@@ -19,35 +20,35 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onOpenMatchDetail,
 }) => {
   const { settings } = useSettings();
+  const { user } = useAuth();
   const [recentMatches, setRecentMatches] = useState<Match[]>([]);
 
+  const ownerId = user && !user.isGuest ? user.id : undefined;
+
   useEffect(() => {
+    if (!ownerId) {
+      setRecentMatches([]);
+      return;
+    }
     const fetchRecent = async () => {
       try {
-        let matches = await db.matches
-          .where('status')
-          .equals('finished')
-          .reverse()
-          .limit(5)
-          .toArray();
+        const mine = async () =>
+          (await db.matches.where('status').equals('finished').reverse().sortBy('startedAt'))
+            .filter((m) => m.createdBy === ownerId)
+            .slice(0, 5);
 
+        let matches = await mine();
         if (matches.length === 0) {
           await pullInitialDataFromSupabase();
-          matches = await db.matches
-            .where('status')
-            .equals('finished')
-            .reverse()
-            .limit(5)
-            .toArray();
+          matches = await mine();
         }
-
         setRecentMatches(matches);
       } catch {
         // ignore
       }
     };
     fetchRecent();
-  }, []);
+  }, [ownerId]);
 
   return (
     <div className="w-full grid lg:grid-cols-2 gap-10 lg:gap-16 items-start select-none">

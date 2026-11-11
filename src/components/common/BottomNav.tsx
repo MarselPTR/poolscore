@@ -1,5 +1,7 @@
 import React from 'react';
-import { Home, History, Trophy, BarChart3, LayoutGrid } from 'lucide-react';
+import { Home, History, Trophy, BarChart3, LayoutGrid, ShieldCheck } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { allowedTabs, type TabId } from '../../lib/roles';
 
 interface BottomNavProps {
   currentTab: string;
@@ -7,24 +9,28 @@ interface BottomNavProps {
   isVisible: boolean;
 }
 
+const NAV_META: Record<TabId, { label: string; icon: React.ElementType }> = {
+  home: { label: 'Beranda', icon: Home },
+  history: { label: 'Riwayat', icon: History },
+  stats: { label: 'Peringkat', icon: BarChart3 },
+  tournament: { label: 'Turnamen', icon: Trophy },
+  club: { label: 'Klub', icon: LayoutGrid },
+  admin: { label: 'Panel', icon: ShieldCheck },
+};
+
 export const BottomNav: React.FC<BottomNavProps> = ({
   currentTab,
   onSelectTab,
   isVisible,
 }) => {
+  const { user } = useAuth();
   if (!isVisible) return null;
 
-  const items = [
-    { id: 'home', label: 'Beranda', icon: Home },
-    { id: 'history', label: 'Riwayat', icon: History },
-    { id: 'stats', label: 'Peringkat', icon: BarChart3 },
-    { id: 'tournament', label: 'Turnamen', icon: Trophy },
-    { id: 'club', label: 'Klub', icon: LayoutGrid },
-  ];
+  const items = allowedTabs(user).map((id) => ({ id, ...NAV_META[id] }));
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-bg border-t border-rule select-none safe-area-pb">
-      <div className="grid grid-cols-5">
+      <div className="grid" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
         {items.map((item) => {
           const Icon = item.icon;
           const isActive = currentTab === item.id;

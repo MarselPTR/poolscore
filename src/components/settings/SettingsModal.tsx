@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type React from 'react';
 import { Modal } from '../common/Modal';
 import { useSettings } from '../../context/SettingsContext';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth, ROLE_LABELS } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import type { TouchProtectionMode, GameType, AppSettings } from '../../types';
@@ -110,7 +110,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   <div className="min-w-0">
                     <div className="font-semibold text-ink truncate">{user.name}</div>
                     <div className="text-[13px] text-ink-3 truncate">
-                      {user.isGuest ? 'Mode tamu' : user.email} · {user.role} · rating {user.rating}
+                      {user.isGuest ? 'Mode tamu' : `${user.email} · ${ROLE_LABELS[user.role]}`} · rating {user.rating}
                     </div>
                   </div>
                 </div>

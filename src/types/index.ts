@@ -10,6 +10,11 @@ export type TouchProtectionMode = 'hold' | 'confirm' | 'quick';
 
 export type ThemeMode = 'dark' | 'light';
 
+// Account roles (Fase 2). "Wasit" (referee) is not a global role — it is a
+// per-tournament assignment handled later. Guests are tracked by a flag.
+export type UserRole = 'participant' | 'venue_admin' | 'super_admin';
+export type ApprovalStatus = 'approved' | 'pending' | 'rejected';
+
 export interface MatchEvent {
   id: string;
   timestamp: number;
@@ -114,6 +119,7 @@ export interface Match {
   tournamentId?: string;
   tournamentMatchId?: string;
   tableNumber?: number;
+  createdBy?: string; // auth user id of the recorder (empty for guests)
 }
 
 export interface Player {

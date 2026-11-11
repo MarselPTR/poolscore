@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Match } from '../../types';
 import { db } from '../../db/database';
+import { useAuth } from '../../context/AuthContext';
 import { pullInitialDataFromSupabase } from '../../services/supabaseService';
 import { formatSeconds, formatTimestampDate, getRelativeGroup } from '../../utils/time';
 import { MatchDetailModal } from './MatchDetailModal';
@@ -12,20 +13,25 @@ interface MatchHistoryViewProps {
 }
 
 export const MatchHistoryView: React.FC<MatchHistoryViewProps> = ({ onOpenShareCard }) => {
+  const { user } = useAuth();
   const [matches, setMatches] = useState<Match[]>([]);
   const [selectedGame, setSelectedGame] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
 
+  const ownerId = user && !user.isGuest ? user.id : undefined;
+
   const fetchMatches = async () => {
     try {
+      const mine = (all: Match[]) => all.filter((m) => m.createdBy === ownerId);
+
       let all = await db.matches
         .where('status')
         .equals('finished')
         .reverse()
         .sortBy('startedAt');
 
-      if (all.length === 0) {
+      if (mine(all).length === 0) {
         await pullInitialDataFromSupabase();
         all = await db.matches
           .where('status')
@@ -34,15 +40,17 @@ export const MatchHistoryView: React.FC<MatchHistoryViewProps> = ({ onOpenShareC
           .sortBy('startedAt');
       }
 
-      setMatches(all);
+      setMatches(mine(all));
     } catch {
       // ignore
     }
   };
 
   useEffect(() => {
-    fetchMatches();
-  }, []);
+    if (ownerId) fetchMatches();
+    else setMatches([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ownerId]);
 
   const filteredMatches = matches.filter((m) => {
     const matchesGame = selectedGame === 'ALL' || m.gameType === selectedGame;
