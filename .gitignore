@@ -26,3 +26,6 @@ dist-ssr
 # Berkas pribadi / sensitif
 superadmin password.png
 *.local.png
+
+# Local environment (keys)
+.env
