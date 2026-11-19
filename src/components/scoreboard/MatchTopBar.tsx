@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Match } from '../../types';
-import { ArrowLeft, Maximize, Minimize, QrCode, Settings, Tv, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, Maximize, Minimize, QrCode, Settings, Tv, Sun, Moon, LogOut } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 
 interface MatchTopBarProps {
@@ -126,10 +126,11 @@ export const MatchTopBar: React.FC<MatchTopBarProps> = ({
         {match.status === 'in_progress' && (
           <button
             onClick={onCancelMatch}
-            className="ml-1 px-2.5 h-8 text-[13px] font-semibold uppercase tracking-wide text-danger hover:bg-danger/10 transition-colors"
+            className="ml-1 inline-flex items-center gap-1.5 px-2.5 h-8 text-[13px] font-semibold uppercase tracking-wide text-danger hover:bg-danger/10 transition-colors"
             title="Batalkan pertandingan"
             aria-label="Batalkan pertandingan"
           >
+            <LogOut className="w-4 h-4" />
             Batalkan
           </button>
         )}

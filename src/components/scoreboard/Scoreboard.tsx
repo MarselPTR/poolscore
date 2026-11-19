@@ -190,6 +190,7 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({
         isPaused={isPaused}
         onTogglePause={togglePauseTimer}
         canUndo={activeMatch.events.length > 1}
+        showClock={activeMatch.isTimerEnabled}
       />
 
       <FoulModal

@@ -41,6 +41,7 @@ interface MatchContextType {
   switchTurn: (targetPlayer?: 1 | 2) => void;
   adjustScore: (player: 1 | 2, delta: number) => void;
   togglePauseTimer: () => void;
+  setTimerVisible: (visible: boolean) => void;
   finishAndSaveMatch: () => Promise<void>;
   quitMatch: () => void;
   resumeMatch: (matchId: string) => Promise<boolean>;
@@ -141,7 +142,10 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // while the match is actively running accrues.
   const lastTickRef = useRef<number>(Date.now());
   useEffect(() => {
-    if (!activeMatch || activeMatch.status !== 'in_progress' || isPaused || !activeMatch.isTimerEnabled) {
+    // The clock always advances while the match runs (so the duration is
+    // recorded for stats); whether it is SHOWN is a separate, live display
+    // choice handled on the scoreboard.
+    if (!activeMatch || activeMatch.status !== 'in_progress' || isPaused) {
       return;
     }
 
@@ -174,7 +178,7 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('focus', onVisible);
     };
-  }, [activeMatch?.status, activeMatch?.isTimerEnabled, isPaused]);
+  }, [activeMatch?.status, isPaused]);
 
   const clearFoulAlert = useCallback(() => {
     if (foulTimeoutRef.current) clearTimeout(foulTimeoutRef.current);
@@ -864,6 +868,11 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsPaused(prev => !prev);
   };
 
+  // Show/hide the match clock on the fly (the clock keeps counting either way).
+  const setTimerVisible = (visible: boolean) => {
+    setActiveMatch((prev) => (prev ? { ...prev, isTimerEnabled: visible } : prev));
+  };
+
   // Finish match and save. A match that ended naturally (via winRack) is
   // already 'finished' and its stats were already finalized there, so we only
   // clear the active match — finalizing again would double-count every stat.
@@ -928,6 +937,7 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         switchTurn,
         adjustScore,
         togglePauseTimer,
+        setTimerVisible,
         finishAndSaveMatch,
         quitMatch,
         resumeMatch,

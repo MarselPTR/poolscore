@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type React from 'react';
 import { Modal } from '../common/Modal';
 import { useSettings } from '../../context/SettingsContext';
+import { useMatch } from '../../context/MatchContext';
 import { useAuth, ROLE_LABELS } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
@@ -17,7 +18,14 @@ interface SettingsModalProps {
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const { settings, updateSettings, resetSettings } = useSettings();
+  const { activeMatch, setTimerVisible } = useMatch();
   const { user, logout } = useAuth();
+
+  // While a match is running, the Settings modal is opened from the scoreboard.
+  // Options that only seed a *new* match (default game / race) are hidden then,
+  // and "show timer" acts on the live match immediately.
+  const isMatchActive = activeMatch !== null && activeMatch.status === 'in_progress';
+  const timerShown = isMatchActive ? activeMatch.isTimerEnabled : settings.showTimer;
   const { success, error, info } = useToast();
 
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
@@ -170,39 +178,46 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           <section>
             <h4 className="eyebrow pb-2 border-b border-rule">Pertandingan</h4>
             <div className="pt-3 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="set-game" className="label">
-                    Permainan bawaan
-                  </label>
-                  <select
-                    id="set-game"
-                    value={settings.defaultGame}
-                    onChange={(e) => updateSettings({ defaultGame: e.target.value as GameType })}
-                    className="field"
-                  >
-                    <option value="9-Ball">9-Ball</option>
-                    <option value="8-Ball">8-Ball</option>
-                    <option value="10-Ball">10-Ball</option>
-                    <option value="Straight Pool">Straight Pool</option>
-                  </select>
-                </div>
+              {isMatchActive ? (
+                <p className="text-[13px] text-ink-3">
+                  Jenis permainan dan race dikunci saat pertandingan berlangsung. Pengaturan di
+                  bawah berlaku langsung ke pertandingan ini.
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="set-game" className="label">
+                      Permainan bawaan
+                    </label>
+                    <select
+                      id="set-game"
+                      value={settings.defaultGame}
+                      onChange={(e) => updateSettings({ defaultGame: e.target.value as GameType })}
+                      className="field"
+                    >
+                      <option value="9-Ball">9-Ball</option>
+                      <option value="8-Ball">8-Ball</option>
+                      <option value="10-Ball">10-Ball</option>
+                      <option value="Straight Pool">Straight Pool</option>
+                    </select>
+                  </div>
 
-                <div>
-                  <label htmlFor="set-race" className="label">
-                    Race to bawaan
-                  </label>
-                  <input
-                    id="set-race"
-                    type="number"
-                    min="1"
-                    max="50"
-                    value={settings.defaultRace}
-                    onChange={(e) => updateSettings({ defaultRace: parseInt(e.target.value, 10) || 7 })}
-                    className="field"
-                  />
+                  <div>
+                    <label htmlFor="set-race" className="label">
+                      Race to bawaan
+                    </label>
+                    <input
+                      id="set-race"
+                      type="number"
+                      min="1"
+                      max="50"
+                      value={settings.defaultRace}
+                      onChange={(e) => updateSettings({ defaultRace: parseInt(e.target.value, 10) || 7 })}
+                      className="field"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div>
                 <span className="label">Cara mencatat rack menang</span>
@@ -280,8 +295,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   <span className="text-sm text-ink">Tampilkan timer</span>
                   <input
                     type="checkbox"
-                    checked={settings.showTimer}
-                    onChange={(e) => updateSettings({ showTimer: e.target.checked })}
+                    checked={timerShown}
+                    onChange={(e) => {
+                      updateSettings({ showTimer: e.target.checked });
+                      if (isMatchActive) setTimerVisible(e.target.checked);
+                    }}
                     className="switch"
                   />
                 </label>

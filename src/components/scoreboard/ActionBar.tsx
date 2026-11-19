@@ -14,6 +14,8 @@ interface ActionBarProps {
   onTogglePause: () => void;
   canUndo: boolean;
   showRackTimer?: boolean;
+  /** When false, the match clock and its pause control are hidden. */
+  showClock?: boolean;
 }
 
 export const ActionBar: React.FC<ActionBarProps> = ({
@@ -28,6 +30,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   onTogglePause,
   canUndo,
   showRackTimer = true,
+  showClock = true,
 }) => {
   // Labels collapse to icons on narrow phones; the title keeps them discoverable.
   const actionClass = 'btn btn-secondary !px-3 sm:!px-4';
@@ -61,7 +64,8 @@ export const ActionBar: React.FC<ActionBarProps> = ({
         </button>
       </div>
 
-      {/* Match clock */}
+      {/* Match clock (hidden when the user turns the timer display off) */}
+      {showClock && (
       <div className="flex items-center gap-2 pl-3 border-l border-rule shrink-0">
         <div className="text-right">
           <div className={`num text-xl ${isPaused ? 'text-ink-3' : 'text-ink'}`}>
@@ -83,6 +87,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
           {isPaused ? <Play className="w-[18px] h-[18px]" /> : <Pause className="w-[18px] h-[18px]" />}
         </button>
       </div>
+      )}
     </div>
   );
 };
