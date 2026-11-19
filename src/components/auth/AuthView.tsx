@@ -119,7 +119,7 @@ export const AuthView: React.FC = () => {
   return (
     <div className="min-h-screen w-full bg-bg text-ink flex flex-col lg:flex-row">
       {/* Photograph */}
-      <div className="relative w-full lg:w-[46%] h-44 sm:h-60 lg:h-auto lg:min-h-screen shrink-0 overflow-hidden bg-black">
+      <div className="relative w-full lg:w-[60%] h-44 sm:h-60 lg:h-auto lg:min-h-screen shrink-0 overflow-hidden bg-black">
         <img src="/login_bg.jpg" alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/45" />
         <div className="absolute inset-x-0 bottom-0 p-6 lg:p-12 text-white">
