@@ -8,7 +8,7 @@ import { useToast } from '../../context/ToastContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import type { TouchProtectionMode, GameType, AppSettings } from '../../types';
 import { db } from '../../db/database';
-import { Sun, Moon, Download, Upload, Trash2, LogOut } from 'lucide-react';
+import { Sun, Moon, Download, Trash2, LogOut } from 'lucide-react';
 import { PlayerAvatar } from '../common/PlayerAvatar';
 
 interface SettingsModalProps {
@@ -52,30 +52,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
       a.download = `PoolScore_Backup_${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      success('Ekspor Berhasil', 'File backup data pertandingan telah diunduh.');
+      success('Unduhan Dimulai', 'Salinan data di perangkat ini telah diunduh.');
     } catch {
-      error('Gagal Ekspor', 'Terjadi kesalahan saat mengekspor data database.');
+      error('Gagal Mengunduh', 'Terjadi kesalahan saat menyiapkan salinan data.');
     }
-  };
-
-  const handleImportBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      try {
-        const json = JSON.parse(evt.target?.result as string);
-        if (json.matches) await db.matches.bulkPut(json.matches);
-        if (json.players) await db.players.bulkPut(json.players);
-        if (json.tournaments) await db.tournaments.bulkPut(json.tournaments);
-        if (json.settings) updateSettings(json.settings);
-        success('Impor Berhasil', 'Data backup berhasil dipulihkan ke aplikasi.');
-      } catch {
-        error('Format Tidak Valid', 'Format file backup JSON tidak dikenali.');
-      }
-    };
-    reader.readAsText(file);
   };
 
   const handleConfirmClearData = async () => {
@@ -84,9 +64,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
       await db.players.clear();
       await db.tournaments.clear();
       resetSettings();
-      success('Database Bersih', 'Seluruh riwayat pertandingan lokal telah dikosongkan.');
+      success('Perangkat Dibersihkan', 'Data di perangkat ini dikosongkan. Data di cloud tetap aman.');
     } catch {
-      error('Gagal', 'Terjadi kesalahan saat membersihkan database.');
+      error('Gagal', 'Terjadi kesalahan saat membersihkan data perangkat.');
     }
   };
 
@@ -319,26 +299,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
           {/* Data */}
           <section>
-            <h4 className="eyebrow pb-2 border-b border-rule">Data</h4>
+            <h4 className="eyebrow pb-2 border-b border-rule">Data perangkat</h4>
+            <p className="text-[13px] text-ink-3 pt-2">
+              {user && !user.isGuest
+                ? 'Data akun Anda tersimpan aman di cloud. Opsi di bawah hanya menyentuh salinan di perangkat ini.'
+                : 'Opsi di bawah hanya menyentuh data di perangkat ini.'}
+            </p>
             <div className="pt-3 space-y-2">
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={handleExportBackup} className="btn btn-secondary">
-                  <Download className="w-4 h-4" /> Ekspor cadangan
-                </button>
-
-                <label className="btn btn-secondary cursor-pointer">
-                  <Upload className="w-4 h-4" /> Impor cadangan
-                  <input
-                    type="file"
-                    accept=".json"
-                    onChange={handleImportBackup}
-                    className="hidden"
-                  />
-                </label>
-              </div>
+              <button onClick={handleExportBackup} className="btn btn-secondary btn-block">
+                <Download className="w-4 h-4" /> Unduh salinan data
+              </button>
 
               <button onClick={() => setIsClearConfirmOpen(true)} className="btn btn-danger btn-block">
-                <Trash2 className="w-4 h-4" /> Hapus semua data lokal
+                <Trash2 className="w-4 h-4" /> Bersihkan data di perangkat ini
               </button>
             </div>
           </section>
@@ -354,9 +327,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         isOpen={isClearConfirmOpen}
         onClose={() => setIsClearConfirmOpen(false)}
         onConfirm={handleConfirmClearData}
-        title="Reset Seluruh Database?"
-        message="PERINGATAN: Seluruh riwayat pertandingan, pemain, dan turnamen lokal akan dihapus permanen. Lanjutkan?"
-        confirmText="Ya, Hapus Semua"
+        title="Bersihkan data di perangkat ini?"
+        message="Salinan lokal (riwayat, pemain, turnamen) di perangkat ini akan dikosongkan dan setelan dikembalikan ke bawaan. Data akun di cloud TIDAK terhapus dan akan dimuat lagi saat Anda membuka aplikasi. Lanjutkan?"
+        confirmText="Ya, bersihkan"
         cancelText="Batal"
         iconType="delete"
         type="danger"
