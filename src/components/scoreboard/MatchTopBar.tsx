@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Match } from '../../types';
-import { ArrowLeft, Maximize, Minimize, QrCode, Settings, Tv, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, Maximize, Minimize, QrCode, Settings, Tv, Sun, Moon, Ban } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 
 interface MatchTopBarProps {
@@ -13,6 +13,8 @@ interface MatchTopBarProps {
   onOpenSettings: () => void;
   /** Leave the scoreboard without ending the match (it keeps running). */
   onMinimize: () => void;
+  /** Cancel the match entirely (asks for confirmation upstream). */
+  onCancelMatch: () => void;
 }
 
 export const MatchTopBar: React.FC<MatchTopBarProps> = ({
@@ -24,6 +26,7 @@ export const MatchTopBar: React.FC<MatchTopBarProps> = ({
   onOpenTV,
   onOpenSettings,
   onMinimize,
+  onCancelMatch,
 }) => {
   const { isDarkMode, toggleTheme } = useSettings();
   const maxPossibleRacks = match.raceTo * 2 - 1;
@@ -118,6 +121,18 @@ export const MatchTopBar: React.FC<MatchTopBarProps> = ({
         <button onClick={onOpenSettings} className="icon-btn" title="Pengaturan" aria-label="Pengaturan">
           <Settings className="w-[18px] h-[18px]" />
         </button>
+
+        {/* Cancel the whole match (only while it is still running). */}
+        {match.status === 'in_progress' && (
+          <button
+            onClick={onCancelMatch}
+            className="icon-btn text-danger"
+            title="Batalkan pertandingan"
+            aria-label="Batalkan pertandingan"
+          >
+            <Ban className="w-[18px] h-[18px]" />
+          </button>
+        )}
       </div>
     </div>
   );

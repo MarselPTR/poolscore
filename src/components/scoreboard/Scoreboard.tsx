@@ -10,6 +10,7 @@ import { FoulModal } from './FoulModal';
 import { BreakModal } from './BreakModal';
 import { HistoryDrawer } from './HistoryDrawer';
 import { MatchResultModal } from './MatchResultModal';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 interface ScoreboardProps {
   /** Side by side when the screen is wide, stacked when it is tall. */
@@ -47,6 +48,7 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({
     togglePauseTimer,
     finishAndSaveMatch,
     startMatch,
+    quitMatch,
   } = useMatch();
 
   const { settings } = useSettings();
@@ -56,6 +58,7 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({
   const [isFoulModalOpen, setIsFoulModalOpen] = useState(false);
   const [isBreakModalOpen, setIsBreakModalOpen] = useState(false);
   const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
 
   if (!activeMatch) return null;
 
@@ -93,6 +96,7 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({
         onOpenTV={onOpenTV}
         onOpenSettings={onOpenSettings}
         onMinimize={onMinimize}
+        onCancelMatch={() => setIsCancelConfirmOpen(true)}
       />
 
       {/* The two halves */}
@@ -219,6 +223,18 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({
         onRematch={handleRematch}
         onSaveAndFinish={finishAndSaveMatch}
         onOpenShareCard={onOpenShareCard}
+      />
+
+      <ConfirmDialog
+        isOpen={isCancelConfirmOpen}
+        onClose={() => setIsCancelConfirmOpen(false)}
+        onConfirm={quitMatch}
+        title="Batalkan pertandingan?"
+        message="Pertandingan ini akan dihapus dan TIDAK tersimpan ke riwayat maupun statistik. Tindakan ini tidak bisa dibatalkan."
+        confirmText="Ya, batalkan"
+        cancelText="Lanjut bermain"
+        type="danger"
+        iconType="delete"
       />
     </div>
   );

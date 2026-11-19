@@ -879,9 +879,22 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setActiveMatch(null);
   };
 
-  // Quit match without saving as finished
+  // Cancel an in-progress match entirely: it is NOT saved to history or stats.
+  // We must also remove the persisted in_progress record (otherwise it would be
+  // restored on the next reload) and free its club table. A tournament match is
+  // left untouched, so its bracket slot simply stays pending.
   const quitMatch = () => {
+    const match = activeMatch;
     setActiveMatch(null);
+    setRackSeconds(0);
+    setIsPaused(false);
+    if (!match) return;
+    if (!isGuest) {
+      db.matches.delete(match.id).catch(() => {});
+    }
+    if (match.tableId) {
+      setTableStatus(match.tableId, 'FREE').catch(() => {});
+    }
   };
 
   // Resume previous match from database
