@@ -131,24 +131,49 @@ export const MatchProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [activeMatch, broadcastMatch, isGuest]);
 
-  // Match and Rack Timers
+  // Match and Rack Timers.
+  //
+  // The clock is driven by real timestamps rather than a naive +1-per-tick
+  // counter, so it stays accurate even when the tab is backgrounded (browsers
+  // throttle setInterval in the background). We anchor `lastTickRef` whenever
+  // the timer (re)starts — on mount/resume and on un-pause — which means time
+  // the app spent CLOSED or PAUSED is never counted; only elapsed wall-clock
+  // while the match is actively running accrues.
+  const lastTickRef = useRef<number>(Date.now());
   useEffect(() => {
     if (!activeMatch || activeMatch.status !== 'in_progress' || isPaused || !activeMatch.isTimerEnabled) {
       return;
     }
 
-    const timer = setInterval(() => {
+    // Re-anchor so any gap before this run (closed app, paused) is not counted.
+    lastTickRef.current = Date.now();
+
+    const tick = () => {
+      const now = Date.now();
+      const delta = Math.round((now - lastTickRef.current) / 1000);
+      if (delta < 1) return;
+      lastTickRef.current = now;
       setActiveMatch((prev) => {
         if (!prev || prev.status !== 'in_progress') return prev;
-        return {
-          ...prev,
-          durationSeconds: prev.durationSeconds + 1,
-        };
+        return { ...prev, durationSeconds: prev.durationSeconds + delta };
       });
-      setRackSeconds((prev) => prev + 1);
-    }, 1000);
+      setRackSeconds((prev) => prev + delta);
+    };
 
-    return () => clearInterval(timer);
+    const timer = setInterval(tick, 1000);
+    // When the tab returns to the foreground, reconcile immediately so any
+    // throttled background seconds are recovered in one jump instead of lost.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') tick();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+    };
   }, [activeMatch?.status, activeMatch?.isTimerEnabled, isPaused]);
 
   const clearFoulAlert = useCallback(() => {

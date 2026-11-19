@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useMatch } from './context/MatchContext';
 import { useSettings } from './context/SettingsContext';
 import { useAuth } from './context/AuthContext';
 import { initializeDatabase } from './db/database';
 import { Header } from './components/common/Header';
 import { BottomNav } from './components/common/BottomNav';
+import { ResumeMatchBar } from './components/common/ResumeMatchBar';
 import { LandscapeBanner } from './components/common/LandscapeBanner';
 import { Scoreboard } from './components/scoreboard/Scoreboard';
 import { HomeView } from './components/home/HomeView';
@@ -30,6 +31,9 @@ export const App: React.FC = () => {
 
   const [currentTab, setCurrentTab] = useState<string>('home');
   const [isTVMode, setIsTVMode] = useState<boolean>(false);
+  // Minimized = the match is still running but we've stepped back to the
+  // dashboard. The match itself is never paused or cleared by this.
+  const [isMatchMinimized, setIsMatchMinimized] = useState<boolean>(false);
   const [isQuickMatchOpen, setIsQuickMatchOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isQROpen, setIsQROpen] = useState<boolean>(false);
@@ -66,6 +70,21 @@ export const App: React.FC = () => {
     };
   }, []);
 
+  // A newly started/resumed match should always open on the scoreboard, not stay
+  // hidden behind the dashboard because a previous match was minimized.
+  const prevMatchIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const id = activeMatch?.id ?? null;
+    if (id && id !== prevMatchIdRef.current) setIsMatchMinimized(false);
+    prevMatchIdRef.current = id;
+  }, [activeMatch?.id]);
+
+  // When a minimized match finishes, pop back to the scoreboard so the result
+  // screen (rematch / save / share) is shown immediately.
+  useEffect(() => {
+    if (activeMatch?.status === 'finished') setIsMatchMinimized(false);
+  }, [activeMatch?.status]);
+
   // 1. Auth Guard: Show Login / Register Page if not authenticated
   if (!user) {
     return <AuthView />;
@@ -90,6 +109,10 @@ export const App: React.FC = () => {
   const isMatchRunning =
     activeMatch !== null &&
     (activeMatch.status === 'in_progress' || activeMatch.status === 'finished');
+
+  // The immersive scoreboard takes over the screen only when it is not
+  // minimized; minimizing returns to the dashboard while the match runs on.
+  const showScoreboard = isMatchRunning && !isMatchMinimized;
 
   // Handle launch match from tournament tree
   const handleLaunchTournamentMatch = async (
@@ -120,7 +143,7 @@ export const App: React.FC = () => {
   };
 
   // 3. Active Match View (Full Screen Immersion)
-  if (isMatchRunning) {
+  if (showScoreboard) {
     return (
       <div className="h-dvh flex flex-col overflow-hidden bg-bg text-ink">
         <LandscapeBanner />
@@ -131,6 +154,7 @@ export const App: React.FC = () => {
           onOpenSettings={() => setIsSettingsOpen(true)}
           onOpenShareCard={() => setShareCardMatch(activeMatch)}
           onNewMatchModal={() => setIsQuickMatchOpen(true)}
+          onMinimize={() => setIsMatchMinimized(true)}
         />
 
         {/* Global Modals */}
@@ -174,7 +198,11 @@ export const App: React.FC = () => {
         onOpenTV={() => setIsTVMode(true)}
       />
 
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 pt-6 sm:pt-8 pb-24 md:pb-12">
+      <main
+        className={`flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 pt-6 sm:pt-8 ${
+          isMatchRunning ? 'pb-36 md:pb-28' : 'pb-24 md:pb-12'
+        }`}
+      >
         <div key={safeTab} className="animate-fade">
           {safeTab === 'home' && (
             <HomeView
@@ -210,10 +238,13 @@ export const App: React.FC = () => {
         </div>
       </main>
 
+      {/* Running match, minimized: a persistent bar to jump back in. */}
+      <ResumeMatchBar onResume={() => setIsMatchMinimized(false)} />
+
       <BottomNav
         currentTab={safeTab}
         onSelectTab={setCurrentTab}
-        isVisible={!isMatchRunning}
+        isVisible={true}
       />
 
       {/* Global Modals */}

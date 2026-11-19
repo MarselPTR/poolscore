@@ -19,6 +19,8 @@ interface ScoreboardProps {
   onOpenSettings: () => void;
   onOpenShareCard: () => void;
   onNewMatchModal: () => void;
+  /** Leave the scoreboard without ending the match (it keeps running). */
+  onMinimize: () => void;
 }
 
 export const Scoreboard: React.FC<ScoreboardProps> = ({
@@ -28,6 +30,7 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({
   onOpenSettings,
   onOpenShareCard,
   onNewMatchModal,
+  onMinimize,
 }) => {
   const {
     activeMatch,
@@ -89,6 +92,7 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({
         onOpenQR={onOpenQR}
         onOpenTV={onOpenTV}
         onOpenSettings={onOpenSettings}
+        onMinimize={onMinimize}
       />
 
       {/* The two halves */}

@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Match } from '../../types';
-import { Maximize, Minimize, QrCode, Settings, Tv, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, Maximize, Minimize, QrCode, Settings, Tv, Sun, Moon } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 
 interface MatchTopBarProps {
@@ -11,6 +11,8 @@ interface MatchTopBarProps {
   onOpenQR: () => void;
   onOpenTV: () => void;
   onOpenSettings: () => void;
+  /** Leave the scoreboard without ending the match (it keeps running). */
+  onMinimize: () => void;
 }
 
 export const MatchTopBar: React.FC<MatchTopBarProps> = ({
@@ -21,13 +23,25 @@ export const MatchTopBar: React.FC<MatchTopBarProps> = ({
   onOpenQR,
   onOpenTV,
   onOpenSettings,
+  onMinimize,
 }) => {
   const { isDarkMode, toggleTheme } = useSettings();
   const maxPossibleRacks = match.raceTo * 2 - 1;
   const isMultiSet = match.targetSets && match.targetSets > 1;
 
   return (
-    <div className="h-12 flex items-center justify-between gap-3 pl-4 pr-1.5 border-b border-rule bg-bg select-none shrink-0">
+    <div className="h-12 flex items-center justify-between gap-3 pl-1.5 pr-1.5 border-b border-rule bg-bg select-none shrink-0">
+      {/* Back: leaves the scoreboard but keeps the match running in the background. */}
+      <button
+        onClick={onMinimize}
+        className="btn btn-secondary !px-2.5 shrink-0 mr-1"
+        title="Kembali — pertandingan tetap berjalan"
+        aria-label="Kembali, pertandingan tetap berjalan"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        <span className="hidden sm:inline">Kembali</span>
+      </button>
+
       {/* Match facts */}
       <div className="flex items-baseline gap-x-4 min-w-0 overflow-hidden whitespace-nowrap">
         <span className="display text-xl text-ink">{match.gameType}</span>
