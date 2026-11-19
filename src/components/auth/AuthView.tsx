@@ -166,7 +166,7 @@ export const AuthView: React.FC = () => {
             </button>
           </div>
 
-          <div className="mt-5 space-y-4">
+          <div key={mode} className="animate-page mt-5 space-y-4">
             {errorMsg && (
               <div role="alert" className="notice notice-danger">
                 {errorMsg}

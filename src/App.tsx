@@ -203,7 +203,7 @@ export const App: React.FC = () => {
           isMatchRunning ? 'pb-36 md:pb-28' : 'pb-24 md:pb-12'
         }`}
       >
-        <div key={safeTab} className="animate-fade">
+        <div key={safeTab} className="animate-page">
           {safeTab === 'home' && (
             <HomeView
               onOpenQuickMatch={() => {
