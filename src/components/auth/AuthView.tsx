@@ -118,16 +118,36 @@ export const AuthView: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full bg-bg text-ink flex flex-col lg:flex-row">
-      {/* Photograph */}
-      <div className="relative w-full lg:w-[60%] h-44 sm:h-60 lg:h-auto lg:min-h-screen shrink-0 overflow-hidden bg-black">
+      {/* Hero image. On mobile it is a tall, immersive header that dissolves
+          into the form sheet below; on desktop it is the left 60% panel. */}
+      <div className="relative w-full lg:w-[60%] h-[46vh] min-h-[320px] sm:h-[52vh] lg:h-auto lg:min-h-screen shrink-0 overflow-hidden bg-black">
         <img src="/login_bg.jpg" alt="" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-black/45" />
-        <div className="absolute inset-x-0 bottom-0 p-6 lg:p-12 text-white">
+        {/* Legibility gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/5" />
+        {/* Seamless blend into the form sheet (mobile only) */}
+        <div className="lg:hidden absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-bg to-transparent" />
+
+        {/* Mobile-only brand + theme, floating over the hero */}
+        <div className="lg:hidden absolute inset-x-0 top-0 safe-area-pt flex items-center justify-between px-5 pt-4">
+          <div className="flex items-center gap-2.5 text-white">
+            <img src="/logo.png" alt="" className="w-7 h-7 rounded-[5px] object-contain" />
+            <span className="display text-[20px] tracking-wide">PoolScore</span>
+          </div>
+          <button
+            onClick={toggleTheme}
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 backdrop-blur text-white"
+            aria-label={isDarkMode ? 'Ganti ke tema terang' : 'Ganti ke tema gelap'}
+          >
+            {isDarkMode ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
+          </button>
+        </div>
+
+        <div className="absolute inset-x-0 bottom-0 p-6 pb-16 lg:p-12 text-white">
           <div className="flex h-1.5 w-16 mb-4 lg:mb-6">
             <span className="flex-1 bg-p1" />
             <span className="flex-1 bg-p2" />
           </div>
-          <p className="display text-3xl sm:text-4xl lg:text-6xl max-w-md">
+          <p className="display text-[28px] leading-[1.08] sm:text-4xl lg:text-6xl max-w-md">
             Papan skor untuk meja biliar Anda
           </p>
           <p className="hidden lg:block mt-4 text-white/75 max-w-sm">
@@ -136,9 +156,13 @@ export const AuthView: React.FC = () => {
         </div>
       </div>
 
-      {/* Form column */}
-      <div className="flex-1 flex flex-col px-6 py-6 sm:px-12 lg:px-16 lg:py-10">
-        <div className="flex items-center justify-between">
+      {/* Form column — on mobile it lifts over the hero as a rounded sheet. */}
+      <div className="relative z-10 -mt-8 lg:mt-0 rounded-t-[1.75rem] lg:rounded-none bg-bg flex-1 flex flex-col px-6 pt-6 pb-8 sm:px-12 lg:px-16 lg:py-10">
+        {/* Grabber handle (mobile sheet affordance) */}
+        <div className="lg:hidden mx-auto mb-2 h-1 w-10 rounded-full bg-ink-3/30" />
+
+        {/* Desktop-only brand + theme (mobile has them over the hero) */}
+        <div className="hidden lg:flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <img src="/logo.png" alt="" className="w-7 h-7 rounded-[4px] object-contain" />
             <span className="display text-[22px] tracking-wide">PoolScore</span>
@@ -153,7 +177,7 @@ export const AuthView: React.FC = () => {
           </button>
         </div>
 
-        <div className="my-auto py-8 w-full max-w-sm mx-auto">
+        <div className="w-full max-w-sm mx-auto lg:my-auto py-3 lg:py-8">
           <h1 className="display text-4xl">{mode === 'login' ? 'Masuk' : 'Buat akun'}</h1>
 
           {/* Mode switch */}
