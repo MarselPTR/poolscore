@@ -2,14 +2,18 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
 import { useToast } from '../../context/ToastContext';
+import { useLoginThrottle } from '../../hooks/useLoginThrottle';
+import { formatSeconds } from '../../utils/time';
 import { ForgotPasswordModal } from './ForgotPasswordModal';
 import { ResetPasswordDirectModal } from './ResetPasswordDirectModal';
+import { IosInstallHint } from '../common/IosInstallHint';
 import { Eye, EyeOff, Sun, Moon } from 'lucide-react';
 
 export const AuthView: React.FC = () => {
   const { login, register, loginAsGuest } = useAuth();
   const { isDarkMode, toggleTheme } = useSettings();
   const { warning } = useToast();
+  const { remainingSec, isLocked, recordFailure, recordSuccess } = useLoginThrottle();
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone' | 'username'>('email');
@@ -33,6 +37,10 @@ export const AuthView: React.FC = () => {
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLocked) {
+      setErrorMsg(`Terlalu banyak percobaan gagal. Coba lagi dalam ${formatSeconds(remainingSec)}.`);
+      return;
+    }
     if (!identifier.trim()) {
       const label = loginMethod === 'email' ? 'Email' : loginMethod === 'phone' ? 'Nomor HP' : 'Username';
       setErrorMsg(`Masukkan ${label} Anda`);
@@ -44,7 +52,10 @@ export const AuthView: React.FC = () => {
     try {
       const res = await login(identifier, password);
       if (!res.success) {
+        recordFailure();
         setErrorMsg(res.error || 'Gagal masuk. Periksa kembali akun dan kata sandi Anda.');
+      } else {
+        recordSuccess();
       }
     } catch {
       setErrorMsg('Gagal masuk. Periksa kembali koneksi internet Anda.');
@@ -284,9 +295,20 @@ export const AuthView: React.FC = () => {
                   </div>
                 </div>
 
-                <button type="submit" disabled={isLoading} className="btn btn-lg btn-block btn-primary">
-                  {isLoading ? 'Memproses…' : 'Masuk'}
+                <button
+                  type="submit"
+                  disabled={isLoading || isLocked}
+                  className="btn btn-lg btn-block btn-primary"
+                >
+                  {isLocked ? `Tunggu ${formatSeconds(remainingSec)}` : isLoading ? 'Memproses…' : 'Masuk'}
                 </button>
+
+                {isLocked && (
+                  <p className="text-[13px] text-ink-3 text-center -mt-1">
+                    Terlalu banyak percobaan gagal. Demi keamanan, login dikunci sementara dan
+                    waktunya bertambah bila terus salah.
+                  </p>
+                )}
               </form>
             )}
 
@@ -490,6 +512,8 @@ export const AuthView: React.FC = () => {
               <button type="button" onClick={loginAsGuest} className="btn btn-lg btn-block btn-ghost">
                 Masuk sebagai tamu
               </button>
+
+              <IosInstallHint />
             </div>
           </div>
         </div>

@@ -53,7 +53,7 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({
 
   const { settings } = useSettings();
   const { isLocked: isWakeLocked } = useWakeLock(settings.wakeLockEnabled);
-  const { isFullscreen, toggleFullscreen } = useFullscreen();
+  const { isFullscreen, toggleFullscreen, isSupported: isFullscreenSupported } = useFullscreen();
 
   const [isFoulModalOpen, setIsFoulModalOpen] = useState(false);
   const [isBreakModalOpen, setIsBreakModalOpen] = useState(false);
@@ -91,6 +91,7 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({
         match={activeMatch}
         isWakeLocked={isWakeLocked}
         isFullscreen={isFullscreen}
+        isFullscreenSupported={isFullscreenSupported}
         onToggleFullscreen={toggleFullscreen}
         onOpenQR={onOpenQR}
         onOpenTV={onOpenTV}

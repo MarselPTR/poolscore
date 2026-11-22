@@ -14,6 +14,13 @@ export function useFullscreen() {
     };
   }, []);
 
+  // iOS (and therefore every browser on iPhone, since they all use WebKit) does
+  // not support the Fullscreen API for ordinary elements — only for <video>.
+  // Consumers use this to hide the fullscreen control where it cannot work.
+  const isSupported =
+    typeof document !== 'undefined' &&
+    typeof document.documentElement.requestFullscreen === 'function';
+
   const toggleFullscreen = useCallback(async () => {
     try {
       if (!document.fullscreenElement) {
@@ -28,5 +35,5 @@ export function useFullscreen() {
     }
   }, []);
 
-  return { isFullscreen, toggleFullscreen };
+  return { isFullscreen, toggleFullscreen, isSupported };
 }

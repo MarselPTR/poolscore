@@ -6,6 +6,7 @@ import { initializeDatabase } from './db/database';
 import { Header } from './components/common/Header';
 import { BottomNav } from './components/common/BottomNav';
 import { ResumeMatchBar } from './components/common/ResumeMatchBar';
+import { IosInstallHint } from './components/common/IosInstallHint';
 import { LandscapeBanner } from './components/common/LandscapeBanner';
 import { Scoreboard } from './components/scoreboard/Scoreboard';
 import { HomeView } from './components/home/HomeView';
@@ -203,6 +204,10 @@ export const App: React.FC = () => {
           isMatchRunning ? 'pb-36 md:pb-28' : 'pb-24 md:pb-12'
         }`}
       >
+        <div className="mb-5 empty:hidden">
+          <IosInstallHint />
+        </div>
+
         <div key={safeTab} className="animate-page">
           {safeTab === 'home' && (
             <HomeView

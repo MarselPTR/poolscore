@@ -7,6 +7,7 @@ interface MatchTopBarProps {
   match: Match;
   isWakeLocked: boolean;
   isFullscreen: boolean;
+  isFullscreenSupported: boolean;
   onToggleFullscreen: () => void;
   onOpenQR: () => void;
   onOpenTV: () => void;
@@ -21,6 +22,7 @@ export const MatchTopBar: React.FC<MatchTopBarProps> = ({
   match,
   isWakeLocked,
   isFullscreen,
+  isFullscreenSupported,
   onToggleFullscreen,
   onOpenQR,
   onOpenTV,
@@ -109,14 +111,16 @@ export const MatchTopBar: React.FC<MatchTopBarProps> = ({
           <Tv className="w-[18px] h-[18px]" />
         </button>
 
-        <button
-          onClick={onToggleFullscreen}
-          className="icon-btn"
-          title={isFullscreen ? 'Keluar layar penuh' : 'Layar penuh'}
-          aria-label={isFullscreen ? 'Keluar layar penuh' : 'Layar penuh'}
-        >
-          {isFullscreen ? <Minimize className="w-[18px] h-[18px]" /> : <Maximize className="w-[18px] h-[18px]" />}
-        </button>
+        {isFullscreenSupported && (
+          <button
+            onClick={onToggleFullscreen}
+            className="icon-btn"
+            title={isFullscreen ? 'Keluar layar penuh' : 'Layar penuh'}
+            aria-label={isFullscreen ? 'Keluar layar penuh' : 'Layar penuh'}
+          >
+            {isFullscreen ? <Minimize className="w-[18px] h-[18px]" /> : <Maximize className="w-[18px] h-[18px]" />}
+          </button>
+        )}
 
         <button onClick={onOpenSettings} className="icon-btn" title="Pengaturan" aria-label="Pengaturan">
           <Settings className="w-[18px] h-[18px]" />
