@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { passwordIssue } from '../../lib/password';
 import { Eye, EyeOff } from 'lucide-react';
 
 export const ResetPasswordDirectModal: React.FC = () => {
@@ -18,8 +19,9 @@ export const ResetPasswordDirectModal: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (newPassword.length < 8) {
-      setErrorMsg('Kata sandi baru minimal 8 karakter.');
+    const pwIssue = passwordIssue(newPassword);
+    if (pwIssue) {
+      setErrorMsg(pwIssue);
       return;
     }
 
@@ -70,7 +72,7 @@ export const ResetPasswordDirectModal: React.FC = () => {
 
           <div>
             <label htmlFor="new-pw" className="label">
-              Kata sandi baru (minimal 8 karakter)
+              Kata sandi baru (min. 8 karakter, huruf &amp; angka)
             </label>
             <div className="relative">
               <input

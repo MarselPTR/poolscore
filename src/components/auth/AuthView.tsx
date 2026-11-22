@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
 import { useToast } from '../../context/ToastContext';
 import { useLoginThrottle } from '../../hooks/useLoginThrottle';
+import { passwordIssue } from '../../lib/password';
 import { formatSeconds } from '../../utils/time';
 import { ForgotPasswordModal } from './ForgotPasswordModal';
 import { ResetPasswordDirectModal } from './ResetPasswordDirectModal';
@@ -72,8 +73,9 @@ export const AuthView: React.FC = () => {
       return;
     }
 
-    if (password.length < 8) {
-      setErrorMsg('Kata sandi minimal 8 karakter agar akun Anda lebih aman.');
+    const pwIssue = passwordIssue(password);
+    if (pwIssue) {
+      setErrorMsg(pwIssue);
       return;
     }
 
@@ -390,7 +392,7 @@ export const AuthView: React.FC = () => {
 
                 <div>
                   <label htmlFor="reg-pw" className="label">
-                    Kata sandi (minimal 8 karakter)
+                    Kata sandi (min. 8 karakter, huruf &amp; angka)
                   </label>
                   <div className="relative">
                     <input
