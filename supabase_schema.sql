@@ -50,6 +50,32 @@ RETURNS BOOLEAN AS $$
   );
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
+-- Helper: apakah pemanggil admin tempat / super admin yang SUDAH DISETUJUI
+-- (dipakai RLS agar pembuatan turnamen & meja hanya oleh admin yang sah).
+CREATE OR REPLACE FUNCTION public.can_manage_venue()
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid()
+      AND approval_status = 'approved'
+      AND role IN ('venue_admin', 'super_admin')
+  );
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- Login via username/nama/HP: mengembalikan 1 email yang cocok tanpa membuka
+-- seluruh tabel profil. Dipakai sebelum user terautentikasi.
+CREATE OR REPLACE FUNCTION public.resolve_login_email(identifier text)
+RETURNS text AS $$
+  SELECT email FROM public.profiles
+  WHERE username ILIKE identifier
+     OR name ILIKE identifier
+     OR phone = identifier
+  LIMIT 1;
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+REVOKE ALL ON FUNCTION public.resolve_login_email(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.resolve_login_email(text) TO anon, authenticated;
+
 -- =====================================================================
 -- 3. PLAYERS (papan peringkat sementara — berbasis poin turnamen di Fase 4)
 -- =====================================================================
@@ -160,20 +186,25 @@ ALTER TABLE public.matches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tournaments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.club_tables ENABLE ROW LEVEL SECURITY;
 
--- PROFILES: semua boleh baca (untuk peringkat/etalase); user kelola profil
--- sendiri; super admin boleh ubah apa pun (mis. menyetujui admin tempat).
-CREATE POLICY "profiles readable by all" ON public.profiles
-  FOR SELECT USING (true);
+-- PROFILES: hanya pemilik + super admin yang boleh baca (profil berisi email &
+-- No. HP — JANGAN dibuka publik). Login via username/HP memakai fungsi server
+-- public.resolve_login_email() (lihat bagian fungsi di bawah).
 CREATE POLICY "user manages own profile" ON public.profiles
   FOR ALL USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
 CREATE POLICY "super admin manages all profiles" ON public.profiles
   FOR ALL USING (public.is_super_admin()) WITH CHECK (public.is_super_admin());
 
--- PLAYERS (peringkat): dibaca semua; tulis oleh user terautentikasi.
+-- PLAYERS (peringkat): dibaca semua; klien hanya boleh INSERT/UPDATE (sinkron
+-- hasil match), tidak boleh DELETE. Hapus hanya oleh super admin.
 CREATE POLICY "players readable by all" ON public.players
   FOR SELECT USING (true);
-CREATE POLICY "auth writes players" ON public.players
-  FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "auth inserts players" ON public.players
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "auth updates players" ON public.players
+  FOR UPDATE USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "super admin manages players" ON public.players
+  FOR ALL USING (public.is_super_admin()) WITH CHECK (public.is_super_admin());
 
 -- MATCHES: riwayat pribadi — user baca/tulis miliknya; super admin baca semua.
 CREATE POLICY "user reads own matches" ON public.matches
@@ -190,7 +221,7 @@ CREATE POLICY "user deletes own matches" ON public.matches
 CREATE POLICY "tournaments readable by all" ON public.tournaments
   FOR SELECT USING (true);
 CREATE POLICY "owner inserts tournaments" ON public.tournaments
-  FOR INSERT WITH CHECK (auth.uid() = created_by);
+  FOR INSERT WITH CHECK (auth.uid() = created_by AND public.can_manage_venue());
 CREATE POLICY "owner updates own tournaments" ON public.tournaments
   FOR UPDATE USING (auth.uid() = created_by OR public.is_super_admin())
   WITH CHECK (auth.uid() = created_by OR public.is_super_admin());
@@ -202,7 +233,8 @@ CREATE POLICY "owner deletes own tournaments" ON public.tournaments
 CREATE POLICY "club tables readable by all" ON public.club_tables
   FOR SELECT USING (true);
 CREATE POLICY "owner manages own tables" ON public.club_tables
-  FOR ALL USING (auth.uid() = owner_id) WITH CHECK (auth.uid() = owner_id);
+  FOR ALL USING (auth.uid() = owner_id)
+  WITH CHECK (auth.uid() = owner_id AND public.can_manage_venue());
 CREATE POLICY "super admin manages all tables" ON public.club_tables
   FOR ALL USING (public.is_super_admin()) WITH CHECK (public.is_super_admin());
 
@@ -249,6 +281,25 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- Cegah eskalasi hak akses: user tidak boleh mengubah `role`/`approval_status`
+-- miliknya sendiri. Hanya super admin yang boleh.
+CREATE OR REPLACE FUNCTION public.protect_profile_privileges()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF public.is_super_admin() THEN
+    RETURN NEW;
+  END IF;
+  NEW.role := OLD.role;
+  NEW.approval_status := OLD.approval_status;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS protect_profile_privileges_trg ON public.profiles;
+CREATE TRIGGER protect_profile_privileges_trg
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE PROCEDURE public.protect_profile_privileges();
 
 -- =====================================================================
 -- 9. REALTIME (untuk live score & monitoring di fase berikutnya)

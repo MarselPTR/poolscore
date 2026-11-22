@@ -185,16 +185,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       let targetEmail = emailOrName.trim().toLowerCase();
 
-      // Resolve email from profiles by username/name/phone if not an email.
+      // Resolve email from a username/name/phone if the user did not type an
+      // email. This runs BEFORE authentication, so it must not read the whole
+      // profiles table (which would expose everyone's email/phone). A SECURITY
+      // DEFINER function returns only the single matching email.
       if (!targetEmail.includes('@') || !targetEmail.includes('.')) {
         const clean = emailOrName.trim();
         try {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('email')
-            .or(`username.ilike.${clean},name.ilike.${clean},phone.eq.${clean}`)
-            .maybeSingle();
-          targetEmail = profile?.email || normalizeAuthEmail(clean);
+          const { data } = await supabase.rpc('resolve_login_email', { identifier: clean });
+          targetEmail = (data as string | null) || normalizeAuthEmail(clean);
         } catch {
           targetEmail = normalizeAuthEmail(clean);
         }
