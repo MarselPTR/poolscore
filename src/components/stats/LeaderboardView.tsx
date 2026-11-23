@@ -5,9 +5,12 @@ import { fetchTournamentsFromSupabase } from '../../services/supabaseService';
 import { computeGlobalRanking, type RankingEntry } from '../../lib/ranking';
 import { Search, Trophy } from 'lucide-react';
 import { RankMedallion } from '../common/PlayerAvatar';
+import { PlayerProfileModal } from './PlayerProfileModal';
 
 export const LeaderboardView: React.FC = () => {
   const [ranking, setRanking] = useState<RankingEntry[]>([]);
+  const [allTournaments, setAllTournaments] = useState<Tournament[]>([]);
+  const [profileTarget, setProfileTarget] = useState<{ userId?: string; name: string } | null>(null);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -19,6 +22,7 @@ export const LeaderboardView: React.FC = () => {
         tournaments = await db.tournaments.toArray();
       }
       if (cancelled) return;
+      setAllTournaments(tournaments);
       setRanking(computeGlobalRanking(tournaments));
       setLoading(false);
     };
@@ -35,7 +39,7 @@ export const LeaderboardView: React.FC = () => {
       <div>
         <h1 className="page-title">Peringkat</h1>
         <p className="text-sm text-ink-2 mt-1.5">
-          Dihitung dari hasil turnamen. Nilai tiap turnamen dinormalkan ke persentase agar bobotnya setara.
+          Dihitung dari hasil turnamen. Ketuk pemain untuk melihat profil &amp; riwayatnya.
         </p>
       </div>
 
@@ -73,7 +77,11 @@ export const LeaderboardView: React.FC = () => {
           </thead>
           <tbody>
             {filtered.map((r, idx) => (
-              <tr key={r.userId || r.name} className="border-b border-rule">
+              <tr
+                key={r.userId || r.name}
+                onClick={() => setProfileTarget({ userId: r.userId, name: r.name })}
+                className="border-b border-rule cursor-pointer hover:bg-panel-2"
+              >
                 <td className="py-3 text-center">
                   <RankMedallion rank={idx + 1} />
                 </td>
@@ -101,6 +109,13 @@ export const LeaderboardView: React.FC = () => {
           </tbody>
         </table>
       )}
+
+      <PlayerProfileModal
+        isOpen={!!profileTarget}
+        onClose={() => setProfileTarget(null)}
+        target={profileTarget}
+        tournaments={allTournaments}
+      />
     </div>
   );
 };
