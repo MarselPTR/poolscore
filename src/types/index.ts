@@ -225,6 +225,29 @@ export interface ClubTable {
   gameType?: GameType;
   raceTo?: number;
   startTime?: number;
+  /** Rental tariff per hour (Rupiah) used when opening a billing session. */
+  ratePerHour?: number;
+}
+
+/**
+ * A table-rental billing session (sewa meja). Billing runs independently of the
+ * scoreboard match: a table can be rented with or without a live match on it.
+ */
+export interface RentalSession {
+  id: string;
+  tableId: string;
+  ownerId: string;
+  /** Snapshot of the table name at open time (so receipts stay correct). */
+  tableName: string;
+  /** Snapshot of the tariff per hour at open time. */
+  ratePerHour: number;
+  startTime: number; // epoch ms
+  endTime?: number; // epoch ms, set when closed
+  status: 'active' | 'closed';
+  /** Final billed amount (Rupiah), set at close. */
+  totalCost?: number;
+  /** Optional label — customer name / note. */
+  note?: string;
 }
 
 export interface AppSettings {

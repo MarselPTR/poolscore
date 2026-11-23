@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import type { ClubTable } from '../../types';
+import type { ClubTable, RentalSession } from '../../types';
 import { db } from '../../db/database';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -9,8 +9,20 @@ import {
   createTable,
   renameTable,
   deleteTable,
+  setTableRate,
+  fetchActiveRentals,
+  fetchClosedRentalsSince,
+  startRental,
+  closeRental,
+  cancelRental,
 } from '../../services/supabaseService';
-import { Tv, Plus, Trash2, Pencil, Check, X } from 'lucide-react';
+import { DEFAULT_TABLE_RATE, rentalElapsedSeconds, rentalCostRaw, rentalCost } from '../../lib/billing';
+import { formatRupiah, formatRupiahShort } from '../../utils/currency';
+import { RentalReceiptModal } from './RentalReceiptModal';
+import { RentalRateModal } from './RentalRateModal';
+import { RentalRecapModal } from './RentalRecapModal';
+import { ConfirmDialog } from '../common/ConfirmDialog';
+import { Tv, Plus, Trash2, Pencil, Check, X, Coins, Play, Square } from 'lucide-react';
 
 interface ClubViewProps {
   onOpenQuickMatchForTable: (tableId: string, tableLabel: string) => void;
@@ -18,6 +30,22 @@ interface ClubViewProps {
 }
 
 const DEFAULT_TABLE_COUNT = 4;
+
+const startOfToday = () => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+};
+
+/** Ticking clock H:MM:SS (drops the hour below 1h). */
+const fmtClock = (totalSeconds: number) => {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  const mm = String(m).padStart(2, '0');
+  const ss = String(s).padStart(2, '0');
+  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+};
 
 export const ClubView: React.FC<ClubViewProps> = ({
   onOpenQuickMatchForTable,
@@ -27,14 +55,26 @@ export const ClubView: React.FC<ClubViewProps> = ({
   const { success, error, warning } = useToast();
   const isSuperAdmin = user?.role === 'super_admin';
   const ownerId = user && !user.isGuest ? user.id : undefined;
+  const canBill = !isSuperAdmin && !!ownerId;
 
   const [tables, setTables] = useState<ClubTable[]>([]);
+  const [rentals, setRentals] = useState<RentalSession[]>([]);
+  const [todayRevenue, setTodayRevenue] = useState(0);
   const [matchesToday, setMatchesToday] = useState<number>(0);
+  const [now, setNow] = useState<number>(Date.now());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState<string>('');
   const [countDraft, setCountDraft] = useState<string>('');
   const [busy, setBusy] = useState(false);
   const seededRef = useRef(false);
+
+  // Billing modals
+  const [rateTarget, setRateTarget] = useState<ClubTable | null>(null);
+  const [closing, setClosing] = useState<{ session: RentalSession; endTime: number } | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<RentalSession | null>(null);
+  const [recapOpen, setRecapOpen] = useState(false);
+
+  const rentalByTable = new Map(rentals.map((r) => [r.tableId, r]));
 
   const nextPosition = (list: ClubTable[]) =>
     list.reduce((max, t) => Math.max(max, t.position ?? 0), 0) + 1;
@@ -44,6 +84,16 @@ export const ClubView: React.FC<ClubViewProps> = ({
     setTables(list);
     return list;
   }, [isSuperAdmin, ownerId]);
+
+  const loadRentals = useCallback(async () => {
+    if (!canBill || !ownerId) return;
+    const [active, closedToday] = await Promise.all([
+      fetchActiveRentals(ownerId),
+      fetchClosedRentalsSince(ownerId, startOfToday()),
+    ]);
+    setRentals(active);
+    setTodayRevenue(closedToday.reduce((sum, s) => sum + (s.totalCost || 0), 0));
+  }, [canBill, ownerId]);
 
   const loadStats = useCallback(async () => {
     try {
@@ -70,19 +120,28 @@ export const ClubView: React.FC<ClubViewProps> = ({
       }
     })();
     loadStats();
+    loadRentals();
     return () => {
       cancelled = true;
     };
-  }, [loadTables, loadStats, isSuperAdmin, ownerId]);
+  }, [loadTables, loadStats, loadRentals, isSuperAdmin, ownerId]);
 
-  // Poll for live score updates.
+  // Poll for live score + rental updates.
   useEffect(() => {
     const interval = setInterval(() => {
       loadTables();
       loadStats();
+      loadRentals();
     }, 3000);
     return () => clearInterval(interval);
-  }, [loadTables, loadStats]);
+  }, [loadTables, loadStats, loadRentals]);
+
+  // Tick every second while a rental is running, for the live timer/cost.
+  useEffect(() => {
+    if (rentals.length === 0) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [rentals.length]);
 
   const addTable = async () => {
     if (!ownerId || busy) return;
@@ -97,6 +156,10 @@ export const ClubView: React.FC<ClubViewProps> = ({
   const removeTable = async (table: ClubTable) => {
     if (table.status === 'LIVE') {
       warning('Meja sedang dipakai', 'Selesaikan pertandingan di meja ini sebelum menghapusnya.');
+      return;
+    }
+    if (rentalByTable.has(table.id)) {
+      warning('Sewa masih berjalan', 'Tutup sewa meja ini sebelum menghapusnya.');
       return;
     }
     const ok = await deleteTable(table.id);
@@ -119,9 +182,9 @@ export const ClubView: React.FC<ClubViewProps> = ({
         await createTable(ownerId, `Meja ${pos}`, pos);
       }
     } else if (target < current) {
-      // Remove FREE tables from the end only.
+      // Remove tables that are free (no match, no active rental) from the end only.
       const removable = [...tables]
-        .filter((t) => t.status !== 'LIVE')
+        .filter((t) => t.status !== 'LIVE' && !rentalByTable.has(t.id))
         .sort((a, b) => (b.position ?? 0) - (a.position ?? 0));
       let toRemove = current - target;
       for (const t of removable) {
@@ -130,7 +193,7 @@ export const ClubView: React.FC<ClubViewProps> = ({
         toRemove -= 1;
       }
       if (toRemove > 0) {
-        warning('Sebagian meja aktif', 'Meja yang sedang dipakai tidak dihapus.');
+        warning('Sebagian meja sibuk', 'Meja yang sedang dipakai atau disewa tidak dihapus.');
       }
     }
     setBusy(false);
@@ -150,11 +213,79 @@ export const ClubView: React.FC<ClubViewProps> = ({
     setEditingId(null);
   };
 
-  const liveCount = tables.filter((t) => t.status === 'LIVE').length;
+  // ---- Billing actions ----
+  const saveRate = async (ratePerHour: number) => {
+    if (!rateTarget) return;
+    setBusy(true);
+    const ok = await setTableRate(rateTarget.id, ratePerHour);
+    setBusy(false);
+    if (ok) {
+      setTables((prev) => prev.map((t) => (t.id === rateTarget.id ? { ...t, ratePerHour } : t)));
+      setRateTarget(null);
+      success('Tarif disimpan', `${rateTarget.name}: ${formatRupiah(ratePerHour)} / jam.`);
+    } else {
+      error('Gagal', 'Tidak bisa menyimpan tarif.');
+    }
+  };
 
-  const stats = [
+  const openRental = async (table: ClubTable) => {
+    if (!ownerId || busy) return;
+    const rate = table.ratePerHour ?? DEFAULT_TABLE_RATE;
+    setBusy(true);
+    const session = await startRental(ownerId, table.id, table.name, rate);
+    setBusy(false);
+    if (session) {
+      setRentals((prev) => [...prev, session]);
+      setNow(Date.now());
+      success('Sewa dibuka', `${table.name} · ${formatRupiah(rate)} / jam.`);
+    } else {
+      error('Gagal', 'Tidak bisa membuka sewa.');
+    }
+  };
+
+  const confirmClose = async () => {
+    if (!closing) return;
+    const { session, endTime } = closing;
+    const total = rentalCost(session.startTime, endTime, session.ratePerHour);
+    setBusy(true);
+    const ok = await closeRental(session.id, endTime, total);
+    setBusy(false);
+    if (ok) {
+      setRentals((prev) => prev.filter((r) => r.id !== session.id));
+      setTodayRevenue((v) => v + total);
+      setClosing(null);
+      success('Sewa ditutup', `${session.tableName} · ${formatRupiah(total)}.`);
+    } else {
+      error('Gagal', 'Tidak bisa menutup sewa.');
+    }
+  };
+
+  const confirmCancel = async () => {
+    if (!cancelTarget) return;
+    const ok = await cancelRental(cancelTarget.id);
+    if (ok) {
+      setRentals((prev) => prev.filter((r) => r.id !== cancelTarget.id));
+    } else {
+      error('Gagal', 'Tidak bisa membatalkan sewa.');
+    }
+    setCancelTarget(null);
+  };
+
+  const liveCount = tables.filter((t) => t.status === 'LIVE').length;
+  const rentedCount = rentals.length;
+
+  const figures: { label: string; value: string; suffix?: string; onClick?: () => void }[] = [
     { label: 'Meja dipakai', value: `${liveCount}`, suffix: `/ ${tables.length}` },
-    { label: 'Total meja', value: `${tables.length}` },
+    ...(canBill
+      ? [
+          { label: 'Disewa', value: `${rentedCount}` },
+          {
+            label: 'Pemasukan hari ini',
+            value: formatRupiahShort(todayRevenue),
+            onClick: () => setRecapOpen(true),
+          },
+        ]
+      : [{ label: 'Total meja', value: `${tables.length}` }]),
     { label: 'Pertandingan 24 jam', value: `${matchesToday}` },
   ];
 
@@ -175,16 +306,36 @@ export const ClubView: React.FC<ClubViewProps> = ({
       </div>
 
       {/* Figures */}
-      <div className="grid grid-cols-3 border-y border-rule divide-x divide-rule">
-        {stats.map((s, i) => (
-          <div key={s.label} className={`py-3 ${i === 0 ? 'pr-3' : 'px-3'}`}>
-            <div className="eyebrow">{s.label}</div>
-            <div className="num text-4xl text-ink mt-1.5">
-              {s.value}
-              {s.suffix && <span className="text-xl text-ink-3 ml-1.5">{s.suffix}</span>}
+      <div
+        className={`grid grid-cols-2 ${
+          figures.length >= 4 ? 'sm:grid-cols-4' : 'sm:grid-cols-3'
+        } gap-x-4 gap-y-4 border-y border-rule py-3`}
+      >
+        {figures.map((s) => {
+          const inner = (
+            <>
+              <div className="eyebrow">{s.label}</div>
+              <div className="num text-3xl sm:text-4xl text-ink mt-1.5 tabular-nums">
+                {s.value}
+                {s.suffix && <span className="text-xl text-ink-3 ml-1.5">{s.suffix}</span>}
+              </div>
+            </>
+          );
+          return s.onClick ? (
+            <button
+              key={s.label}
+              onClick={s.onClick}
+              className="text-left sm:border-l sm:first:border-l-0 sm:pl-4 sm:first:pl-0 group"
+            >
+              <div className="group-hover:opacity-70 transition-opacity">{inner}</div>
+              <span className="text-[11px] text-ink-3 underline underline-offset-2">Lihat rekap</span>
+            </button>
+          ) : (
+            <div key={s.label} className="sm:border-l sm:first:border-l-0 sm:pl-4 sm:first:pl-0 border-rule">
+              {inner}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Management toolbar (venue admin only) */}
@@ -225,12 +376,14 @@ export const ClubView: React.FC<ClubViewProps> = ({
           {tables.map((table) => {
             const isLive = table.status === 'LIVE';
             const isEditing = editingId === table.id;
+            const rental = rentalByTable.get(table.id);
+            const rate = table.ratePerHour ?? DEFAULT_TABLE_RATE;
 
             return (
               <div
                 key={table.id}
                 className={`flex flex-col bg-panel border rounded-[4px] min-h-[150px] ${
-                  isLive ? 'border-ink' : 'border-rule'
+                  isLive || rental ? 'border-ink' : 'border-rule'
                 }`}
               >
                 <div className="flex items-center justify-between gap-2 px-3 h-11 border-b border-rule">
@@ -260,12 +413,16 @@ export const ClubView: React.FC<ClubViewProps> = ({
                       </button>
                     </div>
                   ) : (
-                    <span className={`tag shrink-0 ${isLive ? 'tag-live' : ''}`}>
-                      {isLive ? 'Dipakai' : table.status === 'MAINTENANCE' ? 'Perbaikan' : 'Kosong'}
+                    <span className="flex items-center gap-1.5 shrink-0">
+                      {rental && <span className="tag tag-live">Disewa</span>}
+                      <span className={`tag ${isLive ? 'tag-live' : ''}`}>
+                        {isLive ? 'Dipakai' : table.status === 'MAINTENANCE' ? 'Perbaikan' : 'Kosong'}
+                      </span>
                     </span>
                   )}
                 </div>
 
+                {/* Match snapshot */}
                 {isLive ? (
                   <div className="flex-1 flex flex-col">
                     <div className="rows">
@@ -313,11 +470,88 @@ export const ClubView: React.FC<ClubViewProps> = ({
                     {isSuperAdmin && <span className="text-sm text-ink-3 text-center">Kosong</span>}
                   </div>
                 )}
+
+                {/* Billing footer (venue admin only) */}
+                {canBill &&
+                  (rental ? (
+                    <div className="border-t border-rule px-3 py-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="inline-flex items-center gap-1.5 text-ink">
+                          <span className="w-1.5 h-1.5 rounded-full bg-ok animate-pulse" />
+                          <span className="num text-sm tabular-nums">
+                            {fmtClock(rentalElapsedSeconds(rental.startTime, now))}
+                          </span>
+                        </span>
+                        <span className="num text-sm text-ink tabular-nums">
+                          {formatRupiah(rentalCostRaw(rental.startTime, now, rental.ratePerHour))}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 mt-2">
+                        <button
+                          onClick={() => setClosing({ session: rental, endTime: Date.now() })}
+                          className="btn btn-primary btn-sm flex-1"
+                        >
+                          <Square className="w-3.5 h-3.5" /> Tutup &amp; tagih
+                        </button>
+                        <button
+                          onClick={() => setCancelTarget(rental)}
+                          className="btn btn-ghost btn-sm hover:!text-danger"
+                          title="Batalkan sewa"
+                        >
+                          Batal
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-2 px-3 h-11 border-t border-rule">
+                      <button
+                        onClick={() => setRateTarget(table)}
+                        className="inline-flex items-center gap-1.5 text-[13px] text-ink-3 hover:text-ink"
+                        title="Ubah tarif"
+                      >
+                        <Coins className="w-3.5 h-3.5" />
+                        <span className="num tabular-nums">{formatRupiah(rate)}</span>
+                        <span>/jam</span>
+                      </button>
+                      <button onClick={() => openRental(table)} disabled={busy} className="btn btn-ghost btn-sm">
+                        <Play className="w-3.5 h-3.5" /> Buka sewa
+                      </button>
+                    </div>
+                  ))}
               </div>
             );
           })}
         </div>
       )}
+
+      {/* Billing modals */}
+      <RentalRateModal
+        isOpen={!!rateTarget}
+        onClose={() => setRateTarget(null)}
+        table={rateTarget}
+        onSave={saveRate}
+        busy={busy}
+      />
+      <RentalReceiptModal
+        isOpen={!!closing}
+        onClose={() => setClosing(null)}
+        session={closing?.session ?? null}
+        endTime={closing?.endTime ?? Date.now()}
+        onConfirm={confirmClose}
+        busy={busy}
+      />
+      <RentalRecapModal isOpen={recapOpen} onClose={() => setRecapOpen(false)} ownerId={ownerId} />
+      <ConfirmDialog
+        isOpen={!!cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        onConfirm={confirmCancel}
+        title="Batalkan sewa?"
+        message={`Sewa ${cancelTarget?.tableName ?? ''} akan dihapus tanpa dicatat sebagai pemasukan. Meja kembali bebas.`}
+        confirmText="Ya, batalkan"
+        cancelText="Kembali"
+        type="danger"
+        iconType="delete"
+      />
     </div>
   );
 };

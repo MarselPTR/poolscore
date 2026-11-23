@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import type { Match, Tournament, Player, ClubTable, TournamentRegistration } from '../types';
+import type { Match, Tournament, Player, ClubTable, TournamentRegistration, RentalSession } from '../types';
 import { db } from '../db/database';
 
 // =====================================================================
@@ -364,6 +364,7 @@ function mapTableRow(d: Record<string, unknown>): ClubTable {
     gameType: (d.game_type as ClubTable['gameType']) || undefined,
     raceTo: (d.race_to as number) || undefined,
     startTime: (d.start_time as number) || undefined,
+    ratePerHour: (d.rate_per_hour as number) ?? undefined,
   };
 }
 
@@ -427,6 +428,20 @@ export async function renameTable(id: string, name: string): Promise<boolean> {
   }
 }
 
+/** Set a table's rental tariff (Rupiah/hour). */
+export async function setTableRate(id: string, ratePerHour: number): Promise<boolean> {
+  if (!isSupabaseConfigured) return false;
+  try {
+    const { error } = await supabase
+      .from('club_tables')
+      .update({ rate_per_hour: ratePerHour, updated_at: new Date().toISOString() })
+      .eq('id', id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
 export async function setTableStatus(id: string, status: ClubTable['status']): Promise<boolean> {
   if (!isSupabaseConfigured) return false;
   try {
@@ -483,6 +498,117 @@ export async function updateTableLive(
       .eq('id', id);
   } catch {
     // Fail silently
+  }
+}
+
+// =====================================================================
+// RENTAL BILLING (sewa meja) — per-venue, synced to Supabase
+// =====================================================================
+
+function mapRentalRow(d: Record<string, unknown>): RentalSession {
+  return {
+    id: d.id as string,
+    tableId: d.table_id as string,
+    ownerId: d.owner_id as string,
+    tableName: (d.table_name as string) || '',
+    ratePerHour: (d.rate_per_hour as number) || 0,
+    startTime: Number(d.start_time) || 0,
+    endTime: d.end_time != null ? Number(d.end_time) : undefined,
+    status: d.status as RentalSession['status'],
+    totalCost: d.total_cost != null ? Number(d.total_cost) : undefined,
+    note: (d.note as string) || undefined,
+  };
+}
+
+/** Open (active) rental sessions for a venue admin's tables. */
+export async function fetchActiveRentals(ownerId: string): Promise<RentalSession[]> {
+  if (!isSupabaseConfigured) return [];
+  try {
+    const { data, error } = await supabase
+      .from('rental_sessions')
+      .select('*')
+      .eq('owner_id', ownerId)
+      .eq('status', 'active')
+      .order('start_time', { ascending: true });
+    if (error || !data) return [];
+    return data.map(mapRentalRow);
+  } catch {
+    return [];
+  }
+}
+
+/** Closed (billed) rental sessions since a timestamp — for the revenue recap. */
+export async function fetchClosedRentalsSince(ownerId: string, sinceMs: number): Promise<RentalSession[]> {
+  if (!isSupabaseConfigured) return [];
+  try {
+    const { data, error } = await supabase
+      .from('rental_sessions')
+      .select('*')
+      .eq('owner_id', ownerId)
+      .eq('status', 'closed')
+      .gte('end_time', sinceMs)
+      .order('end_time', { ascending: false });
+    if (error || !data) return [];
+    return data.map(mapRentalRow);
+  } catch {
+    return [];
+  }
+}
+
+/** Start a rental session on a table. Returns the created session, or null. */
+export async function startRental(
+  ownerId: string,
+  tableId: string,
+  tableName: string,
+  ratePerHour: number,
+  note?: string
+): Promise<RentalSession | null> {
+  if (!isSupabaseConfigured) return null;
+  try {
+    const id = `rnt_${Math.random().toString(36).substring(2, 10)}`;
+    const { data, error } = await supabase
+      .from('rental_sessions')
+      .insert({
+        id,
+        owner_id: ownerId,
+        table_id: tableId,
+        table_name: tableName,
+        rate_per_hour: ratePerHour,
+        start_time: Date.now(),
+        status: 'active',
+        note: note || null,
+      })
+      .select()
+      .single();
+    if (error || !data) return null;
+    return mapRentalRow(data);
+  } catch {
+    return null;
+  }
+}
+
+/** Close a rental session with its final bill. */
+export async function closeRental(id: string, endTime: number, totalCost: number): Promise<boolean> {
+  if (!isSupabaseConfigured) return false;
+  try {
+    const { error } = await supabase
+      .from('rental_sessions')
+      .update({ status: 'closed', end_time: endTime, total_cost: totalCost })
+      .eq('id', id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+/** Cancel (void) an active rental without billing it. */
+export async function cancelRental(id: string): Promise<boolean> {
+  if (!isSupabaseConfigured) return false;
+  try {
+    const { error } = await supabase.from('rental_sessions').delete().eq('id', id);
+    return !error;
+  } catch {
+    return false;
   }
 }
 
