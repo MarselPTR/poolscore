@@ -3,6 +3,8 @@ import type { Tournament, GameType, TournamentFormat } from '../../types';
 import { db } from '../../db/database';
 import { BracketTree } from './BracketTree';
 import { PlayerPicker } from './PlayerPicker';
+import { RegistrationPanel } from './RegistrationPanel';
+import type { TournamentRegistration } from '../../types';
 import { generateTournamentMatches } from '../../utils/tournamentGenerator';
 import { syncTournamentToSupabase, fetchTournamentsFromSupabase, deleteTournamentFromSupabase } from '../../services/supabaseService';
 import { useToast } from '../../context/ToastContext';
@@ -58,6 +60,8 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
   const [tourneyFormat, setTourneyFormat] = useState<TournamentFormat>('Single Elimination');
   const [raceTo, setRaceTo] = useState<number>(7);
   const [numPlayers, setNumPlayers] = useState<number>(8);
+  // When on, the tournament opens for self-registration (no bracket yet).
+  const [openRegistration, setOpenRegistration] = useState<boolean>(false);
   const [playerNames, setPlayerNames] = useState<string[]>(() => generateDefaultPlayerNames(8));
   // Account id per participant slot (undefined = walk-in / not linked).
   const [participantIds, setParticipantIds] = useState<(string | undefined)[]>(() => Array(8).fill(undefined));
@@ -102,33 +106,73 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
     e.preventDefault();
     if (!canManage || !user) return;
     const tId = `TOURNEY-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-    const cleanedPlayers = playerNames.map((p, idx) => p.trim() || `Pemain ${idx + 1}`);
-    const matches = generateTournamentMatches(tId, cleanedPlayers, tourneyFormat, numPlayers);
-    const participants = cleanedPlayers.map((name, idx) => ({
-      name,
-      userId: participantIds[idx],
-    }));
 
-    const newTournament: Tournament = {
-      id: tId,
-      name: tourneyName.trim() || 'Turnamen PoolScore',
-      gameType,
-      format: tourneyFormat,
-      raceTo,
-      status: 'in_progress',
-      players: cleanedPlayers,
-      participants,
-      matches,
-      venueName: user.venueName,
-      isPublic: true,
-      createdBy: user.id,
-      createdAt: Date.now(),
-    };
+    let newTournament: Tournament;
+    if (openRegistration) {
+      // Registration tournament: no players/bracket yet — players join first.
+      newTournament = {
+        id: tId,
+        name: tourneyName.trim() || 'Turnamen PoolScore',
+        gameType,
+        format: tourneyFormat,
+        raceTo,
+        status: 'draft',
+        maxPlayers: numPlayers,
+        players: [],
+        participants: [],
+        matches: [],
+        venueName: user.venueName,
+        isPublic: true,
+        createdBy: user.id,
+        createdAt: Date.now(),
+      };
+    } else {
+      const cleanedPlayers = playerNames.map((p, idx) => p.trim() || `Pemain ${idx + 1}`);
+      const matches = generateTournamentMatches(tId, cleanedPlayers, tourneyFormat, numPlayers);
+      const participants = cleanedPlayers.map((name, idx) => ({ name, userId: participantIds[idx] }));
+      newTournament = {
+        id: tId,
+        name: tourneyName.trim() || 'Turnamen PoolScore',
+        gameType,
+        format: tourneyFormat,
+        raceTo,
+        status: 'in_progress',
+        players: cleanedPlayers,
+        participants,
+        matches,
+        venueName: user.venueName,
+        isPublic: true,
+        createdBy: user.id,
+        createdAt: Date.now(),
+      };
+    }
 
     await db.tournaments.put(newTournament);
     syncTournamentToSupabase(newTournament).catch(() => {});
     setSelectedTournament(newTournament);
     setIsCreateModalOpen(false);
+    fetchTournaments();
+  };
+
+  // Owner starts a registration tournament: build the bracket from registrants.
+  const handleStartTournament = async (regs: TournamentRegistration[]) => {
+    if (!selectedTournament) return;
+    const count = regs.length;
+    const players = regs.map((r) => r.name);
+    const participants = regs.map((r) => ({ name: r.name, userId: r.userId }));
+    const matches = generateTournamentMatches(selectedTournament.id, players, selectedTournament.format, count);
+
+    const started: Tournament = {
+      ...selectedTournament,
+      status: 'in_progress',
+      players,
+      participants,
+      matches,
+    };
+    await db.tournaments.put(started);
+    syncTournamentToSupabase(started).catch(() => {});
+    setSelectedTournament(started);
+    success('Turnamen dimulai', 'Bagan disusun dari peserta yang mendaftar.');
     fetchTournaments();
   };
 
@@ -170,7 +214,10 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
           <p className="text-sm text-ink-2 mt-1.5">
             {selectedTournament.venueName ? `${selectedTournament.venueName} · ` : ''}
             {selectedTournament.gameType} · {FORMAT_LABEL[selectedTournament.format] || selectedTournament.format} ·{' '}
-            {selectedTournament.players.length} pemain · race to {selectedTournament.raceTo}
+            {selectedTournament.status === 'draft'
+              ? `kuota ${selectedTournament.maxPlayers || '-'} pemain`
+              : `${selectedTournament.players.length} pemain`}{' '}
+            · race to {selectedTournament.raceTo}
           </p>
         </div>
       ) : (
@@ -186,20 +233,29 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
       )}
 
       {selectedTournament ? (
-        <BracketTree
-          tournament={selectedTournament}
-          readOnly={!ownsTournament(selectedTournament)}
-          onPlayMatch={(m) => {
-            onLaunchTournamentMatch(
-              selectedTournament.id,
-              m.id,
-              m.player1Name,
-              m.player2Name,
-              selectedTournament.gameType,
-              selectedTournament.raceTo
-            );
-          }}
-        />
+        selectedTournament.status === 'draft' ? (
+          <RegistrationPanel
+            tournament={selectedTournament}
+            isOwner={ownsTournament(selectedTournament)}
+            onStart={handleStartTournament}
+            onChanged={fetchTournaments}
+          />
+        ) : (
+          <BracketTree
+            tournament={selectedTournament}
+            readOnly={!ownsTournament(selectedTournament)}
+            onPlayMatch={(m) => {
+              onLaunchTournamentMatch(
+                selectedTournament.id,
+                m.id,
+                m.player1Name,
+                m.player2Name,
+                selectedTournament.gameType,
+                selectedTournament.raceTo
+              );
+            }}
+          />
+        )
       ) : tournaments.length === 0 ? (
         <div className="py-16 text-center border-y border-rule">
           <div className="display text-2xl">Belum ada turnamen</div>
@@ -219,6 +275,8 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
         <div className="rows border-y border-rule">
           {tournaments.map((t) => {
             const isCompleted = t.status === 'completed';
+            const isDraft = t.status === 'draft';
+            const statusLabel = isCompleted ? 'Selesai' : isDraft ? 'Pendaftaran' : 'Berlangsung';
 
             return (
               <div key={t.id} className="flex items-center gap-2 hover:bg-panel-2">
@@ -230,12 +288,13 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
                     <div className="flex items-center gap-2.5">
                       <span className="font-semibold text-ink truncate">{t.name}</span>
                       <span className={`tag shrink-0 ${isCompleted ? '' : 'tag-live'}`}>
-                        {isCompleted ? 'Selesai' : 'Berlangsung'}
+                        {statusLabel}
                       </span>
                     </div>
                     <div className="text-[13px] text-ink-3 mt-1 truncate">
                       {t.venueName ? `${t.venueName} · ` : ''}
-                      {t.gameType} · race to {t.raceTo} · {t.players.length} pemain ·{' '}
+                      {t.gameType} · race to {t.raceTo} ·{' '}
+                      {isDraft ? `kuota ${t.maxPlayers || '-'}` : `${t.players.length} pemain`} ·{' '}
                       {FORMAT_LABEL[t.format] || t.format}
                       {t.winnerName && (
                         <>
@@ -341,8 +400,23 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
             </div>
           </div>
 
+          <label className="flex items-start justify-between gap-4 py-2 cursor-pointer border-y border-rule">
+            <span className="min-w-0">
+              <span className="text-sm text-ink">Buka pendaftaran</span>
+              <span className="block text-[12px] text-ink-3 mt-0.5">
+                Peserta mendaftar sendiri; bagan disusun saat Anda memulai.
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              checked={openRegistration}
+              onChange={(e) => setOpenRegistration(e.target.checked)}
+              className="switch shrink-0 mt-1"
+            />
+          </label>
+
           <div>
-            <span className="label">Jumlah pemain</span>
+            <span className="label">{openRegistration ? 'Kuota peserta' : 'Jumlah pemain'}</span>
             <div className="grid grid-cols-4 gap-2">
               {[4, 8, 16, 32].map((count) => {
                 const disabled = tourneyFormat === 'Double Elimination' && count > 16;
@@ -362,6 +436,7 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
             </div>
           </div>
 
+          {!openRegistration && (
           <div>
             <div className="flex items-baseline justify-between mb-1.5">
               <span className="text-[13px] font-medium text-ink-2">Peserta ({playerNames.length})</span>
@@ -417,13 +492,21 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
               ))}
             </div>
           </div>
+          )}
+
+          {openRegistration && (
+            <p className="text-[13px] text-ink-3 border-y border-rule py-3">
+              Turnamen akan dibuka untuk pendaftaran. Pemain memilih "Daftar" sendiri, lalu Anda menekan
+              "Mulai turnamen" untuk menyusun bagan.
+            </p>
+          )}
 
           <div className="flex gap-2 pt-1">
             <button type="button" onClick={() => setIsCreateModalOpen(false)} className="btn btn-lg btn-secondary">
               Batal
             </button>
             <button type="submit" className="btn btn-lg btn-primary flex-1">
-              Buat bagan
+              {openRegistration ? 'Buka pendaftaran' : 'Buat bagan'}
             </button>
           </div>
         </form>

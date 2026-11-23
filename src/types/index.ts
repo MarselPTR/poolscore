@@ -178,6 +178,15 @@ export interface TournamentParticipant {
   name: string;
 }
 
+/** A player's self-registration to an open (draft) tournament. */
+export interface TournamentRegistration {
+  id: string;
+  tournamentId: string;
+  userId: string;
+  name: string;
+  createdAt: number;
+}
+
 export interface Tournament {
   id: string;
   name: string;
@@ -185,7 +194,10 @@ export interface Tournament {
   format: TournamentFormat;
   raceTo: number;
   targetSets?: number;
+  /** 'draft' = registration open (no bracket yet); 'in_progress'/'completed'. */
   status: 'draft' | 'in_progress' | 'completed';
+  /** Player quota for a registration (draft) tournament. */
+  maxPlayers?: number;
   players: string[];
   /** Account-link info per entrant, matched to `players` by name. Optional for
    *  backward compatibility with older name-only tournaments. */

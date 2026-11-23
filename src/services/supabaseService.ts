@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import type { Match, Tournament, Player, ClubTable } from '../types';
+import type { Match, Tournament, Player, ClubTable, TournamentRegistration } from '../types';
 import { db } from '../db/database';
 
 // =====================================================================
@@ -206,6 +206,7 @@ export async function syncTournamentToSupabase(tournament: Tournament): Promise<
       runner_up_name: tournament.runnerUpName || null,
       venue_name: tournament.venueName || null,
       is_public: tournament.isPublic ?? true,
+      max_players: tournament.maxPlayers ?? null,
       created_by: tournament.createdBy || null,
       created_at: tournament.createdAt,
     };
@@ -252,11 +253,95 @@ export async function fetchTournamentsFromSupabase(): Promise<Tournament[]> {
       runnerUpName: d.runner_up_name,
       venueName: d.venue_name,
       isPublic: d.is_public,
+      maxPlayers: d.max_players ?? undefined,
       createdBy: d.created_by,
       createdAt: Number(d.created_at),
     }));
   } catch {
     return [];
+  }
+}
+
+// =====================================================================
+// TOURNAMENT REGISTRATIONS (pendaftaran mandiri)
+// =====================================================================
+
+function mapRegistrationRow(d: Record<string, unknown>): TournamentRegistration {
+  return {
+    id: d.id as string,
+    tournamentId: d.tournament_id as string,
+    userId: d.user_id as string,
+    name: d.name as string,
+    createdAt: Number(d.created_at),
+  };
+}
+
+/** All registrations for one tournament, oldest first. */
+export async function fetchRegistrations(tournamentId: string): Promise<TournamentRegistration[]> {
+  if (!isSupabaseConfigured) return [];
+  try {
+    const { data, error } = await supabase
+      .from('tournament_registrations')
+      .select('*')
+      .eq('tournament_id', tournamentId)
+      .order('created_at', { ascending: true });
+    if (error || !data) return [];
+    return data.map(mapRegistrationRow);
+  } catch {
+    return [];
+  }
+}
+
+/** Register the current user to an open tournament. */
+export async function registerForTournament(
+  tournamentId: string,
+  userId: string,
+  name: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured) return { success: false, error: 'Backend tidak tersedia.' };
+  try {
+    const id = `reg_${Math.random().toString(36).substring(2, 10)}`;
+    const { error } = await supabase.from('tournament_registrations').insert({
+      id,
+      tournament_id: tournamentId,
+      user_id: userId,
+      name,
+      created_at: Date.now(),
+    });
+    if (error) {
+      // Unique violation = already registered.
+      if (error.code === '23505') return { success: false, error: 'Anda sudah terdaftar.' };
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch {
+    return { success: false, error: 'Gagal mendaftar.' };
+  }
+}
+
+/** Current user cancels their own registration. */
+export async function unregisterFromTournament(tournamentId: string, userId: string): Promise<boolean> {
+  if (!isSupabaseConfigured) return false;
+  try {
+    const { error } = await supabase
+      .from('tournament_registrations')
+      .delete()
+      .eq('tournament_id', tournamentId)
+      .eq('user_id', userId);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+/** Owner/super admin removes a registrant. */
+export async function removeRegistration(registrationId: string): Promise<boolean> {
+  if (!isSupabaseConfigured) return false;
+  try {
+    const { error } = await supabase.from('tournament_registrations').delete().eq('id', registrationId);
+    return !error;
+  } catch {
+    return false;
   }
 }
 

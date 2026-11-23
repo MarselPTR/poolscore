@@ -166,9 +166,22 @@ CREATE TABLE public.tournaments (
   runner_up_name TEXT,
   venue_name TEXT,
   is_public BOOLEAN NOT NULL DEFAULT TRUE,
+  max_players INTEGER,
   created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at BIGINT NOT NULL
 );
+
+-- Pendaftaran mandiri: satu baris per pemain terdaftar ke satu turnamen.
+CREATE TABLE public.tournament_registrations (
+  id TEXT PRIMARY KEY,
+  tournament_id TEXT NOT NULL REFERENCES public.tournaments(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  created_at BIGINT NOT NULL,
+  UNIQUE (tournament_id, user_id)
+);
+CREATE INDEX tournament_registrations_tid_idx
+  ON public.tournament_registrations (tournament_id);
 
 -- =====================================================================
 -- 6. CLUB TABLES (per-tempat / venue — dimiliki admin tempat)
@@ -253,6 +266,24 @@ CREATE POLICY "owner manages own tables" ON public.club_tables
   WITH CHECK (auth.uid() = owner_id AND public.can_manage_venue());
 CREATE POLICY "super admin manages all tables" ON public.club_tables
   FOR ALL USING (public.is_super_admin()) WITH CHECK (public.is_super_admin());
+
+-- TOURNAMENT REGISTRATIONS: daftar pendaftar dibaca semua user login; peserta
+-- hanya mendaftarkan dirinya ke turnamen yang masih buka (draft); hapus oleh
+-- pemain itu sendiri, pemilik turnamen, atau super admin.
+ALTER TABLE public.tournament_registrations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "registrations readable by authenticated" ON public.tournament_registrations
+  FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "user registers self to open tournament" ON public.tournament_registrations
+  FOR INSERT WITH CHECK (
+    user_id = auth.uid()
+    AND EXISTS (SELECT 1 FROM public.tournaments t WHERE t.id = tournament_id AND t.status = 'draft')
+  );
+CREATE POLICY "self or owner removes registration" ON public.tournament_registrations
+  FOR DELETE USING (
+    user_id = auth.uid()
+    OR public.is_super_admin()
+    OR EXISTS (SELECT 1 FROM public.tournaments t WHERE t.id = tournament_id AND t.created_by = auth.uid())
+  );
 
 -- =====================================================================
 -- 8. TRIGGER: buat profil otomatis saat sign up (membawa peran & info tempat)
