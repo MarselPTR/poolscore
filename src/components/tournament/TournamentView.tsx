@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Tournament, GameType, TournamentFormat } from '../../types';
 import { db } from '../../db/database';
 import { BracketTree } from './BracketTree';
+import { PlayerPicker } from './PlayerPicker';
 import { generateTournamentMatches } from '../../utils/tournamentGenerator';
 import { syncTournamentToSupabase, fetchTournamentsFromSupabase, deleteTournamentFromSupabase } from '../../services/supabaseService';
 import { useToast } from '../../context/ToastContext';
@@ -58,6 +59,8 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
   const [raceTo, setRaceTo] = useState<number>(7);
   const [numPlayers, setNumPlayers] = useState<number>(8);
   const [playerNames, setPlayerNames] = useState<string[]>(() => generateDefaultPlayerNames(8));
+  // Account id per participant slot (undefined = walk-in / not linked).
+  const [participantIds, setParticipantIds] = useState<(string | undefined)[]>(() => Array(8).fill(undefined));
 
   const fetchTournaments = async () => {
     try {
@@ -92,6 +95,7 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
   const handlePlayerCountChange = (count: number) => {
     setNumPlayers(count);
     setPlayerNames(generateDefaultPlayerNames(count, registeredPlayerNames));
+    setParticipantIds(Array(count).fill(undefined));
   };
 
   const handleCreateTournament = async (e: React.FormEvent) => {
@@ -100,6 +104,10 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
     const tId = `TOURNEY-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     const cleanedPlayers = playerNames.map((p, idx) => p.trim() || `Pemain ${idx + 1}`);
     const matches = generateTournamentMatches(tId, cleanedPlayers, tourneyFormat, numPlayers);
+    const participants = cleanedPlayers.map((name, idx) => ({
+      name,
+      userId: participantIds[idx],
+    }));
 
     const newTournament: Tournament = {
       id: tId,
@@ -109,6 +117,7 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
       raceTo,
       status: 'in_progress',
       players: cleanedPlayers,
+      participants,
       matches,
       venueName: user.venueName,
       isPublic: true,
@@ -358,28 +367,51 @@ export const TournamentView: React.FC<TournamentViewProps> = ({ onLaunchTourname
               <span className="text-[13px] font-medium text-ink-2">Peserta ({playerNames.length})</span>
               <button
                 type="button"
-                onClick={() => setPlayerNames(generateDefaultPlayerNames(numPlayers, registeredPlayerNames))}
+                onClick={() => {
+                  setPlayerNames(generateDefaultPlayerNames(numPlayers, registeredPlayerNames));
+                  setParticipantIds(Array(numPlayers).fill(undefined));
+                }}
                 className="text-[13px] font-medium text-ink-2 hover:text-ink underline underline-offset-2"
               >
                 Atur ulang nama
               </button>
             </div>
+            <p className="text-[12px] text-ink-3 mb-2">
+              Ketik nama bebas untuk pemain walk-in, atau cari pemain terdaftar untuk menautkan ke akunnya
+              (ditandai <span className="text-ok">✓</span>).
+            </p>
             <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 max-h-52 overflow-y-auto pr-1">
               {playerNames.map((name, idx) => (
                 <div key={idx} className="flex items-center gap-2">
                   <span className="num text-base text-ink-3 w-6 text-right shrink-0">{idx + 1}</span>
-                  <input
-                    type="text"
+                  <PlayerPicker
+                    index={idx}
                     value={name}
-                    onChange={(e) => {
-                      const updated = [...playerNames];
-                      updated[idx] = e.target.value;
-                      setPlayerNames(updated);
+                    linked={!!participantIds[idx]}
+                    onChangeName={(val) => {
+                      setPlayerNames((prev) => {
+                        const u = [...prev];
+                        u[idx] = val;
+                        return u;
+                      });
+                      setParticipantIds((prev) => {
+                        const u = [...prev];
+                        u[idx] = undefined;
+                        return u;
+                      });
                     }}
-                    placeholder={`Pemain ${idx + 1}`}
-                    aria-label={`Nama peserta ${idx + 1}`}
-                    className="field !h-9 !text-sm"
-                    required
+                    onPick={(userId, pickedName) => {
+                      setPlayerNames((prev) => {
+                        const u = [...prev];
+                        u[idx] = pickedName;
+                        return u;
+                      });
+                      setParticipantIds((prev) => {
+                        const u = [...prev];
+                        u[idx] = userId;
+                        return u;
+                      });
+                    }}
                   />
                 </div>
               ))}

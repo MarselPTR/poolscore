@@ -73,7 +73,7 @@ export const LeaderboardView: React.FC = () => {
           </thead>
           <tbody>
             {filtered.map((r, idx) => (
-              <tr key={r.name} className="border-b border-rule">
+              <tr key={r.userId || r.name} className="border-b border-rule">
                 <td className="py-3 text-center">
                   <RankMedallion rank={idx + 1} />
                 </td>

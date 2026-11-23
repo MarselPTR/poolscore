@@ -171,6 +171,13 @@ export interface TournamentGroupStanding {
   points: number;
 }
 
+/** A tournament entrant: either linked to a real account (userId) or a plain
+ *  walk-in name. `name` is always the display name used in the bracket. */
+export interface TournamentParticipant {
+  userId?: string;
+  name: string;
+}
+
 export interface Tournament {
   id: string;
   name: string;
@@ -180,6 +187,9 @@ export interface Tournament {
   targetSets?: number;
   status: 'draft' | 'in_progress' | 'completed';
   players: string[];
+  /** Account-link info per entrant, matched to `players` by name. Optional for
+   *  backward compatibility with older name-only tournaments. */
+  participants?: TournamentParticipant[];
   matches: TournamentMatch[];
   winnerName?: string;
   runnerUpName?: string;

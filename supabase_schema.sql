@@ -76,6 +76,21 @@ $$ LANGUAGE sql SECURITY DEFINER STABLE;
 REVOKE ALL ON FUNCTION public.resolve_login_email(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.resolve_login_email(text) TO anon, authenticated;
 
+-- Pencarian pemain yang aman (untuk menambah peserta turnamen): hanya
+-- mengembalikan id, nama, username — tanpa email/No. HP.
+CREATE OR REPLACE FUNCTION public.search_players(query text)
+RETURNS TABLE (id uuid, name text, username text) AS $$
+  SELECT id, name, username
+  FROM public.profiles
+  WHERE query <> ''
+    AND (name ILIKE '%' || query || '%' OR username ILIKE '%' || query || '%')
+  ORDER BY name
+  LIMIT 20;
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+REVOKE ALL ON FUNCTION public.search_players(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.search_players(text) TO authenticated;
+
 -- =====================================================================
 -- 3. PLAYERS (papan peringkat sementara — berbasis poin turnamen di Fase 4)
 -- =====================================================================
@@ -145,6 +160,7 @@ CREATE TABLE public.tournaments (
   status TEXT NOT NULL DEFAULT 'in_progress'
     CHECK (status IN ('draft', 'in_progress', 'completed')),
   players JSONB NOT NULL DEFAULT '[]'::jsonb,
+  participants JSONB NOT NULL DEFAULT '[]'::jsonb,
   matches JSONB NOT NULL DEFAULT '[]'::jsonb,
   winner_name TEXT,
   runner_up_name TEXT,

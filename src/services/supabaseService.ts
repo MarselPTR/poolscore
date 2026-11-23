@@ -156,6 +156,33 @@ export async function fetchPlayersFromSupabase(): Promise<Player[]> {
   }
 }
 
+export interface PlayerSearchResult {
+  id: string;
+  name: string;
+  username: string;
+}
+
+/**
+ * Search registered players by name/username to add them as tournament
+ * participants. Backed by a SECURITY DEFINER function that returns only safe
+ * fields (no email/phone), so this does not expose personal data.
+ */
+export async function searchPlayers(query: string): Promise<PlayerSearchResult[]> {
+  const q = query.trim();
+  if (!isSupabaseConfigured || q.length < 2) return [];
+  try {
+    const { data, error } = await supabase.rpc('search_players', { query: q });
+    if (error || !data) return [];
+    return (data as PlayerSearchResult[]).map((d) => ({
+      id: d.id,
+      name: d.name,
+      username: d.username,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 // =====================================================================
 // TOURNAMENTS SYNC SERVICE
 // =====================================================================
@@ -173,6 +200,7 @@ export async function syncTournamentToSupabase(tournament: Tournament): Promise<
       target_sets: tournament.targetSets || 1,
       status: tournament.status,
       players: tournament.players,
+      participants: tournament.participants || [],
       matches: tournament.matches,
       winner_name: tournament.winnerName || null,
       runner_up_name: tournament.runnerUpName || null,
@@ -218,6 +246,7 @@ export async function fetchTournamentsFromSupabase(): Promise<Tournament[]> {
       targetSets: d.target_sets || 1,
       status: d.status,
       players: d.players || [],
+      participants: d.participants || [],
       matches: d.matches || [],
       winnerName: d.winner_name,
       runnerUpName: d.runner_up_name,

@@ -8,6 +8,8 @@ export const POINTS_SCHEME = { win: 10, champion: 50, runnerUp: 25 };
 
 export interface RankingEntry {
   name: string;
+  /** Linked account id, when the entrant is a registered player. */
+  userId?: string;
   /** Average of this player's per-tournament percentages (0–100). */
   avgPct: number;
   tournamentsPlayed: number;
@@ -36,24 +38,39 @@ function tournamentPoints(t: Tournament): Record<string, number> {
  */
 export function computeGlobalRanking(tournaments: Tournament[]): RankingEntry[] {
   const completed = tournaments.filter((t) => t.status === 'completed');
-  const agg: Record<string, { pctSum: number; count: number; won: number; best: number }> = {};
+  // Account-linked entrants aggregate by userId (so results merge across
+  // tournaments even if the display name varies); walk-ins aggregate by name.
+  const agg: Record<
+    string,
+    { name: string; userId?: string; pctSum: number; count: number; won: number; best: number }
+  > = {};
 
   for (const t of completed) {
     const pts = tournamentPoints(t);
     const max = Math.max(1, ...Object.values(pts));
+    // name -> userId for this tournament's entrants
+    const linked: Record<string, string> = {};
+    for (const p of t.participants || []) {
+      if (p.userId) linked[p.name] = p.userId;
+    }
+
     for (const p of t.players) {
+      const userId = linked[p];
+      const key = userId ? `u:${userId}` : `n:${p.toLowerCase()}`;
       const pct = (pts[p] / max) * 100;
-      if (!agg[p]) agg[p] = { pctSum: 0, count: 0, won: 0, best: 0 };
-      agg[p].pctSum += pct;
-      agg[p].count += 1;
-      agg[p].best = Math.max(agg[p].best, pct);
-      if (t.winnerName === p) agg[p].won += 1;
+      if (!agg[key]) agg[key] = { name: p, userId, pctSum: 0, count: 0, won: 0, best: 0 };
+      agg[key].name = p; // keep the latest display name
+      agg[key].pctSum += pct;
+      agg[key].count += 1;
+      agg[key].best = Math.max(agg[key].best, pct);
+      if (t.winnerName === p) agg[key].won += 1;
     }
   }
 
-  return Object.entries(agg)
-    .map(([name, a]) => ({
-      name,
+  return Object.values(agg)
+    .map((a) => ({
+      name: a.name,
+      userId: a.userId,
       avgPct: a.count ? a.pctSum / a.count : 0,
       tournamentsPlayed: a.count,
       tournamentsWon: a.won,
