@@ -35,6 +35,8 @@ CREATE TABLE public.profiles (
   venue_name TEXT,
   venue_area TEXT,
   venue_phone TEXT,
+  -- Tarif default sewa meja (Rupiah/jam) untuk meja baru
+  default_rate_per_hour INTEGER,
   rating INTEGER DEFAULT 1400,
   avatar_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),

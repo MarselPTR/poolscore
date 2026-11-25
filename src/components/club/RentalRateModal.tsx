@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import type { ClubTable } from '../../types';
 import { Modal } from '../common/Modal';
 import { formatRupiah } from '../../utils/currency';
 import { DEFAULT_TABLE_RATE } from '../../lib/billing';
@@ -7,7 +6,11 @@ import { DEFAULT_TABLE_RATE } from '../../lib/billing';
 interface RentalRateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  table: ClubTable | null;
+  title: string;
+  /** Small line under the title (e.g. table name or a hint). */
+  subtitle?: string;
+  initialRate?: number;
+  saveLabel?: string;
   onSave: (ratePerHour: number) => void | Promise<void>;
   busy?: boolean;
 }
@@ -17,30 +20,26 @@ const PRESETS = [15000, 20000, 25000, 30000, 40000, 50000];
 export const RentalRateModal: React.FC<RentalRateModalProps> = ({
   isOpen,
   onClose,
-  table,
+  title,
+  subtitle,
+  initialRate,
+  saveLabel = 'Simpan tarif',
   onSave,
   busy,
 }) => {
   const [value, setValue] = useState('');
 
   useEffect(() => {
-    if (isOpen && table) {
-      setValue(String(table.ratePerHour ?? DEFAULT_TABLE_RATE));
-    }
-  }, [isOpen, table]);
-
-  if (!table) return null;
+    if (isOpen) setValue(String(initialRate ?? DEFAULT_TABLE_RATE));
+  }, [isOpen, initialRate]);
 
   const rate = parseInt(value, 10);
   const valid = Number.isFinite(rate) && rate >= 0 && rate <= 10_000_000;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Tarif sewa" maxWidth="max-w-sm">
+    <Modal isOpen={isOpen} onClose={onClose} title={title} maxWidth="max-w-sm">
       <div className="space-y-5 select-none">
-        <div>
-          <div className="eyebrow">Meja</div>
-          <div className="display text-xl text-ink mt-0.5">{table.name}</div>
-        </div>
+        {subtitle && <p className="text-sm text-ink-2 -mt-1">{subtitle}</p>}
 
         <div>
           <label htmlFor="rate" className="eyebrow">
@@ -86,7 +85,7 @@ export const RentalRateModal: React.FC<RentalRateModalProps> = ({
             className="btn btn-primary flex-1"
             disabled={!valid || busy}
           >
-            {busy ? 'Menyimpan…' : 'Simpan tarif'}
+            {busy ? 'Menyimpan…' : saveLabel}
           </button>
         </div>
       </div>

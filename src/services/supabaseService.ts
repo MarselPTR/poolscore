@@ -399,19 +399,36 @@ export async function fetchAllTables(): Promise<ClubTable[]> {
   }
 }
 
-export async function createTable(ownerId: string, name: string, position: number): Promise<ClubTable | null> {
+export async function createTable(
+  ownerId: string,
+  name: string,
+  position: number,
+  ratePerHour?: number
+): Promise<ClubTable | null> {
   if (!isSupabaseConfigured) return null;
   try {
     const id = `tbl_${Math.random().toString(36).substring(2, 10)}`;
-    const { data, error } = await supabase
-      .from('club_tables')
-      .insert({ id, owner_id: ownerId, name, position, status: 'FREE' })
-      .select()
-      .single();
+    const row: Record<string, unknown> = { id, owner_id: ownerId, name, position, status: 'FREE' };
+    if (ratePerHour != null) row.rate_per_hour = ratePerHour;
+    const { data, error } = await supabase.from('club_tables').insert(row).select().single();
     if (error || !data) return null;
     return mapTableRow(data);
   } catch {
     return null;
+  }
+}
+
+/** Set the venue's default tariff (Rupiah/hour), stored on the owner's profile. */
+export async function setVenueDefaultRate(userId: string, ratePerHour: number): Promise<boolean> {
+  if (!isSupabaseConfigured) return false;
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ default_rate_per_hour: ratePerHour, updated_at: new Date().toISOString() })
+      .eq('id', userId);
+    return !error;
+  } catch {
+    return false;
   }
 }
 

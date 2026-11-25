@@ -21,6 +21,8 @@ export interface UserProfile {
   isGuest?: boolean;
   venueName?: string;
   venueArea?: string;
+  /** Default table-rental tariff (Rupiah/hour) for new tables. */
+  defaultRate?: number;
 }
 
 export const ROLE_LABELS: Record<UserRole, string> = {
@@ -82,12 +84,13 @@ async function buildProfile(authUser: {
   let username = (meta.username as string) || authUser.email?.split('@')[0];
   let venueName: string | undefined;
   let venueArea: string | undefined;
+  let defaultRate: number | undefined;
   let rating = 1400;
 
   try {
     const { data } = await supabase
       .from('profiles')
-      .select('role, approval_status, name, username, venue_name, venue_area, rating')
+      .select('role, approval_status, name, username, venue_name, venue_area, default_rate_per_hour, rating')
       .eq('id', authUser.id)
       .maybeSingle();
     if (data) {
@@ -97,6 +100,7 @@ async function buildProfile(authUser: {
       username = data.username || username;
       venueName = data.venue_name || undefined;
       venueArea = data.venue_area || undefined;
+      defaultRate = (data.default_rate_per_hour as number) ?? undefined;
       rating = data.rating ?? rating;
     }
   } catch {
@@ -115,6 +119,7 @@ async function buildProfile(authUser: {
     isGuest: false,
     venueName,
     venueArea,
+    defaultRate,
   };
 }
 

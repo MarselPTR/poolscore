@@ -10,6 +10,7 @@ import {
   renameTable,
   deleteTable,
   setTableRate,
+  setVenueDefaultRate,
   fetchActiveRentals,
   fetchClosedRentalsSince,
   startRental,
@@ -20,9 +21,10 @@ import { DEFAULT_TABLE_RATE, rentalElapsedSeconds, rentalCostRaw, rentalCost } f
 import { formatRupiah, formatRupiahShort } from '../../utils/currency';
 import { RentalReceiptModal } from './RentalReceiptModal';
 import { RentalRateModal } from './RentalRateModal';
+import { RentalStartModal } from './RentalStartModal';
 import { RentalRecapModal } from './RentalRecapModal';
 import { ConfirmDialog } from '../common/ConfirmDialog';
-import { Tv, Plus, Trash2, Pencil, Check, X, Coins, Play, Square } from 'lucide-react';
+import { Tv, Plus, Trash2, Pencil, Check, X, Coins, Play, Square, User } from 'lucide-react';
 
 interface ClubViewProps {
   onOpenQuickMatchForTable: (tableId: string, tableLabel: string) => void;
@@ -51,11 +53,12 @@ export const ClubView: React.FC<ClubViewProps> = ({
   onOpenQuickMatchForTable,
   onOpenTVView,
 }) => {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const { success, error, warning } = useToast();
   const isSuperAdmin = user?.role === 'super_admin';
   const ownerId = user && !user.isGuest ? user.id : undefined;
   const canBill = !isSuperAdmin && !!ownerId;
+  const venueDefaultRate = user?.defaultRate ?? DEFAULT_TABLE_RATE;
 
   const [tables, setTables] = useState<ClubTable[]>([]);
   const [rentals, setRentals] = useState<RentalSession[]>([]);
@@ -68,8 +71,13 @@ export const ClubView: React.FC<ClubViewProps> = ({
   const [busy, setBusy] = useState(false);
   const seededRef = useRef(false);
 
-  // Billing modals
-  const [rateTarget, setRateTarget] = useState<ClubTable | null>(null);
+  // Billing modals. `rateEditor` targets either a specific table or the
+  // venue-wide default; `reopenStart` loops back to the start sheet after a
+  // tariff edit launched from it.
+  const [rateEditor, setRateEditor] = useState<
+    { table: ClubTable; reopenStart: boolean } | { venue: true } | null
+  >(null);
+  const [startTarget, setStartTarget] = useState<ClubTable | null>(null);
   const [closing, setClosing] = useState<{ session: RentalSession; endTime: number } | null>(null);
   const [cancelTarget, setCancelTarget] = useState<RentalSession | null>(null);
   const [recapOpen, setRecapOpen] = useState(false);
@@ -114,7 +122,7 @@ export const ClubView: React.FC<ClubViewProps> = ({
       if (!isSuperAdmin && ownerId && list.length === 0 && !seededRef.current) {
         seededRef.current = true;
         for (let i = 0; i < DEFAULT_TABLE_COUNT; i++) {
-          await createTable(ownerId, `Meja ${i + 1}`, i + 1);
+          await createTable(ownerId, `Meja ${i + 1}`, i + 1, venueDefaultRate);
         }
         if (!cancelled) await loadTables();
       }
@@ -147,7 +155,7 @@ export const ClubView: React.FC<ClubViewProps> = ({
     if (!ownerId || busy) return;
     setBusy(true);
     const pos = nextPosition(tables);
-    const created = await createTable(ownerId, `Meja ${pos}`, pos);
+    const created = await createTable(ownerId, `Meja ${pos}`, pos, venueDefaultRate);
     setBusy(false);
     if (created) setTables((prev) => [...prev, created]);
     else error('Gagal', 'Tidak bisa menambah meja.');
@@ -179,7 +187,7 @@ export const ClubView: React.FC<ClubViewProps> = ({
     if (target > current) {
       for (let i = current; i < target; i++) {
         const pos = i + 1;
-        await createTable(ownerId, `Meja ${pos}`, pos);
+        await createTable(ownerId, `Meja ${pos}`, pos, venueDefaultRate);
       }
     } else if (target < current) {
       // Remove tables that are free (no match, no active rental) from the end only.
@@ -215,36 +223,57 @@ export const ClubView: React.FC<ClubViewProps> = ({
 
   // ---- Billing actions ----
   const saveRate = async (ratePerHour: number) => {
-    if (!rateTarget) return;
+    if (!rateEditor) return;
     setBusy(true);
-    const ok = await setTableRate(rateTarget.id, ratePerHour);
+
+    if ('venue' in rateEditor) {
+      // Venue-wide default (stored on the owner's profile).
+      const ok = ownerId ? await setVenueDefaultRate(ownerId, ratePerHour) : false;
+      setBusy(false);
+      if (ok) {
+        setRateEditor(null);
+        await refreshProfile();
+        success('Tarif default disimpan', `${formatRupiah(ratePerHour)} / jam untuk meja baru.`);
+      } else {
+        error('Gagal', 'Tidak bisa menyimpan tarif default.');
+      }
+      return;
+    }
+
+    // Per-table tariff.
+    const { table, reopenStart } = rateEditor;
+    const ok = await setTableRate(table.id, ratePerHour);
     setBusy(false);
     if (ok) {
-      setTables((prev) => prev.map((t) => (t.id === rateTarget.id ? { ...t, ratePerHour } : t)));
-      setRateTarget(null);
-      success('Tarif disimpan', `${rateTarget.name}: ${formatRupiah(ratePerHour)} / jam.`);
+      const updated = { ...table, ratePerHour };
+      setTables((prev) => prev.map((t) => (t.id === table.id ? updated : t)));
+      setRateEditor(null);
+      if (reopenStart) setStartTarget(updated);
+      else success('Tarif disimpan', `${table.name}: ${formatRupiah(ratePerHour)} / jam.`);
     } else {
       error('Gagal', 'Tidak bisa menyimpan tarif.');
     }
   };
 
-  const openRental = async (table: ClubTable) => {
-    if (!ownerId || busy) return;
+  const openRental = async (note: string) => {
+    if (!ownerId || busy || !startTarget) return;
+    const table = startTarget;
     const rate = table.ratePerHour ?? DEFAULT_TABLE_RATE;
     setBusy(true);
-    const session = await startRental(ownerId, table.id, table.name, rate);
+    const session = await startRental(ownerId, table.id, table.name, rate, note || undefined);
     setBusy(false);
     if (session) {
       setRentals((prev) => [...prev, session]);
       setNow(Date.now());
+      setStartTarget(null);
       success('Sewa dibuka', `${table.name} · ${formatRupiah(rate)} / jam.`);
     } else {
       error('Gagal', 'Tidak bisa membuka sewa.');
     }
   };
 
-  const confirmClose = async () => {
-    if (!closing) return;
+  const confirmClose = async (): Promise<boolean> => {
+    if (!closing) return false;
     const { session, endTime } = closing;
     const total = rentalCost(session.startTime, endTime, session.ratePerHour);
     setBusy(true);
@@ -253,11 +282,10 @@ export const ClubView: React.FC<ClubViewProps> = ({
     if (ok) {
       setRentals((prev) => prev.filter((r) => r.id !== session.id));
       setTodayRevenue((v) => v + total);
-      setClosing(null);
-      success('Sewa ditutup', `${session.tableName} · ${formatRupiah(total)}.`);
-    } else {
-      error('Gagal', 'Tidak bisa menutup sewa.');
+      return true;
     }
+    error('Gagal', 'Tidak bisa menutup sewa.');
+    return false;
   };
 
   const confirmCancel = async () => {
@@ -360,6 +388,13 @@ export const ClubView: React.FC<ClubViewProps> = ({
               Terapkan
             </button>
           </div>
+          <button
+            onClick={() => setRateEditor({ venue: true })}
+            className="btn btn-ghost btn-sm sm:ml-auto"
+            title="Tarif default untuk meja baru"
+          >
+            <Coins className="w-4 h-4" /> Tarif default: {formatRupiah(venueDefaultRate)}
+          </button>
         </div>
       )}
 
@@ -486,6 +521,11 @@ export const ClubView: React.FC<ClubViewProps> = ({
                           {formatRupiah(rentalCostRaw(rental.startTime, now, rental.ratePerHour))}
                         </span>
                       </div>
+                      {rental.note && (
+                        <div className="flex items-center gap-1 text-[12px] text-ink-3 truncate mt-1.5">
+                          <User className="w-3 h-3 shrink-0" /> <span className="truncate">{rental.note}</span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-1 mt-2">
                         <button
                           onClick={() => setClosing({ session: rental, endTime: Date.now() })}
@@ -505,15 +545,15 @@ export const ClubView: React.FC<ClubViewProps> = ({
                   ) : (
                     <div className="flex items-center justify-between gap-2 px-3 h-11 border-t border-rule">
                       <button
-                        onClick={() => setRateTarget(table)}
+                        onClick={() => setRateEditor({ table, reopenStart: false })}
                         className="inline-flex items-center gap-1.5 text-[13px] text-ink-3 hover:text-ink"
-                        title="Ubah tarif"
+                        title="Ubah tarif meja ini"
                       >
                         <Coins className="w-3.5 h-3.5" />
                         <span className="num tabular-nums">{formatRupiah(rate)}</span>
                         <span>/jam</span>
                       </button>
-                      <button onClick={() => openRental(table)} disabled={busy} className="btn btn-ghost btn-sm">
+                      <button onClick={() => setStartTarget(table)} disabled={busy} className="btn btn-ghost btn-sm">
                         <Play className="w-3.5 h-3.5" /> Buka sewa
                       </button>
                     </div>
@@ -525,10 +565,37 @@ export const ClubView: React.FC<ClubViewProps> = ({
       )}
 
       {/* Billing modals */}
+      <RentalStartModal
+        isOpen={!!startTarget}
+        onClose={() => setStartTarget(null)}
+        table={startTarget}
+        onEditRate={() => {
+          if (startTarget) {
+            const t = startTarget;
+            setStartTarget(null);
+            setRateEditor({ table: t, reopenStart: true });
+          }
+        }}
+        onStart={openRental}
+        busy={busy}
+      />
       <RentalRateModal
-        isOpen={!!rateTarget}
-        onClose={() => setRateTarget(null)}
-        table={rateTarget}
+        isOpen={!!rateEditor}
+        onClose={() => setRateEditor(null)}
+        title={rateEditor && 'venue' in rateEditor ? 'Tarif default tempat' : 'Tarif sewa'}
+        subtitle={
+          rateEditor && 'venue' in rateEditor
+            ? 'Dipakai sebagai tarif awal setiap meja baru. Tidak mengubah meja yang sudah ada.'
+            : rateEditor && 'table' in rateEditor
+              ? rateEditor.table.name
+              : undefined
+        }
+        initialRate={
+          rateEditor && 'table' in rateEditor
+            ? (rateEditor.table.ratePerHour ?? venueDefaultRate)
+            : venueDefaultRate
+        }
+        saveLabel={rateEditor && 'venue' in rateEditor ? 'Simpan tarif default' : 'Simpan tarif'}
         onSave={saveRate}
         busy={busy}
       />
@@ -537,6 +604,7 @@ export const ClubView: React.FC<ClubViewProps> = ({
         onClose={() => setClosing(null)}
         session={closing?.session ?? null}
         endTime={closing?.endTime ?? Date.now()}
+        venueName={user?.venueName}
         onConfirm={confirmClose}
         busy={busy}
       />
